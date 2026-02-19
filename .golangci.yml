@@ -539,7 +539,7 @@ run:
     allow-serial-runners: false
     # Define the Go version limit.
     # Default: use Go version from the go.mod file, fallback on the env var `GOVERSION`, fallback on 1.22.
-    go: "1.25"
+    go: "1.24"
 
 severity:
     # Set the default severity for issues.
