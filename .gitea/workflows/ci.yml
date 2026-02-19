@@ -17,9 +17,14 @@ jobs:
         name: CI Pipeline
         runs-on: ubuntu-latest
         container:
-            image: golang:1.25
+            image: golang:1.25-bookworm
 
         steps:
+            - name: Install Node.js
+              run: |
+                  apt-get update -qq
+                  apt-get install -y -qq nodejs
+
             - name: Checkout code
               uses: actions/checkout@v4
 
