@@ -1,5 +1,7 @@
 # $schema: https://golangci-lint.run/jsonschema/golangci.jsonschema.json
-#
+
+# spell-checker: disable
+
 # golangci-lint configuration for zentest
 # Practical configuration focused on code quality, security, and maintainability
 
@@ -567,3 +569,5 @@ severity:
         # - linters:
         #     - dupl
         #   severity: info
+
+# spell-check enable
