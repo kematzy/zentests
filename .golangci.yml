@@ -1,0 +1,569 @@
+# $schema: https://golangci-lint.run/jsonschema/golangci.jsonschema.json
+#
+# golangci-lint configuration for zentest
+# Practical configuration focused on code quality, security, and maintainability
+
+version: "2"
+
+linters:
+    # Default set of linters.
+    # The value can be:
+    # - `standard`: https://golangci-lint.run/docs/linters/#enabled-by-default
+    # - `all`: enables all linters by default.
+    # - `none`: disables all linters by default.
+    # - `fast`: enables only linters considered as "fast" (`golangci-lint help linters --json | jq '[ .[] | select(.fast==true) ] | map(.name)'`).
+    # Default: standard
+    default: standard
+    exclusions:
+        rules:
+            - path: '(.+)_test\.go'
+              linters:
+                  - bodyclose
+                  - godoclint
+                  - funlen
+                  - goconst
+
+    # Enable specific linter.
+    enable:
+        # Essential Go tools
+        - errcheck # Check for unchecked errors
+        # - govet # Standard Go vet checks
+        - ineffassign # Detect ineffective assignments
+        - staticcheck # Advanced static analysis
+
+        # Security
+        - gosec # Security-focused linter
+
+        # Performance
+        - prealloc # Find slice declarations that could be pre-allocated
+
+        # Style and formatting
+        - godoclint # Fast, configurable linter for Go
+        - godot # Check if comments end in a period.
+        # - goimports # Check if imports are sorted
+        # - misspell # Find commonly misspelled words
+        # - unconvert # Remove unnecessary type conversions
+        # - unparam # Find unused function parameters
+
+        # Error handling
+        - errorlint # Error wrapping issues
+        - errname # Check error names
+
+        # Complexity
+        - gocyclo # Check cyclomatic complexity
+        - funlen # Check function length
+        - gocognit # Check cognitive complexity
+
+        # Maintenance
+        - goconst # Find repeated strings that could be constants
+        - gocritic # Comprehensive Go source code linter
+        - godox # Detects usage of FIXME, TODO and other keywords inside comments.
+        - revive # Fast, configurable linter for Go
+
+        # Web/API specific
+        - bodyclose # Check whether HTTP response body is closed
+        - noctx # Find sending http request without context.Context
+        - rowserrcheck # Check whether Rows.Err is checked
+        - sqlclosecheck # Check sql.Rows/sql.Stmt are closed
+
+    settings:
+        # Checks whether HTTP response body is closed successfully.
+        # bodyclose: No settings available
+
+        # Detects function and method with missing usage of context.Context.
+        # noctx: No settings available
+
+        # Errcheck is a program for checking for unchecked errors in Go code.
+        # These unchecked errors can be critical bugs in some cases.
+        errcheck:
+            # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
+            # Such cases aren't reported by default.
+            # Default: false
+            check-type-assertions: true
+            # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.
+            # Such cases aren't reported by default.
+            # Default: false
+            check-blank: true
+            # List of functions to exclude from checking, where each entry is a single function to exclude.
+            # See https://github.com/kisielk/errcheck#excluding-functions for details.
+            exclude-functions:
+                - io/ioutil.ReadFile
+                - io.Copy(*bytes.Buffer)
+                - io.Copy(os.Stdout)
+                # Common test functions that ignore errors
+                - os.Setenv
+                - os.Unsetenv
+                - os.Rename
+                - (*os.File).Close
+                - (*database/sql.DB).Close
+                - (*database/sql.Rows).Close
+                - (*database/sql.Stmt).Close
+                - fmt.Printf
+                - fmt.Println
+                # Fiber test helpers
+                - (*github.com/gofiber/fiber/v2.App).Shutdown
+                - fmt.Println
+                # Fiber test helpers
+                - (*github.com/gofiber/fiber/v2.App).Shutdown
+            # Display function signature instead of selector.
+            # Default: false
+            verbose: true
+
+        # Checks for long functions.
+        funlen:
+            # Checks the number of lines in a function.
+            # If lower than 0, disable the check.
+            # Default: 60
+            lines: 100
+            # Checks the number of statements in a function.
+            # If lower than 0, disable the check.
+            # Default: 40
+            statements: 40
+            # Ignore comments when counting lines.
+            # Default: true
+            ignore-comments: true
+
+        # Computes and checks the cognitive complexity of functions.
+        gocognit:
+            # Minimal code complexity to report.
+            # Default: 30 (but we recommend 10-20)
+            min-complexity: 20
+
+        # Finds repeated strings that could be replaced by a constant.
+        goconst:
+            # Minimal length of string constant.
+            # Default: 3
+            min-len: 3
+            # Minimum occurrences of constant string count to trigger issue.
+            # Default: 3
+            min-occurrences: 3
+            # Look for existing constants matching the values.
+            # Default: true
+            match-constant: true
+            # Search also for duplicated numbers.
+            # Default: false
+            numbers: false
+            # Minimum value, only works with `goconst.numbers`.
+            # Default: 3
+            min: 2
+            # Maximum value, only works with `goconst.numbers`.
+            # Default: 3
+            max: 2
+            # Ignore when constant is not used as function argument.
+            # Default: true
+            ignore-calls: true
+            # Exclude strings matching the given regular expression.
+            # Default: ""
+            # ignore-string-values:
+            #   - 'foo.+'
+            # Detects constants with identical values.
+            # Default: false
+            find-duplicates: true
+            # Evaluates of constant expressions like Prefix + "suffix".
+            # Default: false
+            # eval-const-expressions: true
+
+        # Provides diagnostics that check for bugs, performance and style issues.
+        # Extensible without recompilation through dynamic rules.
+        # Dynamic rules are written declaratively with AST patterns, filters, report message and optional suggestion.
+        gocritic:
+            enabled-tags:
+                - diagnostic
+                - style
+                - performance
+                - experimental
+            disabled-checks:
+                - commentedOutCode
+                - whyNoLint
+                - unnamedResult
+
+        # Computes and checks the cyclomatic complexity of functions.
+        gocyclo:
+            # Minimal code complexity to report.
+            # Default: 30 (but we recommend 10-20)
+            min-complexity: 15
+
+        # Checks Golang's documentation practice (godoc).
+        godoclint:
+            # Default set of rules to enable.
+            # Possible values are: `basic`, `all` or `none`.
+            # Default: `basic` (enables `pkg-doc`, `single-pkg-doc`, `start-with-name`, and `deprecated`)
+            default: all
+            # List of rules to disable.
+            # Default: empty
+            # disable:
+            #   - pkg-doc
+            #   - single-pkg-doc
+            #   - require-pkg-doc
+            #   - start-with-name
+            #   - require-doc
+            #   - deprecated
+            #   - max-len
+            #   - no-unused-link
+            # A map for fine-tuning individual rules.
+            # All sub-keys are optional.
+            options:
+                max-len:
+                    # Maximum line length for godocs, not including the `// `, or `/*` or `*/` tokens.
+                    # Default: 77
+                    length: 97
+
+        # Detects usage of FIXME, TODO and other keywords inside comments.
+        godox:
+            # Report any comments starting with keywords, this is useful for TODO or FIXME comments
+            # that might be left in the code accidentally and should be resolved before merging.
+            # Default: ["TODO", "BUG", "FIXME"]
+            keywords: []
+                # - NOTE
+                # - OPTIMIZE # marks code that should be optimized before merging
+                # - HACK # marks hack-around that should be removed before merging
+
+        # Inspects source code for security problems.
+        gosec:
+            # To select a subset of rules to run.
+            # Available rules: https://github.com/securego/gosec#available-rules
+            # Default: [] - means include all rules
+            includes:
+                - G101 # Look for hard coded credentials
+                - G102 # Bind to all interfaces
+                - G103 # Audit the use of unsafe block
+                - G104 # Audit errors not checked
+                - G106 # Audit the use of ssh.InsecureIgnoreHostKey
+                - G107 # Url provided to HTTP request as taint input
+                - G108 # Profiling endpoint automatically exposed on /debug/pprof
+                - G109 # Potential Integer overflow made by strconv.Atoi result conversion to int16/32
+                - G110 # Potential DoS vulnerability via decompression bomb
+                - G111 # Potential directory traversal
+                - G112 # Potential slowloris attack
+                - G114 # Use of net/http serve function that has no support for setting timeouts
+                - G115 # Potential integer overflow when converting between integer types
+                - G201 # SQL query construction using format string
+                - G202 # SQL query construction using string concatenation
+                - G203 # Use of unescaped data in HTML templates
+                - G204 # Audit use of command execution
+                - G301 # Poor file permissions used when creating a directory
+                - G302 # Poor file permissions used with chmod
+                - G303 # Creating tempfile using a predictable path
+                - G304 # File path provided as taint input
+                - G305 # File traversal when extracting zip/tar archive
+                - G306 # Poor file permissions used when writing to a new file
+                - G307 # Poor file permissions used when creating a file with os.Create
+                - G401 # Detect the usage of MD5 or SHA1
+                - G402 # Look for bad TLS connection settings
+                - G403 # Ensure minimum RSA key length of 2048 bits
+                - G404 # Insecure random number source (rand)
+                - G405 # Detect the usage of DES or RC4
+                - G406 # Detect the usage of MD4 or RIPEMD160
+                - G501 # Import blocklist: crypto/md5
+                - G502 # Import blocklist: crypto/des
+                - G503 # Import blocklist: crypto/rc4
+                - G504 # Import blocklist: net/http/cgi
+                - G505 # Import blocklist: crypto/sha1
+                - G506 # Import blocklist: golang.org/x/crypto/md4
+                - G507 # Import blocklist: golang.org/x/crypto/ripemd160
+                - G601 # Implicit memory aliasing of items from a range statement
+                - G602 # Slice access out of bounds
+            # To specify a set of rules to explicitly exclude.
+            # Available rules: https://github.com/securego/gosec#available-rules
+            # Default: []
+            excludes: []
+            # Filter out the issues with a lower severity than the given value.
+            # Valid options are: low, medium, high.
+            # Default: low
+            severity: medium
+            # Filter out the issues with a lower confidence than the given value.
+            # Valid options are: low, medium, high.
+            # Default: low
+            confidence: medium
+
+        # Vet examines Go source code and reports suspicious constructs.
+        # It is roughly the same as 'go vet' and uses its passes.
+        govet:
+            # Disable all analyzers.
+            # Default: false
+            disable-all: true
+            # Enable analyzers by name.
+            # (In addition to default:
+            #   appends, asmdecl, assign, atomic, bools, buildtag, cgocall, composites, copylocks, defers,
+            #   directive, errorsas, framepointer, httpresponse, ifaceassert, loopclosure, lostcancel, nilfunc,
+            #   printf, shift, sigchanyzer, slog, stdmethods, stringintconv, structtag, testinggoroutine,
+            #   tests, timeformat, unmarshal, unreachable, unsafeptr, unusedresult
+            # ).
+            # Run `GL_DEBUG=govet golangci-lint run --enable=govet` to see default, all available analyzers, and enabled analyzers.
+            # Default: []
+            enable:
+                # Check for missing values after append.
+                - appends
+                # Report mismatches between assembly files and Go declarations.
+                - asmdecl
+                # Check for useless assignments.
+                - assign
+                # Check for common mistakes using the sync/atomic package.
+                - atomic
+                # Check for non-64-bits-aligned arguments to sync/atomic functions.
+                - atomicalign
+                # Check for common mistakes involving boolean operators.
+                - bools
+                # Check //go:build and // +build directives.
+                - buildtag
+                # Detect some violations of the cgo pointer passing rules.
+                - cgocall
+                # Check for unkeyed composite literals.
+                - composites
+                # Check for locks erroneously passed by value.
+                - copylocks
+                # Check for calls of reflect.DeepEqual on error values.
+                - deepequalerrors
+                # Report common mistakes in defer statements.
+                - defers
+                # Check Go toolchain directives such as //go:debug.
+                - directive
+                # Report passing non-pointer or non-error values to errors.As.
+                - errorsas
+                # Find structs that would use less memory if their fields were sorted.
+                - fieldalignment
+                # Find calls to a particular function.
+                - findcall
+                # Report assembly that clobbers the frame pointer before saving it.
+                - framepointer
+                # Check format of addresses passed to net.Dial.
+                - hostport
+                # Report using Go 1.22 enhanced ServeMux patterns in older Go versions.
+                - httpmux
+                # Check for mistakes using HTTP responses.
+                - httpresponse
+                # Detect impossible interface-to-interface type assertions.
+                - ifaceassert
+                # Check references to loop variables from within nested functions.
+                - loopclosure
+                # Check cancel func returned by context.WithCancel is called.
+                - lostcancel
+                # Check for useless comparisons between functions and nil.
+                - nilfunc
+                # Check for redundant or impossible nil comparisons.
+                - nilness
+                # Check consistency of Printf format strings and arguments.
+                - printf
+                # Check for comparing reflect.Value values with == or reflect.DeepEqual.
+                - reflectvaluecompare
+                # Check for possible unintended shadowing of variables.
+                - shadow
+                # Check for shifts that equal or exceed the width of the integer.
+                - shift
+                # Check for unbuffered channel of os.Signal.
+                - sigchanyzer
+                # Check for invalid structured logging calls.
+                - slog
+                # Check the argument type of sort.Slice.
+                - sortslice
+                # Check signature of methods of well-known interfaces.
+                - stdmethods
+                # Report uses of too-new standard library symbols.
+                - stdversion
+                # Check for string(int) conversions.
+                - stringintconv
+                # Check that struct field tags conform to reflect.StructTag.Get.
+                - structtag
+                # Report calls to (*testing.T).Fatal from goroutines started by a test.
+                - testinggoroutine
+                # Check for common mistaken usages of tests and examples.
+                - tests
+                # Check for calls of (time.Time).Format or time.Parse with 2006-02-01.
+                - timeformat
+                # Report passing non-pointer or non-interface values to unmarshal.
+                - unmarshal
+                # Check for unreachable code.
+                - unreachable
+                # Check for invalid conversions of uintptr to unsafe.Pointer.
+                - unsafeptr
+                # Check for unused results of calls to some functions.
+                - unusedresult
+                # Checks for unused writes.
+                - unusedwrite
+                # Check for misuses of sync.WaitGroup.
+                - waitgroup
+            # Enable all analyzers.
+            # Default: false
+            enable-all: false
+            # Disable analyzers by name.
+            # (In addition to default
+            #   atomicalign, deepequalerrors, fieldalignment, findcall, nilness, reflectvaluecompare, shadow, sortslice,
+            #   timeformat, unusedwrite
+            # ).
+            # Run `GL_DEBUG=govet golangci-lint run --enable=govet` to see default, all available analyzers, and enabled analyzers.
+            # Default: []
+            disable: []
+            # Settings per analyzer.
+            settings:
+                # Analyzer name, run `go tool vet help` to see all analyzers.
+                printf:
+                    # Comma-separated list of print function names to check (in addition to default)
+                    # See `go tool vet help printf`).
+                    # Default: []
+                    funcs:
+                        - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Infof
+                        - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Warnf
+                        - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Errorf
+                        - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Fatalf
+
+        # Fast, configurable, extensible, flexible, and beautiful linter for Go.
+        # Drop-in replacement of golint.
+        revive:
+            # Maximum number of open files at the same time.
+            # See https://github.com/mgechev/revive#command-line-flags
+            # Defaults to unlimited.
+            max-open-files: 2048
+            ignore-generated-header: true
+            # Sets the default severity.
+            # See https://github.com/mgechev/revive#configuration
+            # Default: warning
+            severity: "warning"
+            # Enable all available rules.
+            # Default: false
+            enable-all-rules: false
+            # By default, the default rules are enabled,
+            # but if you explicitly define or configure a rule, the default rules will be disabled.
+            # When `true`, allows you to avoid explicitly redefining default rules when adding a rule.
+            # Default: false
+            enable-default-rules: true
+            # Sets the default failure confidence.
+            # This means that linting errors with less than 0.8 confidence will be ignored.
+            # Default: 0.8
+            confidence: 0.8
+            # Revive handles the default rules in a way that can be unexpected:
+            # - If there are no explicit rules, the default rules are used.
+            # - If there is at least one explicit rule, the default rules are not used, unless
+            # `enable-default-rules` is `true`.
+            # Run `GL_DEBUG=revive golangci-lint run --enable-only=revive` to see default,
+            # all available rules, and enabled rules.
+            rules:
+                - name: blank-imports
+                - name: context-as-argument
+                - name: context-keys-type
+                - name: dot-imports
+                - name: error-return
+                - name: error-strings
+                - name: error-naming
+                - name: exported
+                - name: if-return
+                - name: increment-decrement
+                - name: var-naming
+                - name: var-declaration
+                - name: package-comments
+                - name: range
+                - name: receiver-naming
+                - name: time-naming
+                - name: unexported-return
+                - name: indent-error-flow
+                - name: errorf
+                - name: empty-block
+                - name: superfluous-else
+                - name: unused-parameter
+                - name: unreachable-code
+                - name: redefines-builtin-id
+
+# formatters:
+
+issues:
+    # Maximum issues count per one linter.
+    # Set to 0 to disable.
+    # Default: 50
+    max-issues-per-linter: 50
+    # Maximum count of issues with the same text.
+    # Set to 0 to disable.
+    # Default: 3
+    max-same-issues: 3
+    # Make issues output unique by line.
+    # Default: true
+    uniq-by-line: true
+    # Show only new issues: if there are unstaged changes or untracked files,
+    # only those changes are analyzed, else only changes in HEAD~ are analyzed.
+    # It's a super-useful option for integration of golangci-lint into existing large codebase.
+    # It's not practical to fix all existing issues at the moment of integration:
+    # much better don't allow issues in new code.
+    #
+    # Default: false
+    new: false
+    # Show only new issues created after the best common ancestor (merge-base against HEAD).
+    # Default: ""
+    new-from-merge-base: ""
+    # Show only new issues created after git revision `REV`.
+    # Default: ""
+    new-from-rev: HEAD
+    # Show only new issues created in git patch with set file path.
+    # Default: ""
+    # new-from-patch: path/to/patch/file
+    # Show issues in any part of update files (requires new-from-rev or new-from-patch).
+    # Default: false
+    whole-files: true
+    # Apply the fixes detected by the linters and formatters (if it's supported by the linter).
+    # Default: false
+    fix: true
+
+# Options for analysis running.
+run:
+    # Timeout for total work, e.g. 30s, 5m, 5m30s.
+    # If the value is lower or equal to 0, the timeout is disabled.
+    # Default: 0 (disabled)
+    timeout: 5m
+    # Exit code when at least one issue was found.
+    # Default: 1
+    issues-exit-code: 2
+    # Include test files or not.
+    # Default: true
+    tests: true
+    build-tags:
+        - integration
+
+    # If set, we pass it to "go list -mod={option}". From "go help modules":
+    # If invoked with -mod=readonly, the go command is disallowed from the implicit
+    # automatic updating of go.mod described above. Instead, it fails when any changes
+    # to go.mod are needed. This setting is most useful to check that go.mod does
+    # not need updates, such as in a continuous integration and testing system.
+    # If invoked with -mod=vendor, the go command assumes that the vendor
+    # directory holds the correct copies of dependencies and ignores
+    # the dependency descriptions in go.mod.
+    #
+    # Allowed values: readonly|vendor|mod
+    # Default: ""
+    modules-download-mode: readonly
+    # Allow multiple parallel golangci-lint instances running.
+    # If false, golangci-lint acquires file lock on start.
+    # Default: false
+    allow-parallel-runners: false
+    # Allow multiple golangci-lint instances running, but serialize them around a lock.
+    # If false, golangci-lint exits with an error if it fails to acquire file lock on start.
+    # Default: false
+    allow-serial-runners: false
+    # Define the Go version limit.
+    # Default: use Go version from the go.mod file, fallback on the env var `GOVERSION`, fallback on 1.22.
+    go: "1.25"
+
+severity:
+    # Set the default severity for issues.
+    #
+    # If severity rules are defined and the issues do not match or no severity is provided to the rule
+    # this will be the default severity applied.
+    # Severities should match the supported severity names of the selected out format.
+    # - Code climate: https://docs.codeclimate.com/docs/issues#issue-severity
+    # - Checkstyle: https://checkstyle.sourceforge.io/property_types.html#SeverityLevel
+    # - GitHub: https://help.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-error-message
+    # - TeamCity: https://www.jetbrains.com/help/teamcity/service-messages.html#Inspection+Instance
+    #
+    # `@linter` can be used as severity value to keep the severity from linters (e.g. revive, gosec, ...)
+    #
+    # Default: ""
+    default: ""
+    # When a list of severity rules are provided, severity information will be added to lint issues.
+    # Severity rules have the same filtering capability as exclude rules
+    # except you are allowed to specify one matcher per severity rule.
+    #
+    # `@linter` can be used as severity value to keep the severity from linters (e.g. revive, gosec, ...)
+    #
+    # Only affects out formats that support setting severity information.
+    #
+    # Default: []
+    rules: []
+        # - linters:
+        #     - dupl
+        #   severity: info
