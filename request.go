@@ -32,8 +32,6 @@ import (
 //
 //	// Internal usage only - use Get(), Post(), etc. instead
 //	resp := execute(t, app, "GET", "/users", nil, nil)
-//
-// Implementation:
 func execute(t *testing.T, app *fiber.App, method, path string, body io.Reader, headers map[string]string) *Response {
 	req := httptest.NewRequest(method, path, body)
 	for k, v := range headers {
@@ -67,8 +65,6 @@ func execute(t *testing.T, app *fiber.App, method, path string, body io.Reader, 
 //	zt := zentests.New(t)
 //	resp := zt.Get(app, "/users")
 //	resp.OK().IsJSON().Has("data.users.0.name", "John")
-//
-// Implementation:
 func (zt *T) Get(app *fiber.App, path string) *Response {
 	return execute(zt.T, app, "GET", path, nil, nil)
 }
@@ -89,8 +85,6 @@ func (zt *T) Get(app *fiber.App, path string) *Response {
 //
 //	body := []byte("raw data")
 //	zt.Post(app, "/upload", body).OK()
-//
-// Implementation:
 func (zt *T) Post(app *fiber.App, path string, body []byte) *Response {
 	return execute(zt.T, app, "POST", path, bytes.NewReader(body), nil)
 }
@@ -111,8 +105,6 @@ func (zt *T) Post(app *fiber.App, path string, body []byte) *Response {
 //
 //	data := map[string]string{"name": "John", "email": "john@example.com"}
 //	zt.PostJSON(app, "/users", data).Created().Has("id", float64(1))
-//
-// Implementation:
 func (zt *T) PostJSON(app *fiber.App, path string, data any) *Response {
 	jsonBody, err := json.Marshal(data)
 	assert.NoError(zt.T, err, "JSON marshaling failed")
@@ -137,8 +129,6 @@ func (zt *T) PostJSON(app *fiber.App, path string, data any) *Response {
 //
 //	data := map[string]string{"username": "john", "password": "secret"}
 //	zt.PostForm(app, "/login", data).OK()
-//
-// Implementation:
 func (zt *T) PostForm(app *fiber.App, path string, data map[string]string) *Response {
 	form := make([]string, 0, len(data))
 	for k, v := range data {
@@ -165,8 +155,6 @@ func (zt *T) PostForm(app *fiber.App, path string, data map[string]string) *Resp
 //
 //	body := []byte(`{"name": "Updated Name"}`)
 //	zt.Put(app, "/users/1", body).OK()
-//
-// Implementation:
 func (zt *T) Put(app *fiber.App, path string, body []byte) *Response {
 	return execute(zt.T, app, "PUT", path, bytes.NewReader(body), nil)
 }
@@ -187,8 +175,6 @@ func (zt *T) Put(app *fiber.App, path string, body []byte) *Response {
 //
 //	data := map[string]string{"name": "Updated Name"}
 //	zt.PutJSON(app, "/users/1", data).OK()
-//
-// Implementation:
 func (zt *T) PutJSON(app *fiber.App, path string, data any) *Response {
 	jsonBody, err := json.Marshal(data)
 	assert.NoError(zt.T, err, "JSON marshaling failed")
@@ -212,8 +198,6 @@ func (zt *T) PutJSON(app *fiber.App, path string, data any) *Response {
 //
 //	body := []byte(`{"status": "active"}`)
 //	zt.Patch(app, "/users/1", body).OK()
-//
-// Implementation:
 func (zt *T) Patch(app *fiber.App, path string, body []byte) *Response {
 	return execute(zt.T, app, "PATCH", path, bytes.NewReader(body), nil)
 }
@@ -234,8 +218,6 @@ func (zt *T) Patch(app *fiber.App, path string, body []byte) *Response {
 //
 //	data := map[string]string{"status": "active"}
 //	zt.PatchJSON(app, "/users/1", data).OK()
-//
-// Implementation:
 func (zt *T) PatchJSON(app *fiber.App, path string, data any) *Response {
 	jsonBody, err := json.Marshal(data)
 	assert.NoError(zt.T, err, "JSON marshaling failed")
@@ -257,8 +239,6 @@ func (zt *T) PatchJSON(app *fiber.App, path string, data any) *Response {
 // Example:
 //
 //	zt.Delete(app, "/users/1").NoContent()
-//
-// Implementation:
 func (zt *T) Delete(app *fiber.App, path string) *Response {
 	return execute(zt.T, app, "DELETE", path, nil, nil)
 }
@@ -279,8 +259,6 @@ func (zt *T) Delete(app *fiber.App, path string) *Response {
 //
 //	data := map[string][]int{"ids": {1, 2, 3}}
 //	zt.DeleteJSON(app, "/users/bulk", data).OK()
-//
-// Implementation:
 func (zt *T) DeleteJSON(app *fiber.App, path string, data any) *Response {
 	jsonBody, err := json.Marshal(data)
 	assert.NoError(zt.T, err, "JSON marshaling failed")
@@ -304,8 +282,6 @@ func (zt *T) DeleteJSON(app *fiber.App, path string, data any) *Response {
 //
 //	headers := zentests.SetHeader("Authorization", "Bearer token123")
 //	// Use with a method that accepts headers parameter
-//
-// Implementation:
 func SetHeader(key, value string) map[string]string {
 	return map[string]string{key: value}
 }

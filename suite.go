@@ -38,8 +38,6 @@ type SuiteContext struct {
 //	        zt.PostJSON(app, "/users", data).Created()
 //	    })
 //	})
-//
-// Implementation:.
 func (zt *T) Describe(name string, fn func(ctx *SuiteContext)) {
 	zt.Run(name, func(t *testing.T) {
 		ctx := &SuiteContext{t: t}
@@ -60,8 +58,6 @@ func (zt *T) Describe(name string, fn func(ctx *SuiteContext)) {
 //	ctx.It("returns user list", func(zt *zentests.T) {
 //	    zt.Get(app, "/users").OK().IsJSON()
 //	})
-//
-// Implementation:.
 func (ctx *SuiteContext) It(name string, fn func(*T)) {
 	ctx.t.Run(name, func(t *testing.T) {
 		zt := &T{T: t}
@@ -99,8 +95,6 @@ func (ctx *SuiteContext) It(name string, fn func(*T)) {
 //	}).AfterEach(func(zt *zentests.T) {
 //	    app.Shutdown()
 //	})
-//
-// Implementation:.
 func (ctx *SuiteContext) BeforeEach(fn func(*T)) *SuiteContext {
 	ctx.beforeEach = fn
 	return ctx
@@ -122,8 +116,6 @@ func (ctx *SuiteContext) BeforeEach(fn func(*T)) *SuiteContext {
 //	    app.Shutdown()
 //	    db.Cleanup()
 //	})
-//
-// Implementation:.
 func (ctx *SuiteContext) AfterEach(fn func(*T)) *SuiteContext {
 	ctx.afterEach = fn
 	return ctx

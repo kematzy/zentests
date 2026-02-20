@@ -52,8 +52,6 @@ type T struct {
 //
 //	    zt.Get(app, "/").OK()
 //	}
-//
-// Implementation:
 func New(t *testing.T) *T {
 	return &T{T: t}
 }
@@ -73,8 +71,6 @@ func New(t *testing.T) *T {
 //
 //	zt := zentests.New(t).Use(app)
 //	zt.Get("/users").OK()
-//
-// Implementation:
 func (zt *T) Use(app *fiber.App) *T {
 	zt.app = app
 	return zt

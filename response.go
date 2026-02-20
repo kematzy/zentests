@@ -47,8 +47,6 @@ type Response struct {
 //
 //	body := resp.Body()
 //	fmt.Println(string(body))
-//
-// Implementation:.
 func (r *Response) Body() []byte {
 	if !r.bodyRead {
 		var err error
@@ -73,8 +71,6 @@ func (r *Response) Body() []byte {
 //
 //	bodyStr := resp.BodyString()
 //	assert.Contains(t, bodyStr, "success")
-//
-// Implementation:.
 func (r *Response) BodyString() string {
 	return string(r.Body())
 }
@@ -90,8 +86,6 @@ func (r *Response) BodyString() string {
 // Example:
 //
 //	zt.Get(app, "/users").Debug().OK()
-//
-// Implementation:.
 func (r *Response) Debug() *Response {
 	fmt.Println("")
 	fmt.Println("=== ZENTESTS DEBUG ===")
@@ -123,8 +117,6 @@ func (r *Response) Debug() *Response {
 //
 //	details := resp.Dump()
 //	t.Logf("Response details: %s", details)
-//
-// Implementation:.
 func (r *Response) Dump() string {
 	return fmt.Sprintf("Status: %d\nHeaders: %v\nBody: %s",
 		r.StatusCode, r.Header, r.BodyString())

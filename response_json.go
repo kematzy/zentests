@@ -20,8 +20,6 @@ import (
 // Example:
 //
 //	zt.Get(app, "/api/users").JSON().Has("data.0.name", "John")
-//
-// Implementation:.
 func (r *Response) JSON() *Response {
 	if r.parsedJSON == nil {
 		err := json.Unmarshal(r.Body(), &r.parsedJSON)
@@ -42,8 +40,6 @@ func (r *Response) JSON() *Response {
 // Example:
 //
 //	zt.Get(app, "/api/users/1").HasKey("data.user.name")
-//
-// Implementation:.
 func (r *Response) HasKey(path string) *Response {
 	r.JSON()
 	_, exists := getNestedValue(r.parsedJSON, path)
@@ -66,8 +62,6 @@ func (r *Response) HasKey(path string) *Response {
 //
 //	zt.Get(app, "/api/users/1").Has("data.user.name", "John")
 //	zt.Get(app, "/api/count").Has("data.count", float64(42)) // JSON numbers are float64
-//
-// Implementation:.
 func (r *Response) Has(path string, expected any) *Response {
 	r.JSON()
 	actual, exists := getNestedValue(r.parsedJSON, path)
@@ -92,8 +86,6 @@ func (r *Response) Has(path string, expected any) *Response {
 // Example:
 //
 //	zt.Get(app, "/api/count").HasInt("data.total", 42)
-//
-// Implementation:.
 func (r *Response) HasInt(path string, expected int) *Response {
 	r.JSON()
 	actual, exists := getNestedValue(r.parsedJSON, path)
@@ -124,8 +116,6 @@ func (r *Response) HasInt(path string, expected int) *Response {
 // Example:
 //
 //	zt.Get(app, "/api/score").HasFloat("data.score", 95.5)
-//
-// Implementation:.
 func (r *Response) HasFloat(path string, expected float64) *Response {
 	r.JSON()
 	actual, exists := getNestedValue(r.parsedJSON, path)
@@ -155,8 +145,6 @@ func (r *Response) HasFloat(path string, expected float64) *Response {
 // Example:
 //
 //	zt.Get(app, "/api/users/1").HasString("data.user.email", "john@example.com")
-//
-// Implementation:.
 func (r *Response) HasString(path, expected string) *Response {
 	r.JSON()
 	actual, exists := getNestedValue(r.parsedJSON, path)
@@ -177,8 +165,6 @@ func (r *Response) HasString(path, expected string) *Response {
 // Example:
 //
 //	zt.Get(app, "/api/status").HasBool("data.active", true)
-//
-// Implementation:.
 func (r *Response) HasBool(path string, expected bool) *Response {
 	r.JSON()
 	actual, exists := getNestedValue(r.parsedJSON, path)
@@ -200,8 +186,6 @@ func (r *Response) HasBool(path string, expected bool) *Response {
 // Example:
 //
 //	zt.Get(app, "/api/users/1").MatchesRegex("data.user.email", `^[\w.-]+@[\w.-]+\.\w+$`)
-//
-// Implementation:.
 func (r *Response) MatchesRegex(path, pattern string) *Response {
 	r.JSON()
 	actual, exists := getNestedValue(r.parsedJSON, path)
@@ -231,8 +215,6 @@ func (r *Response) MatchesRegex(path, pattern string) *Response {
 //	    "data.user.name": "John",
 //	    "data.user.active": true,
 //	})
-//
-// Implementation:.
 func (r *Response) JSONMatches(expected map[string]interface{}) *Response {
 	r.JSON()
 	for path, expectedValue := range expected {
@@ -253,8 +235,6 @@ func (r *Response) JSONMatches(expected map[string]interface{}) *Response {
 // Example:
 //
 //	zt.Get(app, "/api/users").ArrayLength("data.users", 10)
-//
-// Implementation:.
 func (r *Response) ArrayLength(path string, expected int) *Response {
 	r.JSON()
 	actual, exists := getNestedValue(r.parsedJSON, path)
@@ -277,8 +257,6 @@ func (r *Response) ArrayLength(path string, expected int) *Response {
 // Example:
 //
 //	zt.Get(app, "/api/users/999").IsNull("data.user")
-//
-// Implementation:.
 func (r *Response) IsNull(path string) *Response {
 	r.JSON()
 	actual, exists := getNestedValue(r.parsedJSON, path)
@@ -298,8 +276,6 @@ func (r *Response) IsNull(path string) *Response {
 // Example:
 //
 //	zt.Get(app, "/api/users/1").IsNotNull("data.user")
-//
-// Implementation:.
 func (r *Response) IsNotNull(path string) *Response {
 	r.JSON()
 	actual, exists := getNestedValue(r.parsedJSON, path)
@@ -325,8 +301,6 @@ func (r *Response) IsNotNull(path string) *Response {
 //	// Internal usage - supports paths like:
 //	// "user.name" -> accesses data["user"]["name"]
 //	// "items.0.id" -> accesses data["items"][0]["id"]
-//
-// Implementation:.
 func getNestedValue(data map[string]interface{}, path string) (interface{}, bool) {
 	parts := strings.Split(path, ".")
 	current := interface{}(data)

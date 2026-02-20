@@ -17,8 +17,6 @@ import (
 //
 //	zt.Get(app, "/users").Status(200)
 //	zt.Get(app, "/notfound").Status(404)
-//
-// Implementation:.
 func (r *Response) Status(expected int) *Response {
 	assert.Equal(r.t, expected, r.StatusCode, "status code mismatch")
 	return r
@@ -33,8 +31,6 @@ func (r *Response) Status(expected int) *Response {
 // Example:
 //
 //	zt.Get(app, "/users").OK()
-//
-// Implementation:.
 func (r *Response) OK() *Response {
 	return r.Status(200)
 }
@@ -49,8 +45,6 @@ func (r *Response) OK() *Response {
 // Example:
 //
 //	zt.PostJSON(app, "/users", data).Created()
-//
-// Implementation:.
 func (r *Response) Created() *Response {
 	return r.Status(201)
 }
@@ -65,8 +59,6 @@ func (r *Response) Created() *Response {
 // Example:
 //
 //	zt.PostJSON(app, "/jobs", jobData).Accepted()
-//
-// Implementation:.
 func (r *Response) Accepted() *Response {
 	return r.Status(202)
 }
@@ -81,8 +73,6 @@ func (r *Response) Accepted() *Response {
 // Example:
 //
 //	zt.Delete(app, "/users/1").NoContent()
-//
-// Implementation:.
 func (r *Response) NoContent() *Response {
 	return r.Status(204)
 }
@@ -97,8 +87,6 @@ func (r *Response) NoContent() *Response {
 // Example:
 //
 //	zt.PostJSON(app, "/users", invalidData).BadRequest()
-//
-// Implementation:.
 func (r *Response) BadRequest() *Response {
 	return r.Status(400)
 }
@@ -113,8 +101,6 @@ func (r *Response) BadRequest() *Response {
 // Example:
 //
 //	zt.Get(app, "/protected").Unauthorized()
-//
-// Implementation:.
 func (r *Response) Unauthorized() *Response {
 	return r.Status(401)
 }
@@ -129,8 +115,6 @@ func (r *Response) Unauthorized() *Response {
 // Example:
 //
 //	zt.Get(app, "/admin").Forbidden()
-//
-// Implementation:.
 func (r *Response) Forbidden() *Response {
 	return r.Status(403)
 }
@@ -145,8 +129,6 @@ func (r *Response) Forbidden() *Response {
 // Example:
 //
 //	zt.Get(app, "/users/999").NotFound()
-//
-// Implementation:.
 func (r *Response) NotFound() *Response {
 	return r.Status(404)
 }
@@ -161,8 +143,6 @@ func (r *Response) NotFound() *Response {
 // Example:
 //
 //	zt.PostJSON(app, "/users", invalidUserData).Unprocessable()
-//
-// Implementation:.
 func (r *Response) Unprocessable() *Response {
 	return r.Status(422)
 }
@@ -177,8 +157,6 @@ func (r *Response) Unprocessable() *Response {
 // Example:
 //
 //	zt.Get(app, "/broken").ServerError()
-//
-// Implementation:.
 func (r *Response) ServerError() *Response {
 	return r.Status(500)
 }
@@ -200,8 +178,6 @@ func (r *Response) ServerError() *Response {
 // Example:
 //
 //	zt.Get(app, "/api/users").HasHeader("Content-Type", "application/json")
-//
-// Implementation:.
 func (r *Response) HasHeader(key, value string) *Response {
 	actual := r.Header.Get(key)
 	assert.Equal(r.t, value, actual, "header %s mismatch", key)
@@ -222,8 +198,6 @@ func (r *Response) HasHeader(key, value string) *Response {
 // Example:
 //
 //	zt.Get(app, "/api/users").HeaderContains("Content-Type", "json")
-//
-// Implementation:.
 func (r *Response) HeaderContains(key, substring string) *Response {
 	actual := r.Header.Get(key)
 	assert.Contains(r.t, actual, substring, "header %s should contain %q", key, substring)
@@ -242,8 +216,6 @@ func (r *Response) HeaderContains(key, substring string) *Response {
 // Example:
 //
 //	zt.Get(app, "/secure").HeaderPresent("X-Auth-Token")
-//
-// Implementation:.
 func (r *Response) HeaderPresent(key string) *Response {
 	assert.NotEmpty(r.t, r.Header.Get(key), "Expected header %s to exist", key)
 	return r
@@ -261,8 +233,6 @@ func (r *Response) HeaderPresent(key string) *Response {
 // Example:
 //
 //	zt.Get(app, "/public").HeaderNotPresent("Authorization")
-//
-// Implementation:.
 func (r *Response) HeaderNotPresent(key string) *Response {
 	assert.Empty(r.t, r.Header.Get(key), "Expected header %s to not exist", key)
 	return r
@@ -282,8 +252,6 @@ func (r *Response) HeaderNotPresent(key string) *Response {
 // Example:
 //
 //	zt.Get(app, "/features").HeaderHasValues("X-Features", []string{"audio", "video"})
-//
-// Implementation:.
 func (r *Response) HeaderHasValues(key string, values []string) *Response {
 	headerValues := r.Header.Values(key)
 	assert.ElementsMatch(r.t, values, headerValues)
@@ -305,8 +273,6 @@ func (r *Response) HeaderHasValues(key string, values []string) *Response {
 //	    "lang": "en",
 //	    "theme": "dark",
 //	})
-//
-// Implementation:.
 func (r *Response) CookieHasValues(expected map[string]string) *Response {
 	// NOTE! must be called on the response
 	cookies := r.resp.Cookies() // Parses "Set-Cookie" headers automatically
@@ -338,8 +304,6 @@ func (r *Response) CookieHasValues(expected map[string]string) *Response {
 // Example:
 //
 //	zt.Get(app, "/page").HasContentType("text/html; charset=utf-8")
-//
-// Implementation:.
 func (r *Response) HasContentType(contentType string) *Response {
 	return r.HasHeader("Content-Type", contentType)
 }
@@ -353,8 +317,6 @@ func (r *Response) HasContentType(contentType string) *Response {
 // Example:
 //
 //	zt.Get(app, "/api/users").OK().IsJSON()
-//
-// Implementation:.
 func (r *Response) IsJSON() *Response {
 	return r.HeaderContains("Content-Type", "application/json")
 }
@@ -368,8 +330,6 @@ func (r *Response) IsJSON() *Response {
 // Example:
 //
 //	zt.Get(app, "/").OK().IsHTML()
-//
-// Implementation:.
 func (r *Response) IsHTML() *Response {
 	return r.HeaderContains("Content-Type", "text/html")
 }
@@ -383,8 +343,6 @@ func (r *Response) IsHTML() *Response {
 // Example:
 //
 //	zt.Get(app, "/health").OK().IsPlainText()
-//
-// Implementation:.
 func (r *Response) IsPlainText() *Response {
 	return r.HeaderContains("Content-Type", "text/plain")
 }
@@ -398,8 +356,6 @@ func (r *Response) IsPlainText() *Response {
 // Example:
 //
 //	zt.Get(app, "/style.css").OK().IsCSS()
-//
-// Implementation:.
 func (r *Response) IsCSS() *Response {
 	return r.HeaderContains("Content-Type", "text/css")
 }
@@ -414,8 +370,6 @@ func (r *Response) IsCSS() *Response {
 // Example:
 //
 //	zt.Get(app, "/app.js").OK().IsJS()
-//
-// Implementation:.
 func (r *Response) IsJS() *Response {
 	return r.HeaderContains("Content-Type", "javascript")
 }
@@ -430,8 +384,6 @@ func (r *Response) IsJS() *Response {
 // Example:
 //
 //	zt.Get(app, "/api/data.xml").OK().IsXML()
-//
-// Implementation:.
 func (r *Response) IsXML() *Response {
 	return r.HeaderContains("Content-Type", "xml")
 }
@@ -445,8 +397,6 @@ func (r *Response) IsXML() *Response {
 // Example:
 //
 //	zt.Get(app, "/api/users").OK().IsXHR()
-//
-// Implementation:.
 func (r *Response) IsXHR() *Response {
 	return r.HeaderContains("X-Requested-With", "XMLHttpRequest")
 }
@@ -460,8 +410,6 @@ func (r *Response) IsXHR() *Response {
 // Example:
 //
 //	zt.Get(app, "/photo.jpg").OK().IsImage()
-//
-// Implementation:.
 func (r *Response) IsImage() *Response {
 	return r.HeaderContains("Content-Type", "image/")
 }
@@ -475,8 +423,6 @@ func (r *Response) IsImage() *Response {
 // Example:
 //
 //	zt.Get(app, "/logo.png").OK().IsPNG()
-//
-// Implementation:.
 func (r *Response) IsPNG() *Response {
 	return r.HeaderContains("Content-Type", "image/png")
 }
@@ -490,8 +436,6 @@ func (r *Response) IsPNG() *Response {
 // Example:
 //
 //	zt.Get(app, "/photo.jpg").OK().IsJPEG()
-//
-// Implementation:.
 func (r *Response) IsJPEG() *Response {
 	return r.HeaderContains("Content-Type", "image/jpeg")
 }
@@ -505,8 +449,6 @@ func (r *Response) IsJPEG() *Response {
 // Example:
 //
 //	zt.Get(app, "/animation.gif").OK().IsGIF()
-//
-// Implementation:.
 func (r *Response) IsGIF() *Response {
 	return r.HeaderContains("Content-Type", "image/gif")
 }
@@ -520,8 +462,6 @@ func (r *Response) IsGIF() *Response {
 // Example:
 //
 //	zt.Get(app, "/icon.svg").OK().IsSVG()
-//
-// Implementation:.
 func (r *Response) IsSVG() *Response {
 	return r.HeaderContains("Content-Type", "image/svg+xml")
 }
@@ -535,8 +475,6 @@ func (r *Response) IsSVG() *Response {
 // Example:
 //
 //	zt.Get(app, "/photo.webp").OK().IsWebP()
-//
-// Implementation:.
 func (r *Response) IsWebP() *Response {
 	return r.HeaderContains("Content-Type", "image/webp")
 }
