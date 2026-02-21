@@ -4,6 +4,10 @@
 # VARIABLES
 #======================================================================================================================
 
+# Set the current version or default
+VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+# Get the current commit hash
+COMMIT_HASH := $(shell git rev-parse --short HEAD)
 # Set the date for
 DATE := $(shell date +'%Y-%m-%d')
 # Read repository from the first line of the `go.mod` file.
@@ -85,4 +89,14 @@ test-coverage:
 	@go test -coverprofile=.code-status/coverage.out ./...
 	@go tool cover -html=.code-status/coverage.out -o code-coverage.html
 	@echo -e "\033[32mCoverage report generated: code-coverage.html \033[0m"
+
+#======================================================================================================================
+# VERSIONS
+#======================================================================================================================
+
+## versions: Show current and all versions
+versions:
+	@echo -e "Version: \033[32m${VERSION}\033[0m \033[02m- #\033[0m\033[32m${COMMIT_HASH}\033[0m"
+	@echo "Versions: "
+	@git tag -l --sort=version:refname | sed 's/^v/ v/'
 
