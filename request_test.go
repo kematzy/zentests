@@ -22,7 +22,7 @@ func setupTestApp() *fiber.App {
 	})
 
 	app.Post("/json", func(c *fiber.Ctx) error {
-		var data map[string]interface{}
+		var data map[string]any
 		c.BodyParser(&data)
 		return c.JSON(fiber.Map{"received": data})
 	})

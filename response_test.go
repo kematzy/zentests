@@ -145,7 +145,7 @@ func TestResponse_Body_MultipleCalls(t *testing.T) {
 	}
 
 	// Multiple calls should all return the same data
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		body := r.Body()
 		assert.Equal(t, "Single Read Test", string(body))
 	}
@@ -225,7 +225,7 @@ func TestResponse_BodyWithParsedJSON(t *testing.T) {
 
 	// Body() should still return the raw JSON
 	body := r.Body()
-	var data map[string]interface{}
+	var data map[string]any
 	err = json.Unmarshal(body, &data)
 	assert.NoError(t, err)
 	assert.Equal(t, "hello", data["message"])

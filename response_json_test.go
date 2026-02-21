@@ -32,7 +32,7 @@ func setupJSONApp() *fiber.App {
 
 	app.Get("/array", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"items": []interface{}{
+			"items": []any{
 				fiber.Map{"id": 1, "name": "first"},
 				fiber.Map{"id": 2, "name": "second"},
 				fiber.Map{"id": 3, "name": "third"},
@@ -43,7 +43,7 @@ func setupJSONApp() *fiber.App {
 	app.Get("/mixed", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"data": fiber.Map{
-				"users": []interface{}{
+				"users": []any{
 					fiber.Map{"id": 1, "email": "test@example.com"},
 				},
 			},
@@ -144,7 +144,7 @@ func TestMatchesBulk(t *testing.T) {
 	zt := New(t)
 
 	resp := zt.Get(app, "/simple")
-	resp.JSONMatches(map[string]interface{}{
+	resp.JSONMatches(map[string]any{
 		"name":   "John",
 		"age":    float64(30),
 		"active": true,
@@ -237,7 +237,7 @@ func TestHasFloat_NonNumeric(t *testing.T) {
 // When path is "user.name" but user is null, it should return false.
 // This covers line 335-336 in getNestedValue.
 func TestGetNestedValue_NilInPath(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"user": nil,
 	}
 
@@ -251,8 +251,8 @@ func TestGetNestedValue_NilInPath(t *testing.T) {
 // When path is "items.abc" (not a number), it should return false.
 // This covers line 348-351 in getNestedValue.
 func TestGetNestedValue_InvalidArrayIndex(t *testing.T) {
-	data := map[string]interface{}{
-		"items": []interface{}{"a", "b", "c"},
+	data := map[string]any{
+		"items": []any{"a", "b", "c"},
 	}
 
 	// Test non-numeric index
@@ -265,8 +265,8 @@ func TestGetNestedValue_InvalidArrayIndex(t *testing.T) {
 // When path is "items.999" but array only has 3 items, it should return false.
 // This covers line 352-354 in getNestedValue.
 func TestGetNestedValue_ArrayOutOfBounds(t *testing.T) {
-	data := map[string]interface{}{
-		"items": []interface{}{"a", "b", "c"},
+	data := map[string]any{
+		"items": []any{"a", "b", "c"},
 	}
 
 	// Test out of bounds index
@@ -279,7 +279,7 @@ func TestGetNestedValue_ArrayOutOfBounds(t *testing.T) {
 // When path is "name.first" but name is a string, it should return false.
 // This covers line 356-358 in getNestedValue.
 func TestGetNestedValue_NonTraversable(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"name": "John",
 	}
 
@@ -292,7 +292,7 @@ func TestGetNestedValue_NonTraversable(t *testing.T) {
 // TestGetNestedValue_MissingKey tests getNestedValue when the key doesn't exist in the map.
 // This covers line 342-343 in getNestedValue.
 func TestGetNestedValue_MissingKey(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"name": "John",
 	}
 
@@ -310,8 +310,8 @@ func TestGetNestedValue_MissingKey(t *testing.T) {
 // TestGetNestedValue_NilTraversal tests getNestedValue when traversing through a nil value.
 // This covers line 335-336 in getNestedValue.
 func TestGetNestedValue_NilTraversal(t *testing.T) {
-	data := map[string]interface{}{
-		"user": map[string]interface{}{
+	data := map[string]any{
+		"user": map[string]any{
 			"profile": nil,
 		},
 	}

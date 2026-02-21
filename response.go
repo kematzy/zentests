@@ -30,7 +30,7 @@ type Response struct {
 	t          *testing.T
 	Header     http.Header
 	resp       *http.Response
-	parsedJSON map[string]interface{}
+	parsedJSON map[string]any
 	body       []byte
 	StatusCode int
 	bodyRead   bool

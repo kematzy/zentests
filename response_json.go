@@ -215,7 +215,7 @@ func (r *Response) MatchesRegex(path, pattern string) *Response {
 //	    "data.user.name": "John",
 //	    "data.user.active": true,
 //	})
-func (r *Response) JSONMatches(expected map[string]interface{}) *Response {
+func (r *Response) JSONMatches(expected map[string]any) *Response {
 	r.JSON()
 	for path, expectedValue := range expected {
 		r.Has(path, expectedValue)
@@ -240,7 +240,7 @@ func (r *Response) ArrayLength(path string, expected int) *Response {
 	actual, exists := getNestedValue(r.parsedJSON, path)
 	assert.True(r.t, exists, "JSON key %q not found", path)
 
-	arr, ok := actual.([]interface{})
+	arr, ok := actual.([]any)
 	assert.True(r.t, ok, "expected array for key %q, got %T", path, actual)
 	assert.Equal(r.t, expected, len(arr), "array length mismatch for key %q", path)
 	return r
@@ -301,9 +301,9 @@ func (r *Response) IsNotNull(path string) *Response {
 //	// Internal usage - supports paths like:
 //	// "user.name" -> accesses data["user"]["name"]
 //	// "items.0.id" -> accesses data["items"][0]["id"]
-func getNestedValue(data map[string]interface{}, path string) (interface{}, bool) {
+func getNestedValue(data map[string]any, path string) (any, bool) {
 	parts := strings.Split(path, ".")
-	current := interface{}(data)
+	current := any(data)
 
 	for _, part := range parts {
 		if current == nil {
@@ -311,13 +311,13 @@ func getNestedValue(data map[string]interface{}, path string) (interface{}, bool
 		}
 
 		switch v := current.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			val, exists := v[part]
 			if !exists {
 				return nil, false
 			}
 			current = val
-		case []interface{}:
+		case []any:
 			// Parse array index
 			index, err := strconv.Atoi(part)
 			if err != nil {
