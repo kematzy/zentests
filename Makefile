@@ -150,3 +150,55 @@ versions:
 	@echo "Versions: "
 	@git tag -l --sort=version:refname | sed 's/^v/ v/'
 
+
+#======================================================================================================================
+# GIT
+#======================================================================================================================
+
+## git-push: Push code to both repositories
+git-push: github-push gitea-push
+	@echo "Successfully pushed both remotes."
+
+github-push:
+	@echo "Pushing to Github"
+	@git push github HEAD
+
+gitea-push:
+	@echo "Pushing to Gitea"
+	@git push gitea HEAD
+
+
+#======================================================================================================================
+# DEVELOPMENT
+#======================================================================================================================
+
+## docs: Open documentation in browser
+docs:
+	@if command -v pkgsite >/dev/null 2>&1; then \
+		echo "Opening docs at http://localhost:8080/pkg/$(REPO)"; \
+		xdg-open "http://localhost:8080/pkg/$(REPO)" 2>/dev/null \
+			|| open "http://localhost:8080/pkg/$(REPO)" 2>/dev/null \
+			|| true; \
+		pkgsite -http=:8080; \
+	else \
+		echo "pkgsite not found. Install with: go install golang.org/x/pkgsite/cmd/pkgsite@latest"; \
+		exit 1; \
+	fi
+
+## docs-md: Create Markdown API doc with `gomarkdoc` in `docs/API.md`
+# See: https://github.com/princjef/gomarkdoc
+docs-md:
+	@if command -v gomarkdoc >/dev/null 2>&1; then \
+		echo "Creating docs/API.md from the code"; \
+		gomarkdoc ./... > docs/API.md; \
+	else \
+		echo "gomarkdoc not found. Install with: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest"; \
+		exit 1; \
+	fi
+
+
+## clean: Clean build artifacts
+clean:
+	@echo -e "\033[2mCleaning... \033[0m"
+	@rm -f coverage.out .code-status/coverage.out
+	@echo -e "\033[32mDone! \033[0m"
