@@ -63,10 +63,9 @@ func TestAPI(t *testing.T) {
         IsJSON().
         Has("status", "ok")
 }
+
 ```
 
-<br>
-  
 ## Code Quality & Coverage
 
 **Coverage: 98.2%** of statements
@@ -284,6 +283,48 @@ resp.Has("count", 42.0)         // PASS: exact type match
 
 ```
 
+<br>
+<br>
+
+## Development & Building
+
+### Make Commands
+
+```bash
+make help                   # Show this help message
+
+# Testing
+make test                   # Run all tests
+make test-verbose           # Run all tests with verbose colored output
+make test-coverage          # Run tests and generate coverage report
+
+# Code Quality
+make fmt                    # Format source code
+make lint                   # Run linter
+make tidy                   # Run tidy on Go modules
+make vet                    # Run `go vet`
+
+make modernize              # Run tool to identify & replace old Go code with newer standards.
+make modernize-check        # Dry-run with diffs to identify old Go code with newer standards.
+
+make check                  # Run all checks (fmt, vet, lint, check-test-coverage)
+make check-test-coverage    # Run tests and enforce coverage threshold (default: 90%)
+
+# Release
+make release                # Release a new tagged version (e.g. make release VERSION=v1.2.3)
+make release VERSION=v1.2.3 # Create specific version
+
+# Development
+make versions               # Show current and all versions
+make git-push               # Push code to both repositories
+
+# Documentation
+make changelog              # Generate changelog using git-cliff
+make docs                   # Open documentation in browser
+make docs-md                # Create Markdown API doc with `gomarkdoc` in `docs/API.md`
+
+make clean                  # Clean build artifacts
+```
 
 <br>
 
