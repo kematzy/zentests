@@ -6,6 +6,8 @@
 
 # Set the current version or default
 VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+# Set the minimun coverage percentage
+COVERAGE_MIN ?= 90
 # Get the current commit hash
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 # Set the date for
@@ -89,6 +91,45 @@ test-coverage:
 	@go test -coverprofile=.code-status/coverage.out ./...
 	@go tool cover -html=.code-status/coverage.out -o code-coverage.html
 	@echo -e "\033[32mCoverage report generated: code-coverage.html \033[0m"
+
+
+#======================================================================================================================
+# RELEASE
+#======================================================================================================================
+
+## check: Run all checks (fmt, vet, lint, check-test-coverage)
+check: fmt vet lint check-test-coverage
+	@echo "All checks passed."
+	@echo ""
+
+## check-test-coverage: Run tests and enforce coverage threshold (default: 90%)
+check-test-coverage:
+	@go test -coverprofile=.code-status/coverage.out ./...
+	@go tool cover -func=coverage.out | tail -1 | awk '{print $$3}' | \
+	  tr -d '%' | awk -v threshold=${COVERAGE_MIN} \
+	  '{ if ($$1 < threshold) \
+	       { print "FAIL: Coverage " $$1 "% is below threshold " threshold "%"; exit 1 } \
+	     else \
+	       { print "OK: Coverage " $$1 "%" } }'
+
+## release: Release a new tagged version  (e.g. make release VERSION=v1.2.3)
+release: check changelog
+	@[ "${VERSION}" ] || { echo "Usage: make release VERSION=v1.2.3"; exit 1; }
+	@echo ""
+	@echo -e "Starting release: \033[32m${VERSION}\033[0m"
+	@echo ""
+	@git tag -a ${VERSION} -m "Release ${VERSION}"
+	@git remote | xargs -I% git push % ${VERSION}
+	@echo ""
+	@echo -e "\033[32mTag - ${VERSION} - pushed to remote(s) & published.\033[0m"
+	@echo ""
+	@echo "To install:"
+	@echo "  go get $(REPO)@${VERSION}"
+	@echo ""
+	@echo "Docs:"
+	@echo "  https://pkg.go.dev/$(REPO)@${VERSION}"
+	@echo "  https://$(REPO)/releases/tag/${VERSION}"
+	@echo ""
 
 #======================================================================================================================
 # CHANGELOG
