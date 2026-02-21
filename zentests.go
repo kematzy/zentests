@@ -1,3 +1,11 @@
+// Package zentests provides utilities for testing Go Fiber applications.
+//
+// Basic usage:
+//
+//	func TestEndpoint(t *testing.T) {
+//	    zt := zentests.New(t).Use(app)
+//	    zt.Get("/users").ExpectStatus(200)
+//	}
 package zentests
 
 import (
