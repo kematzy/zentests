@@ -57,6 +57,14 @@ tidy:
 vet:
 	@go vet ./...
 
+## modernize: Run tool to identify & replace old Go code with newer standards.
+modernize:
+	@go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -fix ./...
+
+## modernize-check: Dry-run with diffs to identify old Go code with newer standards.
+modernize-check:
+	@go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -diff -fix ./...
+
 #======================================================================================================================
 # TEST COMMANDS
 #======================================================================================================================
