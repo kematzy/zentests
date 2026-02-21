@@ -32,7 +32,7 @@ endef
 .DEFAULT_GOAL := help
 
 # non-file targets (commands)
-.PHONY: help test test-verbose test-coverage fmt vet lint tidy
+.PHONY: help test test-verbose test-coverage fmt vet lint tidy check release changelog git-push gitea-push github-push docs docs-md modernize modernize-check
 
 ## help: Show this help message
 help:
