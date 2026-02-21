@@ -1,41 +1,80 @@
-# Makefile for Zen Starter Go Web Project
+# Makefile for zentests
 
-.PHONY: help test test-verbose fmt vet lint check tidy setup
+#======================================================================================================================
+# VARIABLES
+#======================================================================================================================
 
-# Default target
-help: ## Show this help message
-	@echo "Available commands:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
+# Set the date for
+DATE := $(shell date +'%Y-%m-%d')
+# Read repository from the first line of the `go.mod` file.
+REPO := $(shell head -1 go.mod | awk '{print $$2}')
 
-# Testing commands
-test: ## Run all tests
-	go test ./...
+#======================================================================================================================
+# MACROS
+#======================================================================================================================
 
-test-verbose: ## Run tests with verbose output
-	go test -v ./...
+define banner
+	@echo ""
+	@echo -e "\033[2m--\033[1m ${1} \033[0m---------------------------------\033[0m"
+	@echo ""
+endef
 
-test-coverage: ## Generate test coverage report
-	go test -coverprofile=.code-status/coverage.out ./...
-	go tool cover -html=.code-status/coverage.out -o .code-status/coverage.html
-	@echo "Coverage report generated: coverage.html"
+#======================================================================================================================
+# DEFAULT
+#======================================================================================================================
+
+.DEFAULT_GOAL := help
+
+# non-file targets (commands)
+.PHONY: help test test-verbose test-coverage fmt vet lint tidy
+
+## help: Show this help message
+help:
+	$(call banner,Available commands:)
+	@grep -E '^## ' Makefile \
+		| sed 's/^## //' \
+		| awk -F': ' '{ printf " \033[32m\033[1m%-22s\033[0m \033[2m%s\033[0m\n", $$1, $$2 }'
+	@echo -e "\033[0m"
 
 
-# Code quality commands
-fmt: ## Format Go code
-	gofmt -w .
+#======================================================================================================================
+# CODE QUALITY COMMANDS
+#======================================================================================================================
 
-vet: ## Run go vet
-	go vet ./...
+## fmt: Format source code
+fmt:
+	@gofmt -l -w .
 
-lint: ## Run go linting
-	golangci-lint run ./...
+## lint: Run linter
+lint:
+	@golangci-lint run ./...
 
-check: fmt format-check vet lint test ## Run all checks (format, vet, lint, test)
+## tidy: Run tidy on Go modules
+tidy:
+	@go mod tidy
 
-tidy: ## Tidy Go modules
-	go mod tidy
+## vet: Run `go vet`
+vet:
+	@go vet ./...
 
-# Setup commands
-setup: ## Initial project setup
-	go mod tidy
-	@echo "Project setup complete. Run 'make dev' to start development server."
+#======================================================================================================================
+# TEST COMMANDS
+#======================================================================================================================
+
+## test: Run all tests
+test:
+	@gotest ./...
+
+## test-verbose: Run all tests with verbose colored output
+test-verbose:
+	@echo ""
+	@gotestsum --format testdox
+
+# @gotest -v ./...
+
+## test-coverage: Run tests and generate coverage report
+test-coverage:
+	@go test -coverprofile=.code-status/coverage.out ./...
+	@go tool cover -html=.code-status/coverage.out -o code-coverage.html
+	@echo -e "\033[32mCoverage report generated: code-coverage.html \033[0m"
+
