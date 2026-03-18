@@ -1,0 +1,1656 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>zentests: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/kematzy/zentests/request.go (100.0%)</option>
+				
+				<option value="file1">github.com/kematzy/zentests/response.go (100.0%)</option>
+				
+				<option value="file2">github.com/kematzy/zentests/response_body.go (100.0%)</option>
+				
+				<option value="file3">github.com/kematzy/zentests/response_http.go (100.0%)</option>
+				
+				<option value="file4">github.com/kematzy/zentests/response_json.go (95.5%)</option>
+				
+				<option value="file5">github.com/kematzy/zentests/suite.go (100.0%)</option>
+				
+				<option value="file6">github.com/kematzy/zentests/zentests.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package zentests
+
+import (
+        "bytes"
+        "encoding/json"
+        "io"
+        "net/http/httptest"
+        "strings"
+        "testing"
+
+        "github.com/gofiber/fiber/v2"
+        "github.com/stretchr/testify/assert"
+)
+
+// execute performs an HTTP request against the Fiber app and returns a Response.
+// This is an internal helper function used by all HTTP method wrappers to execute
+// the actual HTTP request using httptest and wrap the result in a Response struct.
+// It automatically fails the test if the request execution fails.
+//
+// Parameters:
+//   - t: The testing.T instance for assertions
+//   - app: The Fiber application to test against
+//   - method: The HTTP method (GET, POST, PUT, etc.)
+//   - path: The request path (e.g., "/api/users")
+//   - body: The request body as an io.Reader (nil for GET/DELETE without body)
+//   - headers: Map of headers to set on the request
+//
+// Returns:
+//   - *Response: A Response wrapper containing the HTTP response and assertion methods
+//
+// Example:
+//
+//        // Internal usage only - use Get(), Post(), etc. instead
+//        resp := execute(t, app, "GET", "/users", nil, nil)
+func execute(t *testing.T, app *fiber.App, method, path string, body io.Reader, headers map[string]string) *Response <span class="cov8" title="1">{
+        req := httptest.NewRequest(method, path, body)
+        for k, v := range headers </span><span class="cov8" title="1">{
+                req.Header.Set(k, v)
+        }</span>
+
+        <span class="cov8" title="1">resp, err := app.Test(req)
+        assert.NoError(t, err, "request execution failed")
+
+        return &amp;Response{
+                t:          t,
+                StatusCode: resp.StatusCode,
+                Header:     resp.Header,
+                resp:       resp,
+                bodyRead:   false,
+        }</span>
+}
+
+// Get performs a GET request against the Fiber app.
+// Returns a *Response for chaining assertions. Use this for testing GET endpoints.
+//
+// Parameters:
+//   - app: The Fiber application to test against
+//   - path: The request path (e.g., "/api/users")
+//
+// Returns:
+//   - *Response: A Response wrapper for making assertions
+//
+// Example:
+//
+//        zt := zentests.New(t)
+//        resp := zt.Get(app, "/users")
+//        resp.OK().IsJSON().Has("data.users.0.name", "John")
+func (zt *T) Get(app *fiber.App, path string) *Response <span class="cov8" title="1">{
+        return execute(zt.T, app, "GET", path, nil, nil)
+}</span>
+
+// Post performs a POST request with a raw body.
+// Use PostJSON for JSON payloads or PostForm for form data. This method is suitable
+// for sending raw bytes when you need full control over the request body.
+//
+// Parameters:
+//   - app: The Fiber application to test against
+//   - path: The request path (e.g., "/api/users")
+//   - body: The raw request body as bytes
+//
+// Returns:
+//   - *Response: A Response wrapper for making assertions
+//
+// Example:
+//
+//        body := []byte("raw data")
+//        zt.Post(app, "/upload", body).OK()
+func (zt *T) Post(app *fiber.App, path string, body []byte) *Response <span class="cov8" title="1">{
+        return execute(zt.T, app, "POST", path, bytes.NewReader(body), nil)
+}</span>
+
+// PostJSON performs a POST request with JSON-encoded data.
+// Automatically marshals the data to JSON and sets Content-Type to application/json.
+// Fails the test if JSON marshaling fails.
+//
+// Parameters:
+//   - app: The Fiber application to test against
+//   - path: The request path (e.g., "/api/users")
+//   - data: Any data structure to be JSON-encoded (maps, structs, etc.)
+//
+// Returns:
+//   - *Response: A Response wrapper for making assertions
+//
+// Example:
+//
+//        data := map[string]string{"name": "John", "email": "john@example.com"}
+//        zt.PostJSON(app, "/users", data).Created().Has("id", float64(1))
+func (zt *T) PostJSON(app *fiber.App, path string, data any) *Response <span class="cov8" title="1">{
+        jsonBody, err := json.Marshal(data)
+        assert.NoError(zt.T, err, "JSON marshaling failed")
+
+        headers := map[string]string{"Content-Type": "application/json"}
+        return execute(zt.T, app, "POST", path, bytes.NewReader(jsonBody), headers)
+}</span>
+
+// PostForm performs a POST request with form data.
+// Automatically encodes the data as application/x-www-form-urlencoded.
+// Useful for testing HTML form submissions or traditional form endpoints.
+//
+// Parameters:
+//   - app: The Fiber application to test against
+//   - path: The request path (e.g., "/login")
+//   - data: Map of form field names to values
+//
+// Returns:
+//   - *Response: A Response wrapper for making assertions
+//
+// Example:
+//
+//        data := map[string]string{"username": "john", "password": "secret"}
+//        zt.PostForm(app, "/login", data).OK()
+func (zt *T) PostForm(app *fiber.App, path string, data map[string]string) *Response <span class="cov8" title="1">{
+        form := make([]string, 0, len(data))
+        for k, v := range data </span><span class="cov8" title="1">{
+                form = append(form, k+"="+v)
+        }</span>
+        <span class="cov8" title="1">body := strings.NewReader(strings.Join(form, "&amp;"))
+
+        headers := map[string]string{"Content-Type": "application/x-www-form-urlencoded"}
+        return execute(zt.T, app, "POST", path, body, headers)</span>
+}
+
+// Put performs a PUT request with a raw body.
+// Use PutJSON for JSON payloads. PUT is typically used for full resource updates.
+//
+// Parameters:
+//   - app: The Fiber application to test against
+//   - path: The request path (e.g., "/api/users/1")
+//   - body: The raw request body as bytes
+//
+// Returns:
+//   - *Response: A Response wrapper for making assertions
+//
+// Example:
+//
+//        body := []byte(`{"name": "Updated Name"}`)
+//        zt.Put(app, "/users/1", body).OK()
+func (zt *T) Put(app *fiber.App, path string, body []byte) *Response <span class="cov8" title="1">{
+        return execute(zt.T, app, "PUT", path, bytes.NewReader(body), nil)
+}</span>
+
+// PutJSON performs a PUT request with JSON-encoded data.
+// Automatically marshals the data to JSON and sets Content-Type to application/json.
+// Fails the test if JSON marshaling fails. PUT is typically used for full resource updates.
+//
+// Parameters:
+//   - app: The Fiber application to test against
+//   - path: The request path (e.g., "/api/users/1")
+//   - data: Any data structure to be JSON-encoded
+//
+// Returns:
+//   - *Response: A Response wrapper for making assertions
+//
+// Example:
+//
+//        data := map[string]string{"name": "Updated Name"}
+//        zt.PutJSON(app, "/users/1", data).OK()
+func (zt *T) PutJSON(app *fiber.App, path string, data any) *Response <span class="cov8" title="1">{
+        jsonBody, err := json.Marshal(data)
+        assert.NoError(zt.T, err, "JSON marshaling failed")
+
+        headers := map[string]string{"Content-Type": "application/json"}
+        return execute(zt.T, app, "PUT", path, bytes.NewReader(jsonBody), headers)
+}</span>
+
+// Patch performs a PATCH request with a raw body.
+// Use PatchJSON for JSON payloads. PATCH is typically used for partial resource updates.
+//
+// Parameters:
+//   - app: The Fiber application to test against
+//   - path: The request path (e.g., "/api/users/1")
+//   - body: The raw request body as bytes
+//
+// Returns:
+//   - *Response: A Response wrapper for making assertions
+//
+// Example:
+//
+//        body := []byte(`{"status": "active"}`)
+//        zt.Patch(app, "/users/1", body).OK()
+func (zt *T) Patch(app *fiber.App, path string, body []byte) *Response <span class="cov8" title="1">{
+        return execute(zt.T, app, "PATCH", path, bytes.NewReader(body), nil)
+}</span>
+
+// PatchJSON performs a PATCH request with JSON-encoded data.
+// Automatically marshals the data to JSON and sets Content-Type to application/json.
+// Fails the test if JSON marshaling fails. PATCH is typically used for partial updates.
+//
+// Parameters:
+//   - app: The Fiber application to test against
+//   - path: The request path (e.g., "/api/users/1")
+//   - data: Any data structure to be JSON-encoded
+//
+// Returns:
+//   - *Response: A Response wrapper for making assertions
+//
+// Example:
+//
+//        data := map[string]string{"status": "active"}
+//        zt.PatchJSON(app, "/users/1", data).OK()
+func (zt *T) PatchJSON(app *fiber.App, path string, data any) *Response <span class="cov8" title="1">{
+        jsonBody, err := json.Marshal(data)
+        assert.NoError(zt.T, err, "JSON marshaling failed")
+
+        headers := map[string]string{"Content-Type": "application/json"}
+        return execute(zt.T, app, "PATCH", path, bytes.NewReader(jsonBody), headers)
+}</span>
+
+// Delete performs a DELETE request.
+// Returns a *Response for chaining assertions. Use this for testing DELETE endpoints.
+//
+// Parameters:
+//   - app: The Fiber application to test against
+//   - path: The request path (e.g., "/api/users/1")
+//
+// Returns:
+//   - *Response: A Response wrapper for making assertions
+//
+// Example:
+//
+//        zt.Delete(app, "/users/1").NoContent()
+func (zt *T) Delete(app *fiber.App, path string) *Response <span class="cov8" title="1">{
+        return execute(zt.T, app, "DELETE", path, nil, nil)
+}</span>
+
+// DeleteJSON performs a DELETE request with a JSON body.
+// Some APIs require a request body for DELETE operations (e.g., bulk delete with IDs).
+// Automatically marshals the data to JSON and sets Content-Type to application/json.
+//
+// Parameters:
+//   - app: The Fiber application to test against
+//   - path: The request path (e.g., "/api/users/bulk")
+//   - data: Any data structure to be JSON-encoded
+//
+// Returns:
+//   - *Response: A Response wrapper for making assertions
+//
+// Example:
+//
+//        data := map[string][]int{"ids": {1, 2, 3}}
+//        zt.DeleteJSON(app, "/users/bulk", data).OK()
+func (zt *T) DeleteJSON(app *fiber.App, path string, data any) *Response <span class="cov8" title="1">{
+        jsonBody, err := json.Marshal(data)
+        assert.NoError(zt.T, err, "JSON marshaling failed")
+
+        headers := map[string]string{"Content-Type": "application/json"}
+        return execute(zt.T, app, "DELETE", path, bytes.NewReader(jsonBody), headers)
+}</span>
+
+// SetHeader creates a header map with a single key-value pair.
+// This is a utility function to help construct header maps for custom headers
+// when using raw body request methods.
+//
+// Parameters:
+//   - key: The header name
+//   - value: The header value
+//
+// Returns:
+//   - map[string]string: A map containing the single header
+//
+// Example:
+//
+//        headers := zentests.SetHeader("Authorization", "Bearer token123")
+//        // Use with a method that accepts headers parameter
+func SetHeader(key, value string) map[string]string <span class="cov8" title="1">{
+        return map[string]string{key: value}
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package zentests
+
+import (
+        "encoding/json"
+        "fmt"
+        "io"
+        "net/http"
+        "testing"
+
+        "github.com/stretchr/testify/assert"
+)
+
+// Response wraps an HTTP response with fluent assertion methods.
+// It provides a chainable API for making assertions on HTTP responses including
+// status codes, headers, body content, and JSON data. The response body is lazily
+// loaded when first accessed to avoid unnecessary reads.
+//
+// Response maintains internal state including the parsed JSON body and tracks
+// whether the body has been read to prevent multiple reads from the response stream.
+//
+// Fields:
+//   - t: The testing.T instance for making assertions
+//   - StatusCode: The HTTP status code from the response
+//   - Header: The HTTP headers from the response
+//   - resp: The underlying http.Response
+//   - body: The cached response body bytes (lazy loaded)
+//   - bodyRead: Flag indicating if body has been read
+//   - parsedJSON: The parsed JSON body as a map (cached after first parse)
+type Response struct {
+        t          *testing.T
+        Header     http.Header
+        resp       *http.Response
+        parsedJSON map[string]any
+        body       []byte
+        StatusCode int
+        bodyRead   bool
+}
+
+// Body returns the response body as bytes.
+// The body is lazily loaded on first call and cached for subsequent accesses.
+// This prevents multiple reads from the response stream which would return empty.
+//
+// Returns:
+//   - []byte: The response body as bytes
+//
+// Example:
+//
+//        body := resp.Body()
+//        fmt.Println(string(body))
+func (r *Response) Body() []byte <span class="cov8" title="1">{
+        if !r.bodyRead </span><span class="cov8" title="1">{
+                var err error
+                r.body, err = io.ReadAll(r.resp.Body)
+                assert.NoError(r.t, err)
+
+                err = r.resp.Body.Close()
+                assert.NoError(r.t, err)
+
+                r.bodyRead = true
+        }</span>
+        <span class="cov8" title="1">return r.body</span>
+}
+
+// BodyString returns the response body as a string.
+// Convenience method that converts Body() bytes to string.
+//
+// Returns:
+//   - string: The response body as a string
+//
+// Example:
+//
+//        bodyStr := resp.BodyString()
+//        assert.Contains(t, bodyStr, "success")
+func (r *Response) BodyString() string <span class="cov8" title="1">{
+        return string(r.Body())
+}</span>
+
+// Debug prints detailed response information to stdout for troubleshooting.
+// Outputs status code, headers, body, and parsed JSON (if available).
+// This is useful during test development to inspect response details.
+// Returns the receiver for method chaining.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/users").Debug().OK()
+func (r *Response) Debug() *Response <span class="cov8" title="1">{
+        fmt.Println("")
+        fmt.Println("=== ZENTESTS DEBUG ===")
+        fmt.Println("")
+        fmt.Printf("Status: %d\n", r.StatusCode)
+        fmt.Printf("Headers: %v\n", r.Header)
+        fmt.Printf("Body: %s\n", r.BodyString())
+
+        if r.parsedJSON != nil </span><span class="cov8" title="1">{
+                var err error
+                pretty, err := json.MarshalIndent(r.parsedJSON, "", "  ")
+                assert.NoErrorf(r.t, err, "error marshalIndenting parsed JSON: %s", err)
+                fmt.Printf("Parsed JSON:\n%s\n", string(pretty))
+        }</span>
+        <span class="cov8" title="1">fmt.Println("")
+        fmt.Println("======================")
+        fmt.Println("")
+        return r</span>
+}
+
+// Dump returns raw response details as a formatted string.
+// Useful for custom logging or including response details in test failure messages.
+// Unlike Debug(), this returns a string instead of printing to stdout.
+//
+// Returns:
+//   - string: Formatted string with status, headers, and body
+//
+// Example:
+//
+//        details := resp.Dump()
+//        t.Logf("Response details: %s", details)
+func (r *Response) Dump() string <span class="cov8" title="1">{
+        return fmt.Sprintf("Status: %d\nHeaders: %v\nBody: %s",
+                r.StatusCode, r.Header, r.BodyString())
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package zentests
+
+import (
+        "regexp"
+
+        "github.com/stretchr/testify/assert"
+)
+
+// Contains asserts that the response body contains the specified substring.
+// Case-sensitive substring search in the response body.
+//
+// Parameters:
+//   - substring: The substring to search for in the body
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/page").Contains("Welcome")
+func (r *Response) Contains(substring string) *Response <span class="cov8" title="1">{
+        assert.Contains(r.t, r.BodyString(), substring, "body should contain substring")
+        return r
+}</span>
+
+// NotContains asserts that the response body does not contain the specified substring.
+// Useful for ensuring sensitive data is not present in responses.
+//
+// Parameters:
+//   - substring: The substring that should not be in the body
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/public").NotContains("password")
+func (r *Response) NotContains(substring string) *Response <span class="cov8" title="1">{
+        assert.NotContains(r.t, r.BodyString(), substring, "body should not contain substring")
+        return r
+}</span>
+
+// BodyMatches asserts that the response body matches the regex pattern.
+// Useful for validating dynamic content or complex text patterns.
+//
+// Parameters:
+//   - pattern: The regex pattern to match against the body
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/users/1").BodyMatches(`User ID: \d+`)
+func (r *Response) BodyMatches(pattern string) *Response <span class="cov8" title="1">{
+        matched, err := regexp.MatchString(pattern, r.BodyString())
+        assert.NoError(r.t, err, "invalid regex pattern")
+        assert.True(r.t, matched, "body should match pattern %q", pattern)
+        return r
+}</span>
+
+// Equals asserts that the response body equals the exact expected string.
+// Performs an exact string comparison of the entire body.
+//
+// Parameters:
+//   - expected: The expected body content
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/ping").Equals("pong")
+func (r *Response) Equals(expected string) *Response <span class="cov8" title="1">{
+        assert.Equal(r.t, expected, r.BodyString(), "body mismatch")
+        return r
+}</span>
+
+// IsEmpty asserts that the response body is empty.
+// Checks that the body has zero length.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Delete(app, "/users/1").NoContent().IsEmpty()
+func (r *Response) IsEmpty() *Response <span class="cov8" title="1">{
+        assert.Empty(r.t, r.BodyString(), "body should be empty")
+        return r
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package zentests
+
+import (
+        "github.com/stretchr/testify/assert"
+)
+
+// Status asserts that the HTTP status code equals the expected value.
+// This is the base status assertion method used by all other status shortcuts.
+//
+// Parameters:
+//   - expected: The expected HTTP status code (e.g., 200, 404, 500)
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/users").Status(200)
+//        zt.Get(app, "/notfound").Status(404)
+func (r *Response) Status(expected int) *Response <span class="cov8" title="1">{
+        assert.Equal(r.t, expected, r.StatusCode, "status code mismatch")
+        return r
+}</span>
+
+// OK asserts that the HTTP status code is 200 (OK).
+// Convenience method equivalent to Status(200).
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/users").OK()
+func (r *Response) OK() *Response <span class="cov8" title="1">{
+        return r.Status(200)
+}</span>
+
+// Created asserts that the HTTP status code is 201 (Created).
+// Convenience method equivalent to Status(201).
+// Typically used after POST requests that create new resources.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.PostJSON(app, "/users", data).Created()
+func (r *Response) Created() *Response <span class="cov8" title="1">{
+        return r.Status(201)
+}</span>
+
+// Accepted asserts that the HTTP status code is 202 (Accepted).
+// Convenience method equivalent to Status(202).
+// Indicates the request has been accepted for processing but not completed.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.PostJSON(app, "/jobs", jobData).Accepted()
+func (r *Response) Accepted() *Response <span class="cov8" title="1">{
+        return r.Status(202)
+}</span>
+
+// NoContent asserts that the HTTP status code is 204 (No Content).
+// Convenience method equivalent to Status(204).
+// Typically used for DELETE operations or successful operations with no response body.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Delete(app, "/users/1").NoContent()
+func (r *Response) NoContent() *Response <span class="cov8" title="1">{
+        return r.Status(204)
+}</span>
+
+// BadRequest asserts that the HTTP status code is 400 (Bad Request).
+// Convenience method equivalent to Status(400).
+// Indicates the server cannot process the request due to client error.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.PostJSON(app, "/users", invalidData).BadRequest()
+func (r *Response) BadRequest() *Response <span class="cov8" title="1">{
+        return r.Status(400)
+}</span>
+
+// Unauthorized asserts that the HTTP status code is 401 (Unauthorized).
+// Convenience method equivalent to Status(401).
+// Indicates authentication is required or has failed.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/protected").Unauthorized()
+func (r *Response) Unauthorized() *Response <span class="cov8" title="1">{
+        return r.Status(401)
+}</span>
+
+// Forbidden asserts that the HTTP status code is 403 (Forbidden).
+// Convenience method equivalent to Status(403).
+// Indicates the server understood the request but refuses to authorize it.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/admin").Forbidden()
+func (r *Response) Forbidden() *Response <span class="cov8" title="1">{
+        return r.Status(403)
+}</span>
+
+// NotFound asserts that the HTTP status code is 404 (Not Found).
+// Convenience method equivalent to Status(404).
+// Indicates the requested resource was not found.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/users/999").NotFound()
+func (r *Response) NotFound() *Response <span class="cov8" title="1">{
+        return r.Status(404)
+}</span>
+
+// Unprocessable asserts that the HTTP status code is 422 (Unprocessable Entity).
+// Convenience method equivalent to Status(422).
+// Indicates the request was well-formed but contains semantic errors.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.PostJSON(app, "/users", invalidUserData).Unprocessable()
+func (r *Response) Unprocessable() *Response <span class="cov8" title="1">{
+        return r.Status(422)
+}</span>
+
+// ServerError asserts that the HTTP status code is 500 (Internal Server Error).
+// Convenience method equivalent to Status(500).
+// Indicates an unexpected condition prevented the server from fulfilling the request.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/broken").ServerError()
+func (r *Response) ServerError() *Response <span class="cov8" title="1">{
+        return r.Status(500)
+}</span>
+
+// ================================================================================================
+// HEADER ASSERTIONS
+// ================================================================================================
+
+// HasHeader asserts that a header exists and has the expected value.
+// Performs an exact match comparison. Header names are case-insensitive.
+//
+// Parameters:
+//   - key: The header name (e.g., "Content-Type", "X-Custom-Header")
+//   - value: The expected header value
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/users").HasHeader("Content-Type", "application/json")
+//
+//        zt.Get(app, "/api/users").HasHeader("Content-Type", "application/css") // raises an error
+func (r *Response) HasHeader(key, value string) *Response <span class="cov8" title="1">{
+        actual := r.Header.Get(key)
+        assert.Equal(r.t, value, actual, "header %s mismatch", key)
+        return r
+}</span>
+
+// HeaderContains asserts that a header value contains the expected substring.
+// Useful for flexible checks like verifying "application/json" is in Content-Type
+// without matching the entire header value including charset.
+//
+// Parameters:
+//   - key: The header name
+//   - substring: The substring that must be present in the header value
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/users").HeaderContains("Content-Type", "json")
+//
+//        zt.Get(app, "/api/users").HeaderContains("Content-Type", "image") // raises an error
+func (r *Response) HeaderContains(key, substring string) *Response <span class="cov8" title="1">{
+        actual := r.Header.Get(key)
+        assert.Contains(r.t, actual, substring, "header %s should contain %q", key, substring)
+        return r
+}</span>
+
+// HeaderPresent asserts that a header is present and non-empty.
+// Checks for the existence of a header without validating its value.
+//
+// Parameters:
+//   - key: The header name
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/secure").HeaderPresent("X-Auth-Token")
+func (r *Response) HeaderPresent(key string) *Response <span class="cov8" title="1">{
+        assert.NotEmpty(r.t, r.Header.Get(key), "Expected header %s to exist", key)
+        return r
+}</span>
+
+// HeaderNotPresent asserts that a header is not present or is empty.
+// Useful for security checks to ensure sensitive headers are not exposed.
+//
+// Parameters:
+//   - key: The header name
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/public").HeaderNotPresent("Authorization")
+func (r *Response) HeaderNotPresent(key string) *Response <span class="cov8" title="1">{
+        assert.Empty(r.t, r.Header.Get(key), "Expected header %s to not exist", key)
+        return r
+}</span>
+
+// HeaderHasValues asserts that a header has exactly the expected values.
+// For headers that can have multiple values (e.g., Set-Cookie, X-Features).
+// Order of values does not matter.
+//
+// Parameters:
+//   - key: The header name
+//   - values: Slice of expected header values
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/features").HeaderHasValues("X-Features", []string{"audio", "video"})
+func (r *Response) HeaderHasValues(key string, values []string) *Response <span class="cov8" title="1">{
+        headerValues := r.Header.Values(key)
+        assert.ElementsMatch(r.t, values, headerValues)
+        return r
+}</span>
+
+// CookieHasValues asserts that response cookies match the expected values.
+// Parses all Set-Cookie headers and verifies each cookie name-value pair.
+//
+// Parameters:
+//   - expected: Map of cookie names to expected values
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/settings").CookieHasValues(map[string]string{
+//            "lang": "en",
+//            "theme": "dark",
+//        })
+func (r *Response) CookieHasValues(expected map[string]string) *Response <span class="cov8" title="1">{
+        // NOTE! must be called on the response
+        cookies := r.resp.Cookies() // Parses "Set-Cookie" headers automatically
+
+        actual := make(map[string]string)
+        for _, c := range cookies </span><span class="cov8" title="1">{
+                actual[c.Name] = c.Value
+        }</span>
+
+        <span class="cov8" title="1">for name, val := range expected </span><span class="cov8" title="1">{
+                assert.Equal(r.t, val, actual[name], "Cookie %s value mismatch", name)
+        }</span>
+        <span class="cov8" title="1">return r</span>
+}
+
+// ================================================================================================
+// CONTENT TYPE SHORTCUTS
+// ================================================================================================
+
+// HasContentType asserts that the Content-Type header equals the expected value.
+// Performs an exact match on the Content-Type header.
+//
+// Parameters:
+//   - contentType: The expected Content-Type value (e.g., "application/json")
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/page").HasContentType("text/html; charset=utf-8")
+func (r *Response) HasContentType(contentType string) *Response <span class="cov8" title="1">{
+        return r.HasHeader("Content-Type", contentType)
+}</span>
+
+// IsJSON asserts that the Content-Type header contains "application/json".
+// Quick check for JSON API responses. Case-sensitive substring match.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/users").OK().IsJSON()
+func (r *Response) IsJSON() *Response <span class="cov8" title="1">{
+        return r.HeaderContains("Content-Type", "application/json")
+}</span>
+
+// IsHTML asserts that the Content-Type header contains "text/html".
+// Quick check for HTML page responses. Case-sensitive substring match.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/").OK().IsHTML()
+func (r *Response) IsHTML() *Response <span class="cov8" title="1">{
+        return r.HeaderContains("Content-Type", "text/html")
+}</span>
+
+// IsPlainText asserts that the Content-Type header contains "text/plain".
+// Quick check for plain text responses. Case-sensitive substring match.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/health").OK().IsPlainText()
+func (r *Response) IsPlainText() *Response <span class="cov8" title="1">{
+        return r.HeaderContains("Content-Type", "text/plain")
+}</span>
+
+// IsCSS asserts that the Content-Type header contains "text/css".
+// Quick check for CSS stylesheet responses.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/style.css").OK().IsCSS()
+func (r *Response) IsCSS() *Response <span class="cov8" title="1">{
+        return r.HeaderContains("Content-Type", "text/css")
+}</span>
+
+// IsJS asserts that the Content-Type header contains "javascript".
+// Matches both "application/javascript" and "text/javascript".
+// Quick check for JavaScript responses.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/app.js").OK().IsJS()
+func (r *Response) IsJS() *Response <span class="cov8" title="1">{
+        return r.HeaderContains("Content-Type", "javascript")
+}</span>
+
+// IsXML asserts that the Content-Type header contains "xml".
+// Matches both "application/xml" and "text/xml".
+// Quick check for XML responses.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/data.xml").OK().IsXML()
+func (r *Response) IsXML() *Response <span class="cov8" title="1">{
+        return r.HeaderContains("Content-Type", "xml")
+}</span>
+
+// IsXHR asserts that the X-Requested-With header contains "XMLHttpRequest".
+// Useful for detecting AJAX requests in responses.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/users").OK().IsXHR()
+func (r *Response) IsXHR() *Response <span class="cov8" title="1">{
+        return r.HeaderContains("X-Requested-With", "XMLHttpRequest")
+}</span>
+
+// IsImage asserts that the Content-Type header contains "image/".
+// General check for any image type responses.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/photo.jpg").OK().IsImage()
+func (r *Response) IsImage() *Response <span class="cov8" title="1">{
+        return r.HeaderContains("Content-Type", "image/")
+}</span>
+
+// IsPNG asserts that the Content-Type header contains "image/png".
+// Quick check for PNG image responses.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/logo.png").OK().IsPNG()
+func (r *Response) IsPNG() *Response <span class="cov8" title="1">{
+        return r.HeaderContains("Content-Type", "image/png")
+}</span>
+
+// IsJPEG asserts that the Content-Type header contains "image/jpeg".
+// Quick check for JPEG image responses.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/photo.jpg").OK().IsJPEG()
+func (r *Response) IsJPEG() *Response <span class="cov8" title="1">{
+        return r.HeaderContains("Content-Type", "image/jpeg")
+}</span>
+
+// IsGIF asserts that the Content-Type header contains "image/gif".
+// Quick check for GIF image responses.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/animation.gif").OK().IsGIF()
+func (r *Response) IsGIF() *Response <span class="cov8" title="1">{
+        return r.HeaderContains("Content-Type", "image/gif")
+}</span>
+
+// IsSVG asserts that the Content-Type header contains "image/svg+xml".
+// Quick check for SVG image responses.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/icon.svg").OK().IsSVG()
+func (r *Response) IsSVG() *Response <span class="cov8" title="1">{
+        return r.HeaderContains("Content-Type", "image/svg+xml")
+}</span>
+
+// IsWebP asserts that the Content-Type header contains "image/webp".
+// Quick check for WebP image responses.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/photo.webp").OK().IsWebP()
+func (r *Response) IsWebP() *Response <span class="cov8" title="1">{
+        return r.HeaderContains("Content-Type", "image/webp")
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package zentests
+
+import (
+        "encoding/json"
+        "regexp"
+        "strconv"
+        "strings"
+
+        "github.com/stretchr/testify/assert"
+)
+
+// JSON parses and caches the response body as JSON.
+// Enables JSON-specific assertions on the response. The parsed JSON is cached
+// to avoid re-parsing on subsequent JSON assertions. Fails the test if JSON
+// parsing fails.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/users").JSON().Has("data.0.name", "John")
+func (r *Response) JSON() *Response <span class="cov8" title="1">{
+        if r.parsedJSON == nil </span><span class="cov8" title="1">{
+                err := json.Unmarshal(r.Body(), &amp;r.parsedJSON)
+                assert.NoError(r.t, err, "JSON parsing failed")
+        }</span>
+        <span class="cov8" title="1">return r</span>
+}
+
+// HasKey asserts that the JSON response contains the specified key path.
+// Supports dot notation for nested keys and array indices (e.g., "users.0.name").
+//
+// Parameters:
+//   - path: The JSON key path using dot notation (e.g., "user.email", "items.0.id")
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/users/1").HasKey("data.user.name")
+func (r *Response) HasKey(path string) *Response <span class="cov8" title="1">{
+        r.JSON()
+        _, exists := getNestedValue(r.parsedJSON, path)
+        assert.True(r.t, exists, "JSON should have key %q", path)
+        return r
+}</span>
+
+// Has asserts that the JSON key equals the expected value with strict type checking.
+// Supports dot notation for nested keys. Fails if the key doesn't exist or if
+// the type doesn't match exactly.
+//
+// Parameters:
+//   - path: The JSON key path using dot notation
+//   - expected: The expected value (type must match exactly)
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/users/1").Has("data.user.name", "John")
+//        zt.Get(app, "/api/count").Has("data.count", float64(42)) // JSON numbers are float64
+func (r *Response) Has(path string, expected any) *Response <span class="cov8" title="1">{
+        r.JSON()
+        actual, exists := getNestedValue(r.parsedJSON, path)
+        assert.True(r.t, exists, "JSON key %q not found", path)
+
+        // Type strictness: compare types first
+        assert.IsType(r.t, expected, actual, "type mismatch for key %q", path)
+        assert.Equal(r.t, expected, actual, "value mismatch for key %q", path)
+        return r
+}</span>
+
+// HasInt asserts that the JSON key equals the expected integer value.
+// Handles JSON number conversion (JSON numbers are parsed as float64).
+//
+// Parameters:
+//   - path: The JSON key path using dot notation
+//   - expected: The expected integer value
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/count").HasInt("data.total", 42)
+func (r *Response) HasInt(path string, expected int) *Response <span class="cov8" title="1">{
+        r.JSON()
+        actual, exists := getNestedValue(r.parsedJSON, path)
+        assert.True(r.t, exists, "JSON key %q not found", path)
+
+        // JSON numbers are float64, convert for comparison
+        switch v := actual.(type) </span>{
+        case float64:<span class="cov8" title="1">
+                assert.Equal(r.t, expected, int(v), "int value mismatch for key %q", path)</span>
+        case int:<span class="cov0" title="0">
+                assert.Equal(r.t, expected, v, "int value mismatch for key %q", path)</span>
+        default:<span class="cov0" title="0">
+                assert.Fail(r.t, "type mismatch", "expected numeric value for key %q, got %T", path, actual)</span>
+        }
+        <span class="cov8" title="1">return r</span>
+}
+
+// HasFloat asserts that the JSON key equals the expected float64 value.
+// Uses InDelta for comparison to handle floating point precision issues.
+//
+// Parameters:
+//   - path: The JSON key path using dot notation
+//   - expected: The expected float64 value
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/score").HasFloat("data.score", 95.5)
+func (r *Response) HasFloat(path string, expected float64) *Response <span class="cov8" title="1">{
+        r.JSON()
+        actual, exists := getNestedValue(r.parsedJSON, path)
+        assert.True(r.t, exists, "JSON key %q not found", path)
+
+        // Handle both float64 and int from JSON
+        switch v := actual.(type) </span>{
+        case float64:<span class="cov8" title="1">
+                assert.InDelta(r.t, expected, v, 0.0001, "float value mismatch for key %q", path)</span>
+        case int:<span class="cov0" title="0">
+                assert.InDelta(r.t, expected, float64(v), 0.0001, "float value mismatch for key %q", path)</span>
+        default:<span class="cov0" title="0">
+                assert.Fail(r.t, "type mismatch", "expected numeric value for key %q, got %T", path, actual)</span>
+        }
+        <span class="cov8" title="1">return r</span>
+}
+
+// HasString asserts that the JSON key equals the expected string value.
+//
+// Parameters:
+//   - path: The JSON key path using dot notation
+//   - expected: The expected string value
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/users/1").HasString("data.user.email", "john@example.com")
+func (r *Response) HasString(path, expected string) *Response <span class="cov8" title="1">{
+        r.JSON()
+        actual, exists := getNestedValue(r.parsedJSON, path)
+        assert.True(r.t, exists, "JSON key %q not found", path)
+        assert.Equal(r.t, expected, actual, "string value mismatch for key %q", path)
+        return r
+}</span>
+
+// HasBool asserts that the JSON key equals the expected boolean value.
+//
+// Parameters:
+//   - path: The JSON key path using dot notation
+//   - expected: The expected boolean value
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/status").HasBool("data.active", true)
+func (r *Response) HasBool(path string, expected bool) *Response <span class="cov8" title="1">{
+        r.JSON()
+        actual, exists := getNestedValue(r.parsedJSON, path)
+        assert.True(r.t, exists, "JSON key %q not found", path)
+        assert.Equal(r.t, expected, actual, "bool value mismatch for key %q", path)
+        return r
+}</span>
+
+// MatchesRegex asserts that the JSON key value matches the regex pattern.
+// The value at the specified path must be a string.
+//
+// Parameters:
+//   - path: The JSON key path using dot notation
+//   - pattern: The regex pattern to match
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/users/1").MatchesRegex("data.user.email", `^[\w.-]+@[\w.-]+\.\w+$`)
+func (r *Response) MatchesRegex(path, pattern string) *Response <span class="cov8" title="1">{
+        r.JSON()
+        actual, exists := getNestedValue(r.parsedJSON, path)
+        assert.True(r.t, exists, "JSON key %q not found", path)
+
+        str, ok := actual.(string)
+        assert.True(r.t, ok, "expected string value for key %q to match regex, got %T", path, actual)
+
+        matched, err := regexp.MatchString(pattern, str)
+        assert.NoError(r.t, err, "invalid regex pattern")
+        assert.True(r.t, matched, "value %q should match pattern %q for key %s", str, pattern, path)
+        return r
+}</span>
+
+// JSONMatches asserts that the entire JSON structure matches the expected map.
+// Performs Has() assertions for each key-value pair in the expected map.
+//
+// Parameters:
+//   - expected: Map of key paths to expected values
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/users/1").JSONMatches(map[string]interface{}{
+//            "data.user.name": "John",
+//            "data.user.active": true,
+//        })
+func (r *Response) JSONMatches(expected map[string]any) *Response <span class="cov8" title="1">{
+        r.JSON()
+        for path, expectedValue := range expected </span><span class="cov8" title="1">{
+                r.Has(path, expectedValue)
+        }</span>
+        <span class="cov8" title="1">return r</span>
+}
+
+// ArrayLength asserts that the JSON key is an array with the expected length.
+//
+// Parameters:
+//   - path: The JSON key path using dot notation
+//   - expected: The expected array length
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/users").ArrayLength("data.users", 10)
+func (r *Response) ArrayLength(path string, expected int) *Response <span class="cov8" title="1">{
+        r.JSON()
+        actual, exists := getNestedValue(r.parsedJSON, path)
+        assert.True(r.t, exists, "JSON key %q not found", path)
+
+        arr, ok := actual.([]any)
+        assert.True(r.t, ok, "expected array for key %q, got %T", path, actual)
+        assert.Equal(r.t, expected, len(arr), "array length mismatch for key %q", path)
+        return r
+}</span>
+
+// IsNull asserts that the JSON key has a null value.
+//
+// Parameters:
+//   - path: The JSON key path using dot notation
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/users/999").IsNull("data.user")
+func (r *Response) IsNull(path string) *Response <span class="cov8" title="1">{
+        r.JSON()
+        actual, exists := getNestedValue(r.parsedJSON, path)
+        assert.True(r.t, exists, "JSON key %q not found", path)
+        assert.Nil(r.t, actual, "expected null for key %q", path)
+        return r
+}</span>
+
+// IsNotNull asserts that the JSON key has a non-null value.
+//
+// Parameters:
+//   - path: The JSON key path using dot notation
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//        zt.Get(app, "/api/users/1").IsNotNull("data.user")
+func (r *Response) IsNotNull(path string) *Response <span class="cov8" title="1">{
+        r.JSON()
+        actual, exists := getNestedValue(r.parsedJSON, path)
+        assert.True(r.t, exists, "JSON key %q not found", path)
+        assert.NotNil(r.t, actual, "expected non-null for key %q", path)
+        return r
+}</span>
+
+// getNestedValue traverses a dot-notation path through JSON data.
+// Internal helper function that supports nested objects and array indices.
+// Returns the value and a boolean indicating if the path exists.
+//
+// Parameters:
+//   - data: The root JSON object as a map
+//   - path: Dot-notation path (e.g., "user.name", "items.0.name")
+//
+// Returns:
+//   - interface{}: The value at the path (nil if not found)
+//   - bool: True if the path exists, false otherwise
+//
+// Example:
+//
+//        // Internal usage - supports paths like:
+//        // "user.name" -&gt; accesses data["user"]["name"]
+//        // "items.0.id" -&gt; accesses data["items"][0]["id"]
+func getNestedValue(data map[string]any, path string) (any, bool) <span class="cov8" title="1">{
+        parts := strings.Split(path, ".")
+        current := any(data)
+
+        for _, part := range parts </span><span class="cov8" title="1">{
+                if current == nil </span><span class="cov8" title="1">{
+                        return nil, false
+                }</span>
+
+                <span class="cov8" title="1">switch v := current.(type) </span>{
+                case map[string]any:<span class="cov8" title="1">
+                        val, exists := v[part]
+                        if !exists </span><span class="cov8" title="1">{
+                                return nil, false
+                        }</span>
+                        <span class="cov8" title="1">current = val</span>
+                case []any:<span class="cov8" title="1">
+                        // Parse array index
+                        index, err := strconv.Atoi(part)
+                        if err != nil </span><span class="cov8" title="1">{
+                                return nil, false // not a valid index
+                        }</span>
+                        <span class="cov8" title="1">if index &lt; 0 || index &gt;= len(v) </span><span class="cov8" title="1">{
+                                return nil, false // out of bounds
+                        }</span>
+                        <span class="cov8" title="1">current = v[index]</span>
+                default:<span class="cov8" title="1">
+                        // Can't traverse further
+                        return nil, false</span>
+                }
+        }
+
+        <span class="cov8" title="1">return current, true</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package zentests
+
+import (
+        "testing"
+)
+
+// SuiteContext holds hooks and state for a BDD-style describe block.
+// Provides lifecycle hooks (BeforeEach, AfterEach) for test setup and teardown.
+// Each describe block gets its own SuiteContext to manage test isolation.
+//
+// Fields:
+//   - t: The testing.T instance for running subtests
+//   - beforeEach: Function to run before each test case in the suite
+//   - afterEach: Function to run after each test case in the suite
+type SuiteContext struct {
+        t          *testing.T
+        beforeEach func(*T)
+        afterEach  func(*T)
+}
+
+// Describe creates a BDD-style test group with lifecycle hooks.
+// Organizes related tests under a descriptive name with optional setup/teardown.
+// Similar to describe/it blocks in testing frameworks like RSpec or Mocha.
+//
+// Parameters:
+//   - name: The descriptive name for the test group (e.g., "User API", "Auth Service")
+//   - fn: Function that receives the SuiteContext and defines test cases using It()
+//
+// Example:
+//
+//        zt.Describe("User API", func(ctx *zentests.SuiteContext) {
+//            ctx.BeforeEach(func(zt *zentests.T) {
+//                // Setup fresh app before each test
+//                app = setupTestApp()
+//            })
+//
+//            ctx.It("creates a user", func(zt *zentests.T) {
+//                zt.PostJSON(app, "/users", data).Created()
+//            })
+//        })
+func (zt *T) Describe(name string, fn func(ctx *SuiteContext)) <span class="cov8" title="1">{
+        zt.Run(name, func(t *testing.T) </span><span class="cov8" title="1">{
+                ctx := &amp;SuiteContext{t: t}
+                fn(ctx)
+        }</span>)
+}
+
+// It runs a test case within a describe block.
+// Individual test cases that execute with BeforeEach/AfterEach hooks.
+// Each It() call creates a sub-test that runs independently.
+//
+// Parameters:
+//   - name: The descriptive name for the test case (e.g., "returns user list")
+//   - fn: The test function receiving a *T for making requests
+//
+// Example:
+//
+//        ctx.It("returns user list", func(zt *zentests.T) {
+//            zt.Get(app, "/users").OK().IsJSON()
+//        })
+func (ctx *SuiteContext) It(name string, fn func(*T)) <span class="cov8" title="1">{
+        ctx.t.Run(name, func(t *testing.T) </span><span class="cov8" title="1">{
+                zt := &amp;T{T: t}
+
+                // Run beforeEach if defined
+                if ctx.beforeEach != nil </span><span class="cov8" title="1">{
+                        ctx.beforeEach(zt)
+                }</span>
+
+                // Run test
+                <span class="cov8" title="1">fn(zt)
+
+                // Run afterEach if defined
+                if ctx.afterEach != nil </span><span class="cov8" title="1">{
+                        ctx.afterEach(zt)
+                }</span>
+        })
+}
+
+// BeforeEach sets the setup hook function to run before each test case.
+// Use this for common setup like creating fresh app instances or test data.
+// Returns the SuiteContext for method chaining with AfterEach.
+//
+// Parameters:
+//   - fn: Function to execute before each test case, receives *T
+//
+// Returns:
+//   - *SuiteContext: The receiver for method chaining
+//
+// Example:
+//
+//        ctx.BeforeEach(func(zt *zentests.T) {
+//            app = fiber.New()
+//            SetupRoutes(app)
+//        }).AfterEach(func(zt *zentests.T) {
+//            app.Shutdown()
+//        })
+func (ctx *SuiteContext) BeforeEach(fn func(*T)) *SuiteContext <span class="cov8" title="1">{
+        ctx.beforeEach = fn
+        return ctx
+}</span>
+
+// AfterEach sets the teardown hook function to run after each test case.
+// Use this for cleanup like closing database connections or shutting down apps.
+// Returns the SuiteContext for method chaining.
+//
+// Parameters:
+//   - fn: Function to execute after each test case, receives *T
+//
+// Returns:
+//   - *SuiteContext: The receiver for method chaining
+//
+// Example:
+//
+//        ctx.AfterEach(func(zt *zentests.T) {
+//            app.Shutdown()
+//            db.Cleanup()
+//        })
+func (ctx *SuiteContext) AfterEach(fn func(*T)) *SuiteContext <span class="cov8" title="1">{
+        ctx.afterEach = fn
+        return ctx
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">// Package zentests provides utilities for testing Go Fiber applications.
+//
+// Basic usage:
+//
+//        func TestEndpoint(t *testing.T) {
+//            zt := zentests.New(t).Use(app)
+//            zt.Get("/users").ExpectStatus(200)
+//        }
+package zentests
+
+import (
+        "testing"
+
+        "github.com/gofiber/fiber/v2"
+)
+
+// T wraps testing.T with additional context for testing Fiber applications.
+// It provides a fluent API for making HTTP requests against a Fiber app in tests.
+// T maintains a reference to the Fiber app and testing context to enable chainable assertions.
+//
+// Basic usage:
+//
+//        func TestEndpoint(t *testing.T) {
+//            zt := zentests.New(t).Use(app)
+//            zt.Get("/users").ExpectStatus(200)
+//        }
+//
+// Fields:
+//   - T: The embedded testing.T instance for standard Go test functionality
+//   - app: The Fiber application instance for making HTTP requests
+type T struct {
+        *testing.T
+        app *fiber.App
+}
+
+// New creates a new zentests context wrapping the provided testing.T.
+// This is the main entry point for using zentests. The returned *T has no app set initially
+// - call Use() to set the Fiber application for method chaining, or pass the app directly
+// to request methods like Get(app, "/").
+//
+// Parameters:
+//   - t: The testing.T instance from your test function
+//
+// Returns:
+//   - *T: A new zentests context with no Fiber app configured
+//
+// Example:
+//
+//        func TestExample(t *testing.T) {
+//                zt := zentests.New(t)
+//                app := fiber.New()
+//                // declare app routes
+//                zt.Use(app)
+//        }
+//
+//        func TestExample(t *testing.T) {
+//            zt := zentests.New(t)
+//            app := fiber.New()
+//            // declare app routes
+//
+//            zt.Get(app, "/").OK()
+//        }
+func New(t *testing.T) *T <span class="cov8" title="1">{
+        return &amp;T{T: t}
+}</span>
+
+// Use sets the Fiber app for making test requests and enables fluent method chaining.
+// After calling Use(), subsequent request methods can be called without passing the app parameter.
+//
+// Parameters:
+//   - app: The Fiber application instance to test against
+//
+// Returns:
+//   - *T: The receiver for method chaining
+//
+// TODO: Add nil check for app parameter to prevent panics
+//
+// Example:
+//
+//        zt := zentests.New(t).Use(app)
+//        zt.Get("/users").OK()
+func (zt *T) Use(app *fiber.App) *T <span class="cov8" title="1">{
+        zt.app = app
+        return zt
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
