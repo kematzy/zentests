@@ -178,6 +178,8 @@ func (r *Response) ServerError() *Response {
 // Example:
 //
 //	zt.Get(app, "/api/users").HasHeader("Content-Type", "application/json")
+//
+//	zt.Get(app, "/api/users").HasHeader("Content-Type", "application/css") // raises an error
 func (r *Response) HasHeader(key, value string) *Response {
 	actual := r.Header.Get(key)
 	assert.Equal(r.t, value, actual, "header %s mismatch", key)
@@ -198,6 +200,8 @@ func (r *Response) HasHeader(key, value string) *Response {
 // Example:
 //
 //	zt.Get(app, "/api/users").HeaderContains("Content-Type", "json")
+//
+//	zt.Get(app, "/api/users").HeaderContains("Content-Type", "image") // raises an error
 func (r *Response) HeaderContains(key, substring string) *Response {
 	actual := r.Header.Get(key)
 	assert.Contains(r.t, actual, substring, "header %s should contain %q", key, substring)
