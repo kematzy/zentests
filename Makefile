@@ -82,7 +82,7 @@ test:
 ## test-verbose: Run all tests with verbose colored output
 test-verbose:
 	@echo ""
-	@gotestsum --format testdox
+	@gotestsum --format testname
 
 # @gotest -v ./...
 
