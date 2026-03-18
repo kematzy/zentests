@@ -33,7 +33,7 @@ go.work.sum
 # Recommended: Go.AllowList.gitignore
 
 # Ignore everything
-*
+#*
 
 # But not these files...
 !/.gitignore
@@ -49,3 +49,4 @@ go.work.sum
 
 # ...even if they are in subdirectories
 !*/
+.code-status
