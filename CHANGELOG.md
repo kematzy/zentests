@@ -1,11 +1,4 @@
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [unreleased]
+## [0.2.0] - 2026-03-19
 
 ### 🚀 Features
 
@@ -15,39 +8,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add git-cliff configs (git-cliff --init)
 - Add release command
 - Add git-push (github-push, gitea-push) & docs, docs-md, clean commands
+- Add Cspell configs
+- Add *WithConfig()` functions
+
+### 🐛 Bug Fixes
+
+- Golangci configs
+- Github CI failure on Lint job
+- Reactivating Gitea Lint job
+- GitHub CI failure on Lint job (try #2)
+
+### 💼 Other
+
+- Add required installs
 
 ### 🚜 Refactor
 
 - Reworked Makefile
 - Update .PHONY list
+- Make modernize (code updates)
+- Update to Fiber v3
+- Update fiber imports
+- Update handler signatures (from pointer to interface)
+- Fiber v3 - BodyParser() -> Bind().Body()
+
+### 📚 Documentation
+
+- Add API.md (gomarkdoc trial)
+- Updated README.md about Fiber v2 -> v3 migration & functionality
+- Update README.md with 'testify/suite' examples
+
+### 🧪 Testing
+
+- Updated HTTP response tests
+- Add code-coverage.html (temporary test)
+- Fiber v3 JSON adds `charset=utf-8`
+- Add tests for *WithConfig() functions
+- Convert to testify/suite structure
 
 ### ⚙️ Miscellaneous Tasks
 
 - Remove bad comments
 - Updated README.md with Makefile commands
 - Go mod tidy
+- Add CHANGELOG.md
+- Docs update
+- Updated make test-verbose output
+- Updated .gitignore
 
 ## [0.1.0] - 2026-02-19
 
-### Added
-- New content type assertion methods: IsCSS(), IsJS(), IsXML(), IsXHR(), IsImage(), IsPNG(), IsJPEG(), IsGIF(), IsSVG(), IsWebP()
-- Comprehensive documentation with Parameters and Returns sections for all functions
-- New examples in `examples/` directory: flat_style.go, routes.go, suite.go
-- Test coverage improved from 94.7% to 98.2%
-- GitHub Actions CI configuration with testing, linting, and coverage artifacts
-- Gitea Actions CI configuration with Docker-optimized workflows
-- Makefile with release automation
-
-### Changed
-- Refactored error handling in HasInt() and HasFloat() to use assert.Fail() instead of t.Errorf()
-- Made getNestedValue() directly testable for better coverage
-- Added Implementation: headers before function definitions for better readability
-
-### Fixed
-- Fixed GitHub Actions artifact upload (Gitea-compatible tarball approach)
-- Fixed Gitea CI Docker container configuration
-
 ### 💼 Other
 
-- Improved Gitea workflow
-- Added Gitea workflow configs
+- Improved Gitea workflow Maybe???
+- Gitea workflow configs
+- Gitea workflow again - ensure NodeJS is available
