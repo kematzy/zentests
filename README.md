@@ -33,7 +33,28 @@ go get github.com/kematzy/zentests
 
 **Requirements:**
 - Go 1.25 or higher
-- [Fiber](https://github.com/gofiber/fiber) v2
+- [Fiber](https://github.com/gofiber/fiber) v3.x
+
+> **Fiber v2 Users:** If you're using Fiber v2, use the `fiber-v2` branch:
+> ```bash
+> go get github.com/kematzy/zentests@fiber-v2
+> ```
+> See [Branches](#branches) for more information.
+
+<br>
+
+## Branches
+
+| Branch | Fiber Version | Go Version | Status |
+|--------|---------------|------------|--------|
+| `master`   | v3.x | 1.25+ | Active development |
+| `fiber-v2` | v2.x | 1.21+ | Maintenance only |
+
+The `fiber-v2` branch receives bug fixes and security updates only. New features are developed on `master` (Fiber v3).
+
+### Migrating from Fiber v2 to v3
+
+If you're upgrading from Fiber v2 to v3, see the [upgrade guide](#migration-from-fiber-v2).
 
 <br>
 
@@ -53,7 +74,8 @@ func TestAPI(t *testing.T) {
     app := fiber.New()
     
     // Your routes here...
-    app.Get("/api/health", func(c *fiber.Ctx) error {
+    // Note: Fiber v3 uses fiber.Ctx (interface), not *fiber.Ctx (pointer)
+    app.Get("/api/health", func(c fiber.Ctx) error {
         return c.JSON(fiber.Map{"status": "ok"})
     })
     
@@ -147,8 +169,60 @@ All methods accept `*fiber.App` and `path`, return `*Response` for chaining:
 | `PutJSON(app, path, data)` | PUT with JSON  |
 | `Patch(app, path, body)` | PATCH request  |
 | `PatchJSON(app, path, data)` | PATCH with JSON  |
-| `Delete(app, path)`	| DELETE request  |
+| `Delete(app, path)` | DELETE request  |
 | `DeleteJSON(app, path, data)` | DELETE with JSON body  |
+
+### HTTP Methods with TestConfig (Fiber v3+)
+
+For custom timeout and behavior control, use the `*WithConfig` variants:
+
+| Method | Description |
+|--------|-------------|
+| `GetWithConfig(app, path, cfg)` | GET with custom TestConfig |
+| `PostWithConfig(app, path, body, cfg)` | POST with custom TestConfig |
+| `PostJSONWithConfig(app, path, data, cfg)` | POST JSON with custom TestConfig |
+| `PostFormWithConfig(app, path, data, cfg)` | POST form with custom TestConfig |
+| `PutWithConfig(app, path, body, cfg)` | PUT with custom TestConfig |
+| `PutJSONWithConfig(app, path, data, cfg)` | PUT JSON with custom TestConfig |
+| `PatchWithConfig(app, path, body, cfg)` | PATCH with custom TestConfig |
+| `PatchJSONWithConfig(app, path, data, cfg)` | PATCH JSON with custom TestConfig |
+| `DeleteWithConfig(app, path, cfg)` | DELETE with custom TestConfig |
+| `DeleteJSONWithConfig(app, path, data, cfg)` | DELETE JSON with custom TestConfig |
+
+#### TestConfig Usage
+
+```go
+import (
+    "time"
+    "github.com/gofiber/fiber/v3"
+    "github.com/kematzy/zentests"
+)
+
+func TestSlowEndpoint(t *testing.T) {
+    zt := zentests.New(t)
+    app := fiber.New()
+    
+    // Custom timeout for slow endpoints
+    resp := zt.GetWithConfig(app, "/slow-endpoint", fiber.TestConfig{
+        Timeout: 10 * time.Second,
+    })
+    resp.OK().IsJSON()
+    
+    // Custom timeout with FailOnTimeout behavior
+    resp2 := zt.PostJSONWithConfig(app, "/api/users", userData, fiber.TestConfig{
+        Timeout:       5 * time.Second,
+        FailOnTimeout: true, // Returns error instead of partial response
+    })
+    resp2.Created()
+}
+```
+
+#### TestConfig Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `Timeout` | `time.Duration` | `1s` | Request timeout duration |
+| `FailOnTimeout` | `bool` | `true` | Return error on timeout (true) or partial response (false) |
 
 
 ### Status Assertions
@@ -284,6 +358,86 @@ resp.Has("count", 42.0)         // PASS: exact type match
 ```
 
 <br>
+
+## Migration from Fiber v2
+
+If you're upgrading from Fiber v2 to v3, here are the key changes affecting `zentests`:
+
+### Import Path Change
+
+```go
+// Fiber v2
+import "github.com/gofiber/fiber/v2"
+
+// Fiber v3
+import "github.com/gofiber/fiber/v3"
+```
+
+### Handler Signature Change
+
+Fiber v3 uses `fiber.Ctx` as an interface (not a pointer):
+
+```go
+// Fiber v2
+app.Get("/route", func(c *fiber.Ctx) error {
+    return c.SendString("hello")
+})
+
+// Fiber v3
+app.Get("/route", func(c fiber.Ctx) error {
+    return c.SendString("hello")
+})
+```
+
+### Body Parser Change
+
+The `BodyParser` method has been replaced with the new `Bind()` API:
+
+```go
+// Fiber v2
+app.Post("/users", func(c *fiber.Ctx) error {
+    var data map[string]any
+    c.BodyParser(&data)
+    return c.JSON(data)
+})
+
+// Fiber v3
+app.Post("/users", func(c fiber.Ctx) error {
+    var data map[string]any
+    if err := c.Bind().Body(&data); err != nil {
+        return err
+    }
+    return c.JSON(data)
+})
+```
+
+### New TestConfig Support
+
+Fiber v3's `app.Test()` now accepts `TestConfig` instead of timeout duration:
+
+```go
+// Fiber v2
+resp, err := app.Test(req, 5*time.Second)
+
+// Fiber v3
+resp, err := app.Test(req) // Uses default 1s timeout
+resp, err := app.Test(req, fiber.TestConfig{
+    Timeout: 5 * time.Second,
+})
+```
+
+`zentests` provides `*WithConfig` methods to expose this functionality:
+
+```go
+// Fiber v2 style (still works)
+zt.Get(app, "/route")
+
+// Fiber v3 with custom timeout
+zt.GetWithConfig(app, "/slow-route", fiber.TestConfig{
+    Timeout: 10 * time.Second,
+})
+```
+
 <br>
 
 ## Development & Building
@@ -363,6 +517,7 @@ Please use GitHub Issues to report bugs or request features. When reporting bugs
 **Authors**: 
 - [Kematzy](https://github.com/kematzy)
 - Kimi K2.5 model via [opencode Zen](https://opencode.ai/zen)
+- GLM 5 model via [opencode Go](https://opencode.ai/go)
 
 **Inspiration**:
 - [RSpec](https://rspec.info/) - Ruby testing framework that inspired the BDD syntax
@@ -400,3 +555,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+<!-- spellchecker:ignore kimi opencode -->
