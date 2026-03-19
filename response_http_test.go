@@ -18,7 +18,6 @@ type ResponseHTTPTestSuite struct {
 func (s *ResponseHTTPTestSuite) SetupSuite() {
 	s.app = fiber.New()
 	s.zt = New(s.T())
-	// statusCodes := []int{200, 201, 202, 204, 400, 401, 403, 404, 422, 500}
 	s.statusCodes = []int{200, 201, 202, 204, 400, 401, 403, 404, 422, 500}
 	// declare status routes
 	for _, code := range s.statusCodes {

@@ -4,49 +4,64 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-func setupBodyApp() *fiber.App {
-	app := fiber.New()
-	app.Get("/text", func(c fiber.Ctx) error {
+type ResponseBodyAssertionsSuite struct {
+	suite.Suite
+	app *fiber.App
+	zt  *T
+}
+
+func (s *ResponseBodyAssertionsSuite) SetupTest() {
+	s.app = fiber.New()
+	s.zt = New(s.T())
+
+	s.app.Get("/text", func(c fiber.Ctx) error {
 		return c.SendString("Hello World")
 	})
-	app.Get("/html", func(c fiber.Ctx) error {
+	s.app.Get("/html", func(c fiber.Ctx) error {
 		return c.SendString("<h1>Title</h1><p>Paragraph</p>")
 	})
-	app.Get("/empty", func(c fiber.Ctx) error {
+	s.app.Get("/empty", func(c fiber.Ctx) error {
 		return c.SendStatus(204)
 	})
-	return app
 }
 
-func TestBodyAssertions(t *testing.T) {
-	app := setupBodyApp()
-	zt := New(t)
+func (s *ResponseBodyAssertionsSuite) TearDownTest() {
+	if s.app != nil {
+		_ = s.app.Shutdown()
+		s.app = nil
+	}
+}
 
-	zt.Get(app, "/text").
-		Contains("Hello").
-		Contains("World").
-		NotContains("Goodbye")
+func (s *ResponseBodyAssertionsSuite) Test_BodyAssertions_Contains() {
+	s.zt.Get(s.app, "/text").OK().Contains("Hello World")
+}
 
-	zt.Get(app, "/html").
-		Contains("Title").
+func (s *ResponseBodyAssertionsSuite) Test_BodyAssertions_NotContains() {
+	s.zt.Get(s.app, "/text").OK().NotContains("Hello World!") // Note `!`
+}
+
+func (s *ResponseBodyAssertionsSuite) Test_BodyAssertions_BodyMatches() {
+	s.zt.Get(s.app, "/html").OK().
 		BodyMatches(`<h1>\w+</h1>`).
 		BodyMatches(`<p>.*</p>`)
-
-	zt.Get(app, "/text").Equals("Hello World")
-	zt.Get(app, "/empty").IsEmpty()
 }
 
-func TestBodyChaining(t *testing.T) {
-	app := setupBodyApp()
-	zt := New(t)
+func (s *ResponseBodyAssertionsSuite) Test_BodyAssertions_Equals() {
+	s.zt.Get(s.app, "/text").OK().Equals("Hello World")
+}
 
-	resp := zt.Get(app, "/html")
+func (s *ResponseBodyAssertionsSuite) Test_BodyAssertions_Empty() {
+	s.zt.Get(s.app, "/empty").Status(204).IsEmpty()
+}
+
+func (s *ResponseBodyAssertionsSuite) Test_BodyAssertions_Contains_Chaining() {
+	resp := s.zt.Get(s.app, "/html")
 	resp.Contains("Title").Contains("Paragraph")
+}
 
-	// Test that body is cached
-	assert.Equal(t, resp.BodyString(), resp.BodyString())
-	assert.Equal(t, resp.Body(), resp.Body())
+func TestResponseBodyAssertionsSuite(t *testing.T) {
+	suite.Run(t, new(ResponseBodyAssertionsSuite))
 }

@@ -5,24 +5,29 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-func setupTestApp() *fiber.App {
-	app := fiber.New()
+type HTTPRequestsSuite struct {
+	suite.Suite
+	app *fiber.App
+	zt  *T
+}
 
-	app.Get("/test", func(c fiber.Ctx) error {
+func (s *HTTPRequestsSuite) SetupTest() {
+	s.app = fiber.New()
+	s.zt = New(s.T())
+
+	s.app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("GET response")
 	})
 
-	app.Post("/test", func(c fiber.Ctx) error {
-		// body, _ := io.ReadAll(c.Body())
+	s.app.Post("/test", func(c fiber.Ctx) error {
 		body := c.Body()
-		// Fix: c.Body() returns []byte, not io.Reader
 		return c.SendString("POST: " + string(body))
 	})
 
-	app.Post("/json", func(c fiber.Ctx) error {
+	s.app.Post("/json", func(c fiber.Ctx) error {
 		var data map[string]any
 		if err := c.Bind().Body(&data); err != nil {
 			return err
@@ -30,330 +35,233 @@ func setupTestApp() *fiber.App {
 		return c.JSON(fiber.Map{"received": data})
 	})
 
-	app.Post("/form", func(c fiber.Ctx) error {
+	s.app.Post("/form", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"name": c.FormValue("name"),
 			"age":  c.FormValue("age"),
 		})
 	})
 
-	app.Put("/test", func(c fiber.Ctx) error {
+	s.app.Put("/test", func(c fiber.Ctx) error {
 		return c.SendStatus(200)
 	})
 
-	app.Patch("/test", func(c fiber.Ctx) error {
+	s.app.Patch("/test", func(c fiber.Ctx) error {
 		return c.SendStatus(200)
 	})
 
-	app.Delete("/test", func(c fiber.Ctx) error {
+	s.app.Delete("/test", func(c fiber.Ctx) error {
 		return c.SendStatus(204)
 	})
 
-	return app
+	s.app.Put("/json", func(c fiber.Ctx) error {
+		return c.JSON(fiber.Map{"method": "PUT"})
+	})
+
+	s.app.Patch("/json", func(c fiber.Ctx) error {
+		return c.JSON(fiber.Map{"method": "PATCH"})
+	})
+
+	s.app.Delete("/json", func(c fiber.Ctx) error {
+		return c.JSON(fiber.Map{"method": "DELETE"})
+	})
 }
 
-func TestGet(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
-
-	resp := zt.Get(app, "/test")
-	assert.Equal(t, 200, resp.StatusCode)
-	assert.Equal(t, "GET response", resp.BodyString())
+func (s *HTTPRequestsSuite) TearDownTest() {
+	if s.app != nil {
+		_ = s.app.Shutdown()
+		s.app = nil
+	}
 }
 
-func TestPost(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
+// --- GET ---
 
-	resp := zt.Post(app, "/test", []byte("hello"))
-	assert.Equal(t, 200, resp.StatusCode)
-	assert.Equal(t, "POST: hello", resp.BodyString())
+func (s *HTTPRequestsSuite) Test_HTTP_GET() {
+	resp := s.zt.Get(s.app, "/test")
+
+	s.Equal(200, resp.StatusCode)
+	s.Equal("GET response", resp.BodyString())
 }
 
-func TestPostJSON(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
+// --- POST ---
 
+func (s *HTTPRequestsSuite) Test_HTTP_POST() {
+	s.zt.Post(s.app, "/test", []byte("hello")).OK().Contains("POST: hello")
+
+	resp := s.zt.Post(s.app, "/test", []byte("hello"))
+	s.Equal(200, resp.StatusCode)
+	s.Equal("POST: hello", resp.BodyString())
+}
+
+func (s *HTTPRequestsSuite) Test_HTTP_POST_JSON() {
 	data := map[string]any{"name": "John", "age": 30}
-	resp := zt.PostJSON(app, "/json", data)
 
-	resp.OK().
-		IsJSON().
+	s.zt.PostJSON(s.app, "/json", data).OK().JSON().
 		Has("received.name", "John").
 		HasFloat("received.age", 30)
 }
 
-func TestPostForm(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
-
+func (s *HTTPRequestsSuite) Test_HTTP_POST_Form() {
 	formData := map[string]string{"name": "Jane", "age": "25"}
-	resp := zt.PostForm(app, "/form", formData)
 
-	resp.OK().IsJSON().
-		Has("name", "Jane").
-		Has("age", "25")
+	s.zt.PostForm(s.app, "/form", formData).OK().JSON().Has("name", "Jane").Has("age", "25")
 }
 
-func TestPut(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
+// --- PUT ---
 
-	resp := zt.Put(app, "/test", []byte("data"))
-	resp.OK()
+func (s *HTTPRequestsSuite) Test_HTTP_PUT() {
+	s.zt.Put(s.app, "/test", []byte("data")).OK()
 }
 
-func TestPutJSON(t *testing.T) {
-	app := fiber.New()
-	app.Put("/test", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"method": "PUT"})
-	})
-
-	zt := New(t)
-	resp := zt.PutJSON(app, "/test", map[string]any{"key": "value"})
-
-	resp.OK().IsJSON().Has("method", "PUT")
+func (s *HTTPRequestsSuite) Test_HTTP_PUT_JSON() {
+	s.zt.PutJSON(s.app, "/json", map[string]any{"key": "value"}).OK().JSON().Has("method", "PUT")
 }
 
-func TestPatch(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
+// --- PATCH ---
 
-	resp := zt.Patch(app, "/test", []byte("patch"))
-	resp.OK()
+func (s *HTTPRequestsSuite) Test_HTTP_PATCH() {
+	s.zt.Patch(s.app, "/test", []byte("patch")).OK()
 }
 
-func TestPatchJSON(t *testing.T) {
-	app := fiber.New()
-	app.Patch("/test", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"method": "PATCH"})
-	})
-
-	zt := New(t)
-	resp := zt.PatchJSON(app, "/test", map[string]any{"key": "value"})
-
-	resp.OK().IsJSON().Has("method", "PATCH")
+func (s *HTTPRequestsSuite) Test_HTTP_PATCH_JSON() {
+	s.zt.PatchJSON(s.app, "/json", map[string]any{"key": "value"}).OK().JSON().Has("method", "PATCH")
 }
 
-func TestDelete(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
+// --- DELETE ---
 
-	resp := zt.Delete(app, "/test")
-	resp.NoContent()
+func (s *HTTPRequestsSuite) Test_HTTP_DELETE() {
+	s.zt.Delete(s.app, "/test").NoContent()
 }
 
-func TestDeleteJSON(t *testing.T) {
-	app := fiber.New()
-	app.Delete("/test", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"method": "DELETE"})
-	})
-
-	zt := New(t)
-	resp := zt.DeleteJSON(app, "/test", map[string]any{"key": "value"})
-
-	resp.OK().IsJSON().Has("method", "DELETE")
+func (s *HTTPRequestsSuite) Test_HTTP_DELETE_JSON() {
+	s.zt.DeleteJSON(s.app, "/json", map[string]any{"key": "value"}).OK().JSON().Has("method", "DELETE")
 }
 
-func TestSetHeader(t *testing.T) {
+// --- Helpers ---
+
+func (s *HTTPRequestsSuite) Test_HTTP_SetHeader() {
 	headers := SetHeader("X-Custom", "value")
-	assert.Equal(t, "value", headers["X-Custom"])
+	s.Equal("value", headers["X-Custom"])
 }
 
 // =================================================================================================
 // TESTS FOR *WithConfig METHODS (Fiber v3+)
 // =================================================================================================
 
-func TestGetWithConfig(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
+// --- GET WithConfig ---
 
-	// Test with empty config (uses defaults)
-	resp := zt.GetWithConfig(app, "/test", fiber.TestConfig{})
-	assert.Equal(t, 200, resp.StatusCode)
-	assert.Equal(t, "GET response", resp.BodyString())
-
-	// Test with custom timeout config
-	resp2 := zt.GetWithConfig(app, "/test", fiber.TestConfig{
-		Timeout: time.Second,
-	})
-	assert.Equal(t, 200, resp2.StatusCode)
+func (s *HTTPRequestsSuite) Test_HTTP_GET_WithConfig_Empty() {
+	s.zt.GetWithConfig(s.app, "/test", fiber.TestConfig{}).OK().Equals("GET response")
 }
 
-func TestPostWithConfig(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
-
-	// Test with empty config
-	resp := zt.PostWithConfig(app, "/test", []byte("hello"), fiber.TestConfig{})
-	assert.Equal(t, 200, resp.StatusCode)
-	assert.Equal(t, "POST: hello", resp.BodyString())
-
-	// Test with custom timeout
-	resp2 := zt.PostWithConfig(app, "/test", []byte("world"), fiber.TestConfig{
-		Timeout: 2 * time.Second,
-	})
-	assert.Equal(t, 200, resp2.StatusCode)
-	assert.Equal(t, "POST: world", resp2.BodyString())
+func (s *HTTPRequestsSuite) Test_HTTP_GET_WithConfig_Timeout() {
+	s.zt.GetWithConfig(s.app, "/test", fiber.TestConfig{Timeout: time.Second}).Status(200)
 }
 
-func TestPostJSONWithConfig(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
+// --- POST WithConfig ---
 
+func (s *HTTPRequestsSuite) Test_HTTP_PostWithConfig() {
+	s.zt.PostWithConfig(s.app, "/test", []byte("hello"), fiber.TestConfig{}).Status(200).Equals("POST: hello")
+}
+
+func (s *HTTPRequestsSuite) Test_HTTP_PostWithConfig_Timeout() {
+	s.zt.PostWithConfig(s.app, "/test", []byte("world"), fiber.TestConfig{Timeout: 2 * time.Second}).
+		Status(200).Equals("POST: world")
+}
+
+func (s *HTTPRequestsSuite) Test_HTTP_PostJSONWithConfig_Empty() {
 	data := map[string]any{"name": "John", "age": 30}
 
-	// Test with empty config
-	resp := zt.PostJSONWithConfig(app, "/json", data, fiber.TestConfig{})
-
-	resp.OK().
-		IsJSON().
-		Has("received.name", "John").
-		HasFloat("received.age", 30)
-
-	// Test with custom config
-	data2 := map[string]any{"name": "Jane", "age": 25}
-	resp2 := zt.PostJSONWithConfig(app, "/json", data2, fiber.TestConfig{
-		Timeout:       time.Second,
-		FailOnTimeout: true,
-	})
-
-	resp2.OK().
-		IsJSON().
-		Has("received.name", "Jane").
-		HasFloat("received.age", 25)
+	s.zt.PostJSONWithConfig(s.app, "/json", data, fiber.TestConfig{}).OK().JSON().
+		Has("received.name", "John").HasFloat("received.age", 30)
 }
 
-func TestPostFormWithConfig(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
+func (s *HTTPRequestsSuite) Test_HTTP_PostJSONWithConfig_Timeout() {
+	data := map[string]any{"name": "Jane", "age": 25}
 
+	s.zt.PostJSONWithConfig(s.app, "/json", data, fiber.TestConfig{
+		Timeout:       time.Second,
+		FailOnTimeout: true,
+	}).OK().JSON().Has("received.name", "Jane").HasFloat("received.age", 25)
+}
+
+func (s *HTTPRequestsSuite) Test_HTTP_PostFormWithConfig_Empty() {
 	formData := map[string]string{"name": "Jane", "age": "25"}
 
-	// Test with empty config
-	resp := zt.PostFormWithConfig(app, "/form", formData, fiber.TestConfig{})
-
-	resp.OK().IsJSON().
-		Has("name", "Jane").
-		Has("age", "25")
-
-	// Test with custom timeout
-	formData2 := map[string]string{"name": "Bob", "age": "30"}
-	resp2 := zt.PostFormWithConfig(app, "/form", formData2, fiber.TestConfig{
-		Timeout: time.Second,
-	})
-
-	resp2.OK().IsJSON().
-		Has("name", "Bob").
-		Has("age", "30")
+	s.zt.PostFormWithConfig(s.app, "/form", formData, fiber.TestConfig{}).OK().JSON().
+		Has("name", "Jane").Has("age", "25")
 }
 
-func TestPutWithConfig(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
-
-	// Test with empty config
-	resp := zt.PutWithConfig(app, "/test", []byte("data"), fiber.TestConfig{})
-	resp.OK()
-
-	// Test with custom timeout
-	resp2 := zt.PutWithConfig(app, "/test", []byte("more data"), fiber.TestConfig{
-		Timeout: time.Second,
-	})
-	resp2.OK()
+func (s *HTTPRequestsSuite) Test_HTTP_PostFormWithConfig_Timeout() {
+	formData := map[string]string{"name": "Bob", "age": "30"}
+	s.zt.PostFormWithConfig(s.app, "/form", formData, fiber.TestConfig{Timeout: time.Second}).OK().JSON().
+		Has("name", "Bob").Has("age", "30")
 }
 
-func TestPutJSONWithConfig(t *testing.T) {
-	app := fiber.New()
-	app.Put("/test", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"method": "PUT"})
-	})
+// --- PUT WithConfig ---
 
-	zt := New(t)
+func (s *HTTPRequestsSuite) Test_HTTP_PutWithConfig() {
+	s.zt.PutWithConfig(s.app, "/test", []byte("data"), fiber.TestConfig{}).OK()
+}
 
-	// Test with empty config
-	resp := zt.PutJSONWithConfig(app, "/test", map[string]any{"key": "value"}, fiber.TestConfig{})
+func (s *HTTPRequestsSuite) Test_HTTP_PutWithConfig_Timeout() {
+	s.zt.PutWithConfig(s.app, "/test", []byte("more data"), fiber.TestConfig{Timeout: time.Second}).OK()
+}
 
-	resp.OK().IsJSON().Has("method", "PUT")
+func (s *HTTPRequestsSuite) Test_HTTP_PutJSONWithConfig_Empty() {
+	s.zt.PutJSONWithConfig(s.app, "/json", map[string]any{"key": "value"}, fiber.TestConfig{}).
+		OK().IsJSON().Has("method", "PUT")
+}
 
-	// Test with custom config
-	resp2 := zt.PutJSONWithConfig(app, "/test", map[string]any{"key": "value2"}, fiber.TestConfig{
+func (s *HTTPRequestsSuite) Test_HTTP_PutJSONWithConfig_Timeout() {
+	s.zt.PutJSONWithConfig(s.app, "/json", map[string]any{"key": "value2"}, fiber.TestConfig{
 		Timeout:       time.Second,
 		FailOnTimeout: true,
-	})
-
-	resp2.OK().IsJSON().Has("method", "PUT")
+	}).OK().IsJSON().Has("method", "PUT")
 }
 
-func TestPatchWithConfig(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
+// --- PATCH WithConfig ---
 
-	// Test with empty config
-	resp := zt.PatchWithConfig(app, "/test", []byte("patch"), fiber.TestConfig{})
-	resp.OK()
-
-	// Test with custom timeout
-	resp2 := zt.PatchWithConfig(app, "/test", []byte("patch2"), fiber.TestConfig{
-		Timeout: time.Second,
-	})
-	resp2.OK()
+func (s *HTTPRequestsSuite) Test_HTTP_PATCH_WithConfig_Empty() {
+	s.zt.PatchWithConfig(s.app, "/test", []byte("patch"), fiber.TestConfig{}).OK()
 }
 
-func TestPatchJSONWithConfig(t *testing.T) {
-	app := fiber.New()
-	app.Patch("/test", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"method": "PATCH"})
-	})
-
-	zt := New(t)
-
-	// Test with empty config
-	resp := zt.PatchJSONWithConfig(app, "/test", map[string]any{"key": "value"}, fiber.TestConfig{})
-
-	resp.OK().IsJSON().Has("method", "PATCH")
-
-	// Test with custom config
-	resp2 := zt.PatchJSONWithConfig(app, "/test", map[string]any{"key": "value2"}, fiber.TestConfig{
-		Timeout: time.Second,
-	})
-
-	resp2.OK().IsJSON().Has("method", "PATCH")
+func (s *HTTPRequestsSuite) Test_HTTP_PATCH_WithConfig_Timeout() {
+	s.zt.PatchWithConfig(s.app, "/test", []byte("patch2"), fiber.TestConfig{Timeout: time.Second}).OK()
 }
 
-func TestDeleteWithConfig(t *testing.T) {
-	app := setupTestApp()
-	zt := New(t)
-
-	// Test with empty config
-	resp := zt.DeleteWithConfig(app, "/test", fiber.TestConfig{})
-	resp.NoContent()
-
-	// Test with custom timeout
-	resp2 := zt.DeleteWithConfig(app, "/test", fiber.TestConfig{
-		Timeout: time.Second,
-	})
-	resp2.NoContent()
+func (s *HTTPRequestsSuite) Test_HTTP_PATCH_JSON_WithConfig_Empty() {
+	s.zt.PatchJSONWithConfig(s.app, "/json", map[string]any{"key": "value"}, fiber.TestConfig{}).
+		OK().IsJSON().Has("method", "PATCH")
 }
 
-func TestDeleteJSONWithConfig(t *testing.T) {
-	app := fiber.New()
-	app.Delete("/test", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"method": "DELETE"})
-	})
+func (s *HTTPRequestsSuite) Test_HTTP_PATCH_JSON_WithConfig_Timeout() {
+	s.zt.PatchJSONWithConfig(s.app, "/json", map[string]any{"key": "value2"}, fiber.TestConfig{Timeout: time.Second}).
+		OK().IsJSON().Has("method", "PATCH")
+}
 
-	zt := New(t)
+// --- DELETE WithConfig ---
 
-	// Test with empty config
-	resp := zt.DeleteJSONWithConfig(app, "/test", map[string]any{"key": "value"}, fiber.TestConfig{})
+func (s *HTTPRequestsSuite) Test_HTTP_DELETE_WithConfig_Empty() {
+	s.zt.DeleteWithConfig(s.app, "/test", fiber.TestConfig{}).NoContent()
+}
 
-	resp.OK().IsJSON().Has("method", "DELETE")
+func (s *HTTPRequestsSuite) Test_HTTP_DELETE_WithConfig_Timeout() {
+	s.zt.DeleteWithConfig(s.app, "/test", fiber.TestConfig{Timeout: time.Second}).NoContent()
+}
 
-	// Test with custom config
-	resp2 := zt.DeleteJSONWithConfig(app, "/test", map[string]any{"key": "value2"}, fiber.TestConfig{
+func (s *HTTPRequestsSuite) Test_HTTP_DELETE_JSON_WithConfig_Empty() {
+	s.zt.DeleteJSONWithConfig(s.app, "/json", map[string]any{"key": "value"}, fiber.TestConfig{}).
+		OK().IsJSON().Has("method", "DELETE")
+}
+
+func (s *HTTPRequestsSuite) Test_HTTP_DELETE_JSON_WithConfig_Timeout() {
+	s.zt.DeleteJSONWithConfig(s.app, "/json", map[string]any{"key": "value2"}, fiber.TestConfig{
 		Timeout:       time.Second,
 		FailOnTimeout: true,
-	})
+	}).OK().IsJSON().Has("method", "DELETE")
+}
 
-	resp2.OK().IsJSON().Has("method", "DELETE")
+func TestHTTPRequestsSuite(t *testing.T) {
+	suite.Run(t, new(HTTPRequestsSuite))
 }
