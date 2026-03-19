@@ -113,22 +113,26 @@ check-test-coverage:
 	       { print "OK: Coverage " $$1 "%" } }'
 
 ## release: Release a new tagged version  (e.g. make release VERSION=v1.2.3)
-release: check changelog
+release: check changelog-release
 	@[ "${VERSION}" ] || { echo "Usage: make release VERSION=v1.2.3"; exit 1; }
+
+	# Normalize: add 'v' prefix if not already present
+	$(eval TAG := $(shell echo "${VERSION}" | grep -q '^v' && echo "${VERSION}" || echo "v${VERSION}"))
+
 	@echo ""
-	@echo -e "Starting release: \033[32m${VERSION}\033[0m"
+	@echo -e "Starting release: \033[32m${TAG}\033[0m"
 	@echo ""
-	@git tag -a ${VERSION} -m "Release ${VERSION}"
-	@git remote | xargs -I% git push % ${VERSION}
+	@git tag -a ${TAG} -m "Release ${TAG}"
+	@git remote | xargs -I% git push % ${TAG}
 	@echo ""
-	@echo -e "\033[32mTag - ${VERSION} - pushed to remote(s) & published.\033[0m"
+	@echo -e "\033[32mTag - ${TAG} - pushed to remote(s) & published.\033[0m"
 	@echo ""
 	@echo "To install:"
-	@echo "  go get $(REPO)@${VERSION}"
+	@echo "  go get $(REPO)@${TAG}"
 	@echo ""
 	@echo "Docs:"
-	@echo "  https://pkg.go.dev/$(REPO)@${VERSION}"
-	@echo "  https://$(REPO)/releases/tag/${VERSION}"
+	@echo "  https://pkg.go.dev/$(REPO)@${TAG}"
+	@echo "  https://$(REPO)/releases/tag/${TAG}"
 	@echo ""
 
 #======================================================================================================================
@@ -138,6 +142,11 @@ release: check changelog
 ## changelog: Generate changelog using git-cliff
 changelog:
 	@git-cliff --tag ${VERSION} --output CHANGELOG.md
+
+## changelog-release: Generate changelog using git-cliff & Git committ it
+changelog-release: changelog
+	@git add CHANGELOG.md
+
 
 
 #======================================================================================================================
