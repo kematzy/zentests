@@ -41,7 +41,7 @@ func setupApp() *fiber.App {
 	// User creation endpoint - parses JSON body and returns created user with ID
 	app.Post("/api/users", func(c fiber.Ctx) error {
 		var user User
-		if err := c.BodyParser(&user); err != nil {
+		if err := c.Bind().Body(&user); err != nil {
 			return err
 		}
 		user.ID = 1
