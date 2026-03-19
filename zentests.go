@@ -11,7 +11,7 @@ package zentests
 import (
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // T wraps testing.T with additional context for testing Fiber applications.

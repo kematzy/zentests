@@ -95,10 +95,10 @@ linters:
                 - fmt.Printf
                 - fmt.Println
                 # Fiber test helpers
-                - (*github.com/gofiber/fiber/v2.App).Shutdown
+                - (*github.com/gofiber/fiber/v3.App).Shutdown
                 - fmt.Println
                 # Fiber test helpers
-                - (*github.com/gofiber/fiber/v2.App).Shutdown
+                - (*github.com/gofiber/fiber/v3.App).Shutdown
             # Display function signature instead of selector.
             # Default: false
             verbose: true
