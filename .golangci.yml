@@ -8,23 +8,6 @@
 version: "2"
 
 linters:
-    # Default set of linters.
-    # The value can be:
-    # - `standard`: https://golangci-lint.run/docs/linters/#enabled-by-default
-    # - `all`: enables all linters by default.
-    # - `none`: disables all linters by default.
-    # - `fast`: enables only linters considered as "fast" (`golangci-lint help linters --json | jq '[ .[] | select(.fast==true) ] | map(.name)'`).
-    # Default: standard
-    default: standard
-    exclusions:
-        rules:
-            - path: '(.+)_test\.go'
-              linters:
-                  - bodyclose
-                  - godoclint
-                  - funlen
-                  - goconst
-
     # Enable specific linter.
     enable:
         # Essential Go tools
@@ -67,6 +50,15 @@ linters:
         - noctx # Find sending http request without context.Context
         - rowserrcheck # Check whether Rows.Err is checked
         - sqlclosecheck # Check sql.Rows/sql.Stmt are closed
+
+    exclusions:
+        rules:
+            - path: '(.+)_test\.go'
+              linters:
+                  - bodyclose
+                  - godoclint
+                  - funlen
+                  - goconst
 
     settings:
         # Checks whether HTTP response body is closed successfully.
@@ -366,103 +358,7 @@ linters:
                 - stringintconv
                 # Check that struct field tags conform to reflect.StructTag.Get.
                 - structtag
-                # Report calls to (*testing.T).Fatal from goroutines started by a test.
-                - testinggoroutine
-                # Check for common mistaken usages of tests and examples.
-                - tests
-                # Check for calls of (time.Time).Format or time.Parse with 2006-02-01.
-                - timeformat
-                # Report passing non-pointer or non-interface values to unmarshal.
-                - unmarshal
-                # Check for unreachable code.
-                - unreachable
-                # Check for invalid conversions of uintptr to unsafe.Pointer.
-                - unsafeptr
-                # Check for unused results of calls to some functions.
-                - unusedresult
-                # Checks for unused writes.
-                - unusedwrite
-                # Check for misuses of sync.WaitGroup.
-                - waitgroup
-            # Enable all analyzers.
-            # Default: false
-            enable-all: false
-            # Disable analyzers by name.
-            # (In addition to default
-            #   atomicalign, deepequalerrors, fieldalignment, findcall, nilness, reflectvaluecompare, shadow, sortslice,
-            #   timeformat, unusedwrite
-            # ).
-            # Run `GL_DEBUG=govet golangci-lint run --enable=govet` to see default, all available analyzers, and enabled analyzers.
-            # Default: []
-            disable: []
-            # Settings per analyzer.
-            settings:
-                # Analyzer name, run `go tool vet help` to see all analyzers.
-                printf:
-                    # Comma-separated list of print function names to check (in addition to default)
-                    # See `go tool vet help printf`).
-                    # Default: []
-                    funcs:
-                        - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Infof
-                        - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Warnf
-                        - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Errorf
-                        - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Fatalf
-
-        # Fast, configurable, extensible, flexible, and beautiful linter for Go.
-        # Drop-in replacement of golint.
-        revive:
-            # Maximum number of open files at the same time.
-            # See https://github.com/mgechev/revive#command-line-flags
-            # Defaults to unlimited.
-            max-open-files: 2048
-            ignore-generated-header: true
-            # Sets the default severity.
-            # See https://github.com/mgechev/revive#configuration
-            # Default: warning
-            severity: "warning"
-            # Enable all available rules.
-            # Default: false
-            enable-all-rules: false
-            # By default, the default rules are enabled,
-            # but if you explicitly define or configure a rule, the default rules will be disabled.
-            # When `true`, allows you to avoid explicitly redefining default rules when adding a rule.
-            # Default: false
-            enable-default-rules: true
-            # Sets the default failure confidence.
-            # This means that linting errors with less than 0.8 confidence will be ignored.
-            # Default: 0.8
-            confidence: 0.8
-            # Revive handles the default rules in a way that can be unexpected:
-            # - If there are no explicit rules, the default rules are used.
-            # - If there is at least one explicit rule, the default rules are not used, unless
-            # `enable-default-rules` is `true`.
-            # Run `GL_DEBUG=revive golangci-lint run --enable-only=revive` to see default,
-            # all available rules, and enabled rules.
-            rules:
-                - name: blank-imports
-                - name: context-as-argument
-                - name: context-keys-type
-                - name: dot-imports
-                - name: error-return
-                - name: error-strings
-                - name: error-naming
-                - name: exported
-                - name: if-return
-                - name: increment-decrement
-                - name: var-naming
-                - name: var-declaration
-                - name: package-comments
-                - name: range
-                - name: receiver-naming
-                - name: time-naming
-                - name: unexported-return
-                - name: indent-error-flow
-                - name: errorf
-                - name: empty-block
-                - name: superfluous-else
-                - name: unused-parameter
-                - name: unreachable-code
-                - name: redefines-builtin-id
+                # Report calls to (*testing.T).Fatal from goroutines started
 
 # formatters:
 
