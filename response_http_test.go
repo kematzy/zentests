@@ -238,7 +238,7 @@ func (s *ResponseHTTPTestSuite) Test_Assertion_ServerError_500() {
 }
 
 func (s *ResponseHTTPTestSuite) Test_Assertion_HasHeader() {
-	s.zt.Get(s.app, "/json").OK().HasHeader("Content-Type", "application/json")
+	s.zt.Get(s.app, "/json").OK().HasHeader("Content-Type", "application/json; charset=utf-8")
 	s.True(true, "no chain errors raised")
 
 	s.zt.Get(s.app, "/custom").
@@ -310,7 +310,8 @@ func (s *ResponseHTTPTestSuite) Test_Assertion_CookieHasValues() {
 }
 
 func (s *ResponseHTTPTestSuite) Test_Assertion_HasContentType() {
-	s.zt.Get(s.app, "/json").OK().HasContentType("application/json")
+	// Fiber v3 includes charset in Content-Type
+	s.zt.Get(s.app, "/json").OK().HasContentType("application/json; charset=utf-8")
 	s.True(true, "no chain errors raised")
 }
 
