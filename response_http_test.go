@@ -23,79 +23,79 @@ func (s *ResponseHTTPTestSuite) SetupSuite() {
 	// declare status routes
 	for _, code := range s.statusCodes {
 		path := fmt.Sprintf("/%d", code)
-		s.app.Get(path, func(c *fiber.Ctx) error {
+		s.app.Get(path, func(c fiber.Ctx) error {
 			return c.SendStatus(code)
 		})
 	}
 
-	s.app.Get("/json", func(c *fiber.Ctx) error {
+	s.app.Get("/json", func(c fiber.Ctx) error {
 		c.Type("json")
 		return c.JSON(fiber.Map{"key": "value"})
 	})
-	s.app.Get("/html", func(c *fiber.Ctx) error {
+	s.app.Get("/html", func(c fiber.Ctx) error {
 		c.Type("html")
 		return c.SendString("<h1>Test</h1>")
 	})
-	s.app.Get("/text", func(c *fiber.Ctx) error {
+	s.app.Get("/text", func(c fiber.Ctx) error {
 		c.Type("txt")
 		return c.SendString("plain text")
 	})
-	s.app.Get("/custom", func(c *fiber.Ctx) error {
+	s.app.Get("/custom", func(c fiber.Ctx) error {
 		c.Set("X-Custom", "custom-value")
 		return c.SendStatus(200)
 	})
 
 	// CSS
-	s.app.Get("/style.css", func(c *fiber.Ctx) error {
+	s.app.Get("/style.css", func(c fiber.Ctx) error {
 		c.Type("css")
 		return c.SendString("body { color: red; }")
 	})
 
 	// JavaScript
-	s.app.Get("/app.js", func(c *fiber.Ctx) error {
+	s.app.Get("/app.js", func(c fiber.Ctx) error {
 		c.Type("js")
 		return c.SendString("console.log('hello');")
 	})
 
 	// XML
-	s.app.Get("/data.xml", func(c *fiber.Ctx) error {
+	s.app.Get("/data.xml", func(c fiber.Ctx) error {
 		c.Type("xml")
 		return c.SendString("<?xml version=\"1.0\"?><root><item>value</item></root>")
 	})
 
 	// XHR
-	s.app.Get("/xhr", func(c *fiber.Ctx) error {
+	s.app.Get("/xhr", func(c fiber.Ctx) error {
 		c.Set("X-Requested-With", "XMLHttpRequest")
 		return c.JSON(fiber.Map{"xhr": true})
 	})
 
 	// Images
-	s.app.Get("/photo.png", func(c *fiber.Ctx) error {
+	s.app.Get("/photo.png", func(c fiber.Ctx) error {
 		c.Type("png")
 		return c.SendStatus(200)
 	})
-	s.app.Get("/photo.jpg", func(c *fiber.Ctx) error {
+	s.app.Get("/photo.jpg", func(c fiber.Ctx) error {
 		c.Type("jpg")
 		return c.SendStatus(200)
 	})
-	s.app.Get("/animation.gif", func(c *fiber.Ctx) error {
+	s.app.Get("/animation.gif", func(c fiber.Ctx) error {
 		c.Type("gif")
 		return c.SendStatus(200)
 	})
-	s.app.Get("/icon.svg", func(c *fiber.Ctx) error {
+	s.app.Get("/icon.svg", func(c fiber.Ctx) error {
 		c.Type("svg")
 		return c.SendStatus(200)
 	})
-	s.app.Get("/photo.webp", func(c *fiber.Ctx) error {
+	s.app.Get("/photo.webp", func(c fiber.Ctx) error {
 		c.Type("webp")
 		return c.SendStatus(200)
 	})
-	s.app.Get("/image", func(c *fiber.Ctx) error {
+	s.app.Get("/image", func(c fiber.Ctx) error {
 		c.Type("png") // Any image type should match IsImage()
 		return c.SendStatus(200)
 	})
 
-	s.app.Get("/cookies", func(c *fiber.Ctx) error {
+	s.app.Get("/cookies", func(c fiber.Ctx) error {
 		c.Cookie(&fiber.Cookie{Name: "lang", Value: "en"})
 		c.Cookie(&fiber.Cookie{Name: "theme", Value: "dark"})
 		return c.SendStatus(200)
@@ -119,7 +119,7 @@ func (s *ResponseHTTPTestSuite) TearDownTest() {
 	// No cleanup needed - SetupTest resets state
 }
 
-// TestStatus - tests the Status function
+// TestStatus - tests the Status function.
 func (s *ResponseHTTPTestSuite) Test_Assertion_Status() {
 	for _, code := range s.statusCodes {
 		path := fmt.Sprintf("/%d", code)
@@ -381,7 +381,7 @@ func (s *ResponseHTTPTestSuite) Test_Assertion_IsImage() {
 	s.True(true, "no chain errors raised")
 }
 
-// TestAssetSuite runs the test suite
+// TestAssetSuite runs the test suite.
 func TestResponseHTTPTestSuite(t *testing.T) {
 	suite.Run(t, new(ResponseHTTPTestSuite))
 }

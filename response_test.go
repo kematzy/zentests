@@ -17,7 +17,7 @@ import (
 // TestResponse_Body tests the Body() method for lazy loading and caching.
 func TestResponse_Body(t *testing.T) {
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Hello, World!")
 	})
 
@@ -48,7 +48,7 @@ func TestResponse_Body(t *testing.T) {
 // TestResponse_BodyString tests the BodyString() method.
 func TestResponse_BodyString(t *testing.T) {
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Test Body Content")
 	})
 
@@ -71,7 +71,7 @@ func TestResponse_BodyString(t *testing.T) {
 // TestResponse_Dump tests the Dump() method for formatted output.
 func TestResponse_Dump(t *testing.T) {
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		c.Set("Content-Type", "text/plain")
 		c.Status(200)
 		return c.SendString("Dump Test Body")
@@ -101,7 +101,7 @@ func TestResponse_Dump(t *testing.T) {
 // TestResponse_Dump_WithJSON tests Dump() when JSON has been parsed.
 func TestResponse_Dump_WithJSON(t *testing.T) {
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"key": "value"})
 	})
 
@@ -128,7 +128,7 @@ func TestResponse_Dump_WithJSON(t *testing.T) {
 // TestResponse_Body_MultipleCalls tests that Body() handles multiple calls correctly.
 func TestResponse_Body_MultipleCalls(t *testing.T) {
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Single Read Test")
 	})
 
@@ -154,7 +154,7 @@ func TestResponse_Body_MultipleCalls(t *testing.T) {
 // TestResponse_EmptyBody tests handling of empty response body.
 func TestResponse_EmptyBody(t *testing.T) {
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendStatus(204) // No content
 	})
 
@@ -180,7 +180,7 @@ func TestResponse_LargeBody(t *testing.T) {
 	largeContent := bytes.Repeat([]byte("Large content. "), 1000)
 
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.Send(largeContent)
 	})
 
@@ -204,7 +204,7 @@ func TestResponse_LargeBody(t *testing.T) {
 // TestResponse_BodyWithParsedJSON tests that Body() works correctly after JSON parsing.
 func TestResponse_BodyWithParsedJSON(t *testing.T) {
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"message": "hello"})
 	})
 
@@ -234,7 +234,7 @@ func TestResponse_BodyWithParsedJSON(t *testing.T) {
 // TestResponse_DumpWithCustomHeaders tests Dump() with custom headers.
 func TestResponse_DumpWithCustomHeaders(t *testing.T) {
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		c.Set("X-Custom-Header", "custom-value")
 		c.Set("X-Request-ID", "12345")
 		return c.SendString("Custom Headers Test")
@@ -261,7 +261,7 @@ func TestResponse_DumpWithCustomHeaders(t *testing.T) {
 // TestResponse_StructFields tests that Response struct fields are properly accessible.
 func TestResponse_StructFields(t *testing.T) {
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		c.Set("X-Test", "test-value")
 		return c.SendStatus(201)
 	})
@@ -292,7 +292,7 @@ func TestResponse_StructFields(t *testing.T) {
 // TestResponse_BodyReadFlag tests the bodyRead flag behavior.
 func TestResponse_BodyReadFlag(t *testing.T) {
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Flag Test")
 	})
 
@@ -340,7 +340,7 @@ func TestResponse_WithHTTPResponse(t *testing.T) {
 // TestResponse_DumpFormatting tests the exact formatting of Dump() output.
 func TestResponse_DumpFormatting(t *testing.T) {
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		c.Set("Content-Type", "application/json")
 		return c.JSON(fiber.Map{"test": "data"})
 	})
@@ -370,7 +370,7 @@ func TestResponse_DumpFormatting(t *testing.T) {
 // TestResponse_BodyAfterBodyString tests that Body() returns same data after BodyString().
 func TestResponse_BodyAfterBodyString(t *testing.T) {
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Body After String Test")
 	})
 
@@ -399,7 +399,7 @@ func TestResponse_BodyAfterBodyString(t *testing.T) {
 // This covers the branch in Debug() that prints formatted JSON (lines 96-99).
 func TestResponse_Debug_WithParsedJSON(t *testing.T) {
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"test": "debug_json"})
 	})
 

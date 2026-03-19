@@ -10,39 +10,41 @@ import (
 func setupTestApp() *fiber.App {
 	app := fiber.New()
 
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("GET response")
 	})
 
-	app.Post("/test", func(c *fiber.Ctx) error {
+	app.Post("/test", func(c fiber.Ctx) error {
 		// body, _ := io.ReadAll(c.Body())
 		body := c.Body()
 		// Fix: c.Body() returns []byte, not io.Reader
 		return c.SendString("POST: " + string(body))
 	})
 
-	app.Post("/json", func(c *fiber.Ctx) error {
+	app.Post("/json", func(c fiber.Ctx) error {
 		var data map[string]any
-		c.BodyParser(&data)
+		if err := c.Bind().Body(&data); err != nil {
+			return err
+		}
 		return c.JSON(fiber.Map{"received": data})
 	})
 
-	app.Post("/form", func(c *fiber.Ctx) error {
+	app.Post("/form", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"name": c.FormValue("name"),
 			"age":  c.FormValue("age"),
 		})
 	})
 
-	app.Put("/test", func(c *fiber.Ctx) error {
+	app.Put("/test", func(c fiber.Ctx) error {
 		return c.SendStatus(200)
 	})
 
-	app.Patch("/test", func(c *fiber.Ctx) error {
+	app.Patch("/test", func(c fiber.Ctx) error {
 		return c.SendStatus(200)
 	})
 
-	app.Delete("/test", func(c *fiber.Ctx) error {
+	app.Delete("/test", func(c fiber.Ctx) error {
 		return c.SendStatus(204)
 	})
 
@@ -102,7 +104,7 @@ func TestPut(t *testing.T) {
 
 func TestPutJSON(t *testing.T) {
 	app := fiber.New()
-	app.Put("/test", func(c *fiber.Ctx) error {
+	app.Put("/test", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"method": "PUT"})
 	})
 
@@ -122,7 +124,7 @@ func TestPatch(t *testing.T) {
 
 func TestPatchJSON(t *testing.T) {
 	app := fiber.New()
-	app.Patch("/test", func(c *fiber.Ctx) error {
+	app.Patch("/test", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"method": "PATCH"})
 	})
 
@@ -142,7 +144,7 @@ func TestDelete(t *testing.T) {
 
 func TestDeleteJSON(t *testing.T) {
 	app := fiber.New()
-	app.Delete("/test", func(c *fiber.Ctx) error {
+	app.Delete("/test", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"method": "DELETE"})
 	})
 

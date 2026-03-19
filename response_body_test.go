@@ -9,13 +9,13 @@ import (
 
 func setupBodyApp() *fiber.App {
 	app := fiber.New()
-	app.Get("/text", func(c *fiber.Ctx) error {
+	app.Get("/text", func(c fiber.Ctx) error {
 		return c.SendString("Hello World")
 	})
-	app.Get("/html", func(c *fiber.Ctx) error {
+	app.Get("/html", func(c fiber.Ctx) error {
 		return c.SendString("<h1>Title</h1><p>Paragraph</p>")
 	})
-	app.Get("/empty", func(c *fiber.Ctx) error {
+	app.Get("/empty", func(c fiber.Ctx) error {
 		return c.SendStatus(204)
 	})
 	return app

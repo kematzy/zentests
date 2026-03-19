@@ -34,12 +34,12 @@ func setupApp() *fiber.App {
 	app := fiber.New()
 
 	// Health check endpoint - returns simple status
-	app.Get("/api/health", func(c *fiber.Ctx) error {
+	app.Get("/api/health", func(c fiber.Ctx) error {
 		return c.JSON(map[string]string{"status": "ok"})
 	})
 
 	// User creation endpoint - parses JSON body and returns created user with ID
-	app.Post("/api/users", func(c *fiber.Ctx) error {
+	app.Post("/api/users", func(c fiber.Ctx) error {
 		var user User
 		if err := c.BodyParser(&user); err != nil {
 			return err

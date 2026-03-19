@@ -10,7 +10,7 @@ import (
 func setupJSONApp() *fiber.App {
 	app := fiber.New()
 
-	app.Get("/simple", func(c *fiber.Ctx) error {
+	app.Get("/simple", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"name":   "John",
 			"age":    30,
@@ -19,7 +19,7 @@ func setupJSONApp() *fiber.App {
 		})
 	})
 
-	app.Get("/nested", func(c *fiber.Ctx) error {
+	app.Get("/nested", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"user": fiber.Map{
 				"profile": fiber.Map{
@@ -30,7 +30,7 @@ func setupJSONApp() *fiber.App {
 		})
 	})
 
-	app.Get("/array", func(c *fiber.Ctx) error {
+	app.Get("/array", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"items": []any{
 				fiber.Map{"id": 1, "name": "first"},
@@ -40,7 +40,7 @@ func setupJSONApp() *fiber.App {
 		})
 	})
 
-	app.Get("/mixed", func(c *fiber.Ctx) error {
+	app.Get("/mixed", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"data": fiber.Map{
 				"users": []any{
@@ -50,14 +50,14 @@ func setupJSONApp() *fiber.App {
 		})
 	})
 
-	app.Get("/nulls", func(c *fiber.Ctx) error {
+	app.Get("/nulls", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"value":   nil,
 			"notnull": "something",
 		})
 	})
 
-	app.Get("/regex", func(c *fiber.Ctx) error {
+	app.Get("/regex", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"email": "user@example.com",
 			"phone": "+1-555-123-4567",
@@ -201,7 +201,7 @@ func TestHasInt_NonNumeric(t *testing.T) {
 	t.Skip("Skipping: This test documents error handling behavior. HasInt calls t.Errorf for non-numeric types (line 108-109).")
 
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"name": "John"})
 	})
 
@@ -222,7 +222,7 @@ func TestHasFloat_NonNumeric(t *testing.T) {
 	t.Skip("Skipping: This test documents error handling behavior. HasFloat calls t.Errorf for non-numeric types (line 140-141).")
 
 	app := fiber.New()
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"name": "John"})
 	})
 

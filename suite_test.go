@@ -38,7 +38,7 @@ func TestSuiteWithHTTP(t *testing.T) {
 
 		ctx.BeforeEach(func(zt *T) { //nolint:revive
 			app = fiber.New()
-			app.Get("/test", func(c *fiber.Ctx) error {
+			app.Get("/test", func(c fiber.Ctx) error {
 				return c.JSON(fiber.Map{"status": "ok"})
 			})
 		})

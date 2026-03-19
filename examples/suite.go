@@ -29,7 +29,7 @@ import (
 //   - POST /api/users: Creates new user
 func SetupRoutes(app *fiber.App) *fiber.App {
 	// Simple endpoint returning basic user data
-	app.Get("/simple", func(c *fiber.Ctx) error {
+	app.Get("/simple", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"name":   "John",
 			"age":    30,
@@ -39,7 +39,7 @@ func SetupRoutes(app *fiber.App) *fiber.App {
 	})
 
 	// Users list endpoint with nested data structure
-	app.Get("/api/users", func(c *fiber.Ctx) error {
+	app.Get("/api/users", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"success": true,
 			"data": []interface{}{
@@ -50,7 +50,7 @@ func SetupRoutes(app *fiber.App) *fiber.App {
 	})
 
 	// Single user endpoint that returns 404 for any ID
-	app.Get("/api/users/:id", func(c *fiber.Ctx) error {
+	app.Get("/api/users/:id", func(c fiber.Ctx) error {
 		c.SendStatus(404)
 		return c.JSON(fiber.Map{
 			"success": false,

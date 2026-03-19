@@ -34,7 +34,7 @@ func TestAPI(t *testing.T) {
 	app := fiber.New()
 
 	// Setup route returning nested JSON structure with array
-	app.Get("/api/users", func(c *fiber.Ctx) error {
+	app.Get("/api/users", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"success": true,
 			"data": fiber.Map{
