@@ -48,40 +48,40 @@ jobs:
                   echo "go.mod and go.sum are tidy!"
 
             # Lint steps
-            # - name: Run gofmt
-            #   run: |
-            #       echo "Checking formatting..."
-            #       GOFMT_OUTPUT=$(gofmt -l .)
-            #       if [ -n "$GOFMT_OUTPUT" ]; then
-            #         echo "The following files need formatting:"
-            #         echo "$GOFMT_OUTPUT"
-            #         exit 1
-            #       fi
-            #       echo "All files are properly formatted!"
+            - name: Run gofmt
+              run: |
+                  echo "Checking formatting..."
+                  GOFMT_OUTPUT=$(gofmt -l .)
+                  if [ -n "$GOFMT_OUTPUT" ]; then
+                    echo "The following files need formatting:"
+                    echo "$GOFMT_OUTPUT"
+                    exit 1
+                  fi
+                  echo "All files are properly formatted!"
 
-            # - name: Run go vet
-            #   run: go vet ./...
+            - name: Run go vet
+              run: go vet ./...
 
-            # - name: Run goimports
-            #   run: |
-            #       # Check if goimports is available, if not install it
-            #       if ! command -v goimports &> /dev/null; then
-            #         go install golang.org/x/tools/cmd/goimports@latest
-            #       fi
-            #       echo "Checking imports..."
-            #       GOIMPORTS_OUTPUT=$(goimports -l .)
-            #       if [ -n "$GOIMPORTS_OUTPUT" ]; then
-            #         echo "The following files need import formatting:"
-            #         echo "$GOIMPORTS_OUTPUT"
-            #         exit 1
-            #       fi
-            #       echo "All imports are properly formatted!"
+            - name: Run goimports
+              run: |
+                  # Check if goimports is available, if not install it
+                  if ! command -v goimports &> /dev/null; then
+                    go install golang.org/x/tools/cmd/goimports@latest
+                  fi
+                  echo "Checking imports..."
+                  GOIMPORTS_OUTPUT=$(goimports -l .)
+                  if [ -n "$GOIMPORTS_OUTPUT" ]; then
+                    echo "The following files need import formatting:"
+                    echo "$GOIMPORTS_OUTPUT"
+                    exit 1
+                  fi
+                  echo "All imports are properly formatted!"
 
-            # - name: Run golangci-lint
-            #   uses: golangci/golangci-lint-action@v6
-            #   with:
-            #       version: latest
-            #       args: --timeout=5m
+            - name: Run golangci-lint
+              uses: golangci/golangci-lint-action@v7
+              with:
+                  version: v2
+                  args: --timeout=5m
 
             # Test steps
             - name: Run tests with race detector
