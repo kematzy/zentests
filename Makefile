@@ -77,7 +77,7 @@ modernize-check:
 
 ## test: Run all tests
 test:
-	@gotest ./...
+	@go test ./...
 
 ## test-verbose: Run all tests with verbose colored output
 test-verbose:
