@@ -191,11 +191,16 @@ func (r *Response) MatchesRegex(path, pattern string) *Response {
 	actual, exists := getNestedValue(r.parsedJSON, path)
 	assert.True(r.t, exists, "JSON key %q not found", path)
 
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		assert.Fail(r.t, "invalid regex pattern: %v", err)
+		return r
+	}
+
 	str, ok := actual.(string)
 	assert.True(r.t, ok, "expected string value for key %q to match regex, got %T", path, actual)
 
-	matched, err := regexp.MatchString(pattern, str)
-	assert.NoError(r.t, err, "invalid regex pattern")
+	matched := re.MatchString(str)
 	assert.True(r.t, matched, "value %q should match pattern %q for key %s", str, pattern, path)
 	return r
 }

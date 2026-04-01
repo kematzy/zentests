@@ -53,8 +53,12 @@ func (r *Response) NotContains(substring string) *Response {
 //
 //	zt.Get(app, "/users/1").BodyMatches(`User ID: \d+`)
 func (r *Response) BodyMatches(pattern string) *Response {
-	matched, err := regexp.MatchString(pattern, r.BodyString())
-	assert.NoError(r.t, err, "invalid regex pattern")
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		assert.Fail(r.t, "invalid regex pattern: %v", err)
+		return r
+	}
+	matched := re.MatchString(r.BodyString())
 	assert.True(r.t, matched, "body should match pattern %q", pattern)
 	return r
 }
