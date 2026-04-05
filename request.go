@@ -35,6 +35,10 @@ import (
 //	// Internal usage only - use Get(), Post(), etc. instead
 //	resp := execute(t, app, "GET", "/users", nil, nil)
 func execute(t *testing.T, app *fiber.App, method, path string, body io.Reader, headers map[string]string, cfg ...fiber.TestConfig) *Response {
+	if app == nil {
+		assert.Fail(t, "app cannot be nil")
+		return &Response{t: t}
+	}
 	req := httptest.NewRequest(method, path, body)
 	for k, v := range headers {
 		req.Header.Set(k, v)

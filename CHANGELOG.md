@@ -1,3 +1,37 @@
+## [0.3.0] - 2026-04-05
+
+### 🚀 Features
+
+- Add Logger, MockLogger & DefaultLoggger
+- Add Fiber helpers HasRoute(), NotHasRoute(), NewApp()
+- Add DB GORM test helpers
+
+### 🐛 Bug Fixes
+
+- Updated 'make release' command
+- Fix typos & add test-watch
+- Removed TODO
+- Typo
+
+### 🚜 Refactor
+
+- Security improvements
+
+### 📚 Documentation
+
+- Additions to README.md file
+
+### 🧪 Testing
+
+- Logger, MockLogger & DefaultLogger tests
+- Fiber helpers HasRoute(), NotHasRoute() & NewApp() tests
+- DB GORM helpers tests
+
+### ⚙️ Miscellaneous Tasks
+
+- Go mod tidy (gorm packages)
+- Updated code-coverage.html
+- Spellchecker configs
 ## [0.2.0] - 2026-03-19
 
 ### 🚀 Features
@@ -55,7 +89,6 @@
 - Docs update
 - Updated make test-verbose output
 - Updated .gitignore
-
 ## [0.1.0] - 2026-02-19
 
 ### 💼 Other

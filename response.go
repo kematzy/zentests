@@ -48,6 +48,9 @@ type Response struct {
 //	body := resp.Body()
 //	fmt.Println(string(body))
 func (r *Response) Body() []byte {
+	if r.resp == nil {
+		return []byte{}
+	}
 	if !r.bodyRead {
 		var err error
 		r.body, err = io.ReadAll(r.resp.Body)
@@ -91,7 +94,7 @@ func (r *Response) Debug() *Response {
 	fmt.Println("=== ZENTESTS DEBUG ===")
 	fmt.Println("")
 	fmt.Printf("Status: %d\n", r.StatusCode)
-	fmt.Printf("Headers: %v\n", r.Header)
+	fmt.Printf("Headers: %v\n", sanitizeHeaders(r.Header))
 	fmt.Printf("Body: %s\n", r.BodyString())
 
 	if r.parsedJSON != nil {
@@ -119,5 +122,33 @@ func (r *Response) Debug() *Response {
 //	t.Logf("Response details: %s", details)
 func (r *Response) Dump() string {
 	return fmt.Sprintf("Status: %d\nHeaders: %v\nBody: %s",
-		r.StatusCode, r.Header, r.BodyString())
+		r.StatusCode, sanitizeHeaders(r.Header), r.BodyString())
+}
+
+var sensitiveHeaders = map[string]bool{
+	"Authorization":    true,
+	"Cookie":           true,
+	"Set-Cookie":       true,
+	"X-Api-Key":        true,
+	"X-Auth-Token":     true,
+	"X-Access-Token":   true,
+	"X-Refresh-Token":  true,
+	"X-Session-Id":     true,
+	"X-Csrf-Token":     true,
+	"X-Requested-With": true,
+}
+
+func sanitizeHeaders(header http.Header) http.Header {
+	if header == nil {
+		return nil
+	}
+	sanitized := make(http.Header)
+	for k, v := range header {
+		if sensitiveHeaders[k] {
+			sanitized[k] = []string{"[REDACTED]"}
+		} else {
+			sanitized[k] = v
+		}
+	}
+	return sanitized
 }
