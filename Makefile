@@ -32,7 +32,7 @@ endef
 .DEFAULT_GOAL := help
 
 # non-file targets (commands)
-.PHONY: help test test-verbose test-coverage fmt vet lint tidy check release changelog git-push gitea-push github-push docs docs-md modernize modernize-check
+.PHONY: help test test-verbose test-coverage test-watch fmt vet lint tidy check release changelog git-push gitea-push github-push docs docs-md modernize modernize-check
 
 ## help: Show this help message
 help:
@@ -77,14 +77,12 @@ modernize-check:
 
 ## test: Run all tests
 test:
-	@gotest ./...
+	@go test ./...
 
 ## test-verbose: Run all tests with verbose colored output
 test-verbose:
 	@echo ""
 	@gotestsum --format testname
-
-# @gotest -v ./...
 
 ## test-coverage: Run tests and generate coverage report
 test-coverage:
@@ -92,6 +90,9 @@ test-coverage:
 	@go tool cover -html=.code-status/coverage.out -o code-coverage.html
 	@echo -e "\033[32mCoverage report generated: code-coverage.html \033[0m"
 
+## test-watch: Run tests automatically on saves
+test-watch:
+	@gotestsum --watch --format dots --watch-clear
 
 #======================================================================================================================
 # RELEASE
@@ -105,7 +106,7 @@ check: fmt vet lint check-test-coverage
 ## check-test-coverage: Run tests and enforce coverage threshold (default: 90%)
 check-test-coverage:
 	@go test -coverprofile=.code-status/coverage.out ./...
-	@go tool cover -func=coverage.out | tail -1 | awk '{print $$3}' | \
+	@go tool cover -func=.code-status/coverage.out | tail -1 | awk '{print $$3}' | \
 	  tr -d '%' | awk -v threshold=${COVERAGE_MIN} \
 	  '{ if ($$1 < threshold) \
 	       { print "FAIL: Coverage " $$1 "% is below threshold " threshold "%"; exit 1 } \
