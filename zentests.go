@@ -73,13 +73,14 @@ func New(t *testing.T) *T {
 // Returns:
 //   - *T: The receiver for method chaining
 //
-// TODO: Add nil check for app parameter to prevent panics
-//
 // Example:
 //
 //	zt := zentests.New(t).Use(app)
 //	zt.Get("/users").OK()
 func (zt *T) Use(app *fiber.App) *T {
+	if app == nil {
+		zt.Fatal("Use called with nil app")
+	}
 	zt.app = app
 	return zt
 }
