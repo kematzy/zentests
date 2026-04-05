@@ -19,6 +19,11 @@
     "topo",
     "coverprofile",
     "GOFMT",
-    "goimports"
+    "goimports",
+    "gorm",
+    "gotestsum",
+    "testname",
+    "Warnf",
+    "Debugf"
   ]
 }
