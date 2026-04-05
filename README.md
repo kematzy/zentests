@@ -15,6 +15,10 @@ Readable Go tests without magic. Inspired by RSpec/Pest
 - **Fiber-native**: Built for Fiber, not adapted from net/http
 - **Chainable**: Readable, expressive test code
 - **Familiar**: RSpec/Pest-inspired syntax
+- **Logger testing**: `Logger` interface + `MockLogger` for injection-friendly log assertions
+- **Route assertions**: `HasRoute`/`NotHasRoute` verify registrations without HTTP round-trips
+- **App helpers**: `NewApp` with auto-cleanup and optional `fiber.Config`
+- **GORM helpers**: one-line in-memory DB setup, reset, and generic record creation
 - **Well-tested**: 98.2% code coverage
 
 ### Why only Fiber support?
@@ -71,14 +75,17 @@ import (
 
 func TestAPI(t *testing.T) {
     zt := zentests.New(t)
-    app := fiber.New()
-    
+    app := zentests.NewApp(t) // auto-shutdown via t.Cleanup
+
     // Your routes here...
     // Note: Fiber v3 uses fiber.Ctx (interface), not *fiber.Ctx (pointer)
     app.Get("/api/health", func(c fiber.Ctx) error {
         return c.JSON(fiber.Map{"status": "ok"})
     })
-    
+
+    // Verify routes are registered (no HTTP request needed)
+    zt.HasRoute("GET", "/api/health", app)
+
     // Fluent, chainable assertions
     zt.Get(app, "/api/health").
         OK().
@@ -309,6 +316,162 @@ resp.Matches(map[string]any{
 
 ```
 
+### Route Assertions
+
+Verify that routes are (or are not) registered without making an HTTP request.
+Both methods are chainable and return `*T`.
+
+```go
+zt := zentests.New(t)
+
+// assert routes are registered
+zt.HasRoute("GET",    "/users",     app).
+   HasRoute("POST",   "/users",     app).
+   HasRoute("DELETE", "/users/:id", app, "delete route must exist")
+
+// assert routes are absent
+zt.NotHasRoute("DELETE", "/users",  app, "bulk delete must not be exposed").
+   NotHasRoute("PATCH",  "/admin",  app)
+```
+
+Method matching is case-insensitive (`"get"`, `"Get"`, and `"GET"` all work).
+Path matching is exact against the registered route path — `/users/:id` matches
+the registration, not a concrete request path like `/users/42`.
+
+### App Helpers
+
+#### `NewApp(t, ...fiber.Config)`
+
+Creates a fresh Fiber app with automatic shutdown registered via `t.Cleanup`.
+The app is always stopped when the test finishes, whether it passes or fails —
+no `defer app.Shutdown()` required.
+
+```go
+// zero-config — plain Fiber defaults
+func (s *MySuite) SetupTest() {
+    s.app = zentests.NewApp(s.T())
+    s.app.Get("/ping", handler)
+    s.zt = zentests.New(s.T())
+}
+
+// with views engine — same automatic cleanup, full Fiber config
+func (s *MySuite) SetupTest() {
+    engine := html.New("./views", ".html")
+    // register any custom view helpers here
+
+    s.app = zentests.NewApp(s.T(), fiber.Config{
+        Views:             engine,
+        AppName:           "MyApp",
+        PassLocalsToViews: true,
+    })
+}
+```
+
+The variadic config parameter means the zero-config form `NewApp(t)` is
+unchanged — the optional `fiber.Config` is only provided when needed.
+
+### GORM Database Helpers
+
+`zentests` provides a set of opinionated GORM helpers that reduce database test
+setup to single lines. They use an in-memory SQLite database — no files, no
+external services, no state leaking between tests.
+
+**Requirements:** CGO must be enabled (required by the SQLite driver).
+
+#### Database setup
+
+```go
+// Open an empty in-memory DB — auto-closed via t.Cleanup
+db := zentests.SetupTestDB(t)
+
+// Open + AutoMigrate in one call (most common)
+db := zentests.SetupTestDBWithModels(t, &User{}, &Post{})
+
+// Migrate additional models onto an existing connection
+zentests.DBMigrate(t, db, &Comment{})
+```
+
+#### Resetting between tests
+
+```go
+// Delete all rows from every table; preserve schema and reset sequences.
+// Use in SetupTest() when a suite shares one DB across tests.
+func (s *MySuite) SetupTest() {
+    zentests.DBReset(s.T(), s.db)
+}
+```
+
+#### Creating records
+
+```go
+// Insert one record — returns the same pointer with ID and timestamps filled.
+user := zentests.DBCreate(t, db, &User{Name: "Alice", Email: "alice@example.com"})
+s.NotZero(user.ID)
+
+// Insert N records via a 1-based factory function.
+// Index i goes 1, 2, … count — no i+1 offset needed.
+users := zentests.DBCreateN(t, db, 5, func(i int) User {
+    return User{Email: fmt.Sprintf("user%d@example.com", i)}
+})
+// → user1@example.com … user5@example.com
+s.Len(users, 5)
+```
+
+#### Explicit close (rarely needed)
+
+```go
+// t.Cleanup closes the connection automatically after every test.
+// Use CloseTestDB only when you need to close mid-test.
+zentests.CloseTestDB(t, db)
+```
+
+#### Full suite pattern
+
+```go
+type UserSuite struct {
+    suite.Suite
+    db *gorm.DB
+    zt *zentests.T
+}
+
+func (s *UserSuite) SetupSuite() {
+    // Migrate once for all tests in the suite.
+    s.db = zentests.SetupTestDBWithModels(s.T(), &User{}, &Post{})
+    s.zt = zentests.New(s.T())
+}
+
+func (s *UserSuite) SetupTest() {
+    // Clear data before each test; schema stays intact.
+    zentests.DBReset(s.T(), s.db)
+}
+
+func (s *UserSuite) Test_ListUsers() {
+    zentests.DBCreateN(s.T(), s.db, 3, func(i int) User {
+        return User{Name: fmt.Sprintf("User %d", i)}
+    })
+
+    // wire the DB into a Fiber handler, then test via HTTP...
+    app := zentests.NewApp(s.T())
+    app.Get("/users", func(c fiber.Ctx) error {
+        var users []User
+        s.db.Find(&users)
+        return c.JSON(users)
+    })
+
+    s.zt.Get(app, "/users").OK().IsJSON().ArrayLength("", 3)
+}
+```
+
+| Function | Signature | Purpose |
+|---|---|---|
+| `SetupTestDB` | `(t) *gorm.DB` | In-memory SQLite, silent logger, auto-close |
+| `SetupTestDBWithModels` | `(t, ...any) *gorm.DB` | Above + `AutoMigrate` in one call |
+| `DBMigrate` | `(t, db, ...any)` | `AutoMigrate` on an existing connection |
+| `DBReset` | `(t, db)` | `DELETE` all rows, reset sequences, keep schema |
+| `CloseTestDB` | `(t, db)` | Explicit close for mid-test control |
+| `DBCreate[T]` | `(t, db, *T) *T` | Insert one record, return with ID populated |
+| `DBCreateN[T]` | `(t, db, int, func(int) T) []*T` | Insert N records via 1-based factory |
+
 ### BDD Style with Describe/It
 
 ```go
@@ -452,22 +615,28 @@ TearDownSuite()        ← Runs once after all tests
 
 ### Database Integration
 
+Using the GORM helpers, database suites need no manual teardown:
+
 ```go
 type DatabaseSuite struct {
     suite.Suite
     app *fiber.App
     zt  *zentests.T
-    db  *sql.DB  // or *gorm.DB
+    db  *gorm.DB
 }
 
 func (s *DatabaseSuite) SetupSuite() {
-    // Connect to test database
-    s.db, _ = sql.Open("sqlite3", ":memory:")
-
-    s.app = fiber.New()
+    // One DB for the whole suite — auto-closed via t.Cleanup.
+    s.db = zentests.SetupTestDBWithModels(s.T(), &User{})
     s.zt = zentests.New(s.T())
+}
 
-    // Setup routes that use database
+func (s *DatabaseSuite) SetupTest() {
+    // Wipe all rows before each test; keep the schema.
+    zentests.DBReset(s.T(), s.db)
+
+    // Fresh app wired to the shared DB — auto-shutdown via t.Cleanup.
+    s.app = zentests.NewApp(s.T())
     s.app.Get("/users", func(c fiber.Ctx) error {
         var users []User
         s.db.Find(&users)
@@ -475,13 +644,17 @@ func (s *DatabaseSuite) SetupSuite() {
     })
 }
 
-func (s *DatabaseSuite) SetupTest() {
-    // Clean database before each test
-    s.db.Exec("DELETE FROM users")
+// No TearDownSuite needed — t.Cleanup handles DB close and app shutdown.
+
+func (s *DatabaseSuite) Test_ListUsers_Empty() {
+    s.zt.Get(s.app, "/users").OK().IsJSON()
 }
 
-func (s *DatabaseSuite) TearDownSuite() {
-    s.db.Close()
+func (s *DatabaseSuite) Test_ListUsers_WithRecords() {
+    zentests.DBCreateN(s.T(), s.db, 3, func(i int) User {
+        return User{Name: fmt.Sprintf("User %d", i)}
+    })
+    s.zt.Get(s.app, "/users").OK().IsJSON().ArrayLength("", 3)
 }
 ```
 
@@ -526,6 +699,68 @@ func (s *SlowAPISuite) TestSlowEndpoint() {
     }).OK()
 }
 ```
+
+### Logger Testing
+
+#### `Logger` interface
+
+`zentests` exports a `Logger` interface with three methods:
+
+```go
+type Logger interface {
+    Debugf(format string, v ...any)
+    Warnf(format string, v ...any)
+    Fatalf(format string, v ...any)
+}
+```
+
+Declare this type in your own code wherever you need injectable logging:
+
+```go
+type MyService struct {
+    log zentests.Logger
+}
+```
+
+#### `DefaultLogger`
+
+A production-ready implementation that writes to stderr with level prefixes
+(`DEBUG:`, `WARN:`, `FATAL:`). `Fatalf` calls `os.Exit(1)` after logging.
+
+```go
+var logger zentests.Logger = zentests.DefaultLogger{}
+logger.Warnf("retrying in %d seconds", 5)
+```
+
+#### `MockLogger`
+
+A test double that captures every call without producing any output and without
+calling `os.Exit`. Inject `*MockLogger` into the code under test, then inspect
+its exported fields:
+
+```go
+func (s *MySuite) Test_Warns_On_Missing_Config() {
+    ml := &zentests.MockLogger{}
+    svc := NewMyService(ml)
+
+    svc.Start() // triggers Warnf internally
+
+    s.True(ml.WarnCalled)
+    s.Equal("config not found", ml.WarnMsg)
+}
+```
+
+| Field | Type | Set by |
+|---|---|---|
+| `DebugCalled` | `bool` | `Debugf` |
+| `WarnCalled` | `bool` | `Warnf` |
+| `FatalCalled` | `bool` | `Fatalf` |
+| `DebugMsg` | `string` | `Debugf` — last formatted message |
+| `WarnMsg` | `string` | `Warnf` — last formatted message |
+| `FatalMsg` | `string` | `Fatalf` — last formatted message |
+
+`Fatalf` on `MockLogger` records the call and returns — it does **not** call
+`os.Exit`, making fatal-path tests safe.
 
 ### Choosing Between zentests.Describe and testify/suite
 
