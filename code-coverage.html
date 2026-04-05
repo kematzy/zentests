@@ -55,19 +55,25 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/kematzy/zentests/request.go (100.0%)</option>
+				<option value="file0">github.com/kematzy/zentests/db_gorm.go (100.0%)</option>
 				
-				<option value="file1">github.com/kematzy/zentests/response.go (100.0%)</option>
+				<option value="file1">github.com/kematzy/zentests/fiber.go (100.0%)</option>
 				
-				<option value="file2">github.com/kematzy/zentests/response_body.go (100.0%)</option>
+				<option value="file2">github.com/kematzy/zentests/logger.go (92.9%)</option>
 				
-				<option value="file3">github.com/kematzy/zentests/response_http.go (100.0%)</option>
+				<option value="file3">github.com/kematzy/zentests/request.go (100.0%)</option>
 				
-				<option value="file4">github.com/kematzy/zentests/response_json.go (95.5%)</option>
+				<option value="file4">github.com/kematzy/zentests/response.go (100.0%)</option>
 				
-				<option value="file5">github.com/kematzy/zentests/suite.go (100.0%)</option>
+				<option value="file5">github.com/kematzy/zentests/response_body.go (100.0%)</option>
 				
-				<option value="file6">github.com/kematzy/zentests/zentests.go (100.0%)</option>
+				<option value="file6">github.com/kematzy/zentests/response_http.go (100.0%)</option>
+				
+				<option value="file7">github.com/kematzy/zentests/response_json.go (95.5%)</option>
+				
+				<option value="file8">github.com/kematzy/zentests/suite.go (100.0%)</option>
+				
+				<option value="file9">github.com/kematzy/zentests/zentests.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -82,6 +88,519 @@
 		<div id="content">
 		
 		<pre class="file" id="file0" style="display: none">package zentests
+
+import (
+        "testing"
+        "time"
+
+        "github.com/stretchr/testify/require"
+        "gorm.io/driver/sqlite"
+        "gorm.io/gorm"
+        "gorm.io/gorm/logger"
+)
+
+// SetupTestDB opens a fresh in-memory SQLite database configured for testing.
+// The database uses silent logging to suppress GORM output during tests, and
+// local time for all timestamp operations.
+//
+// The connection is automatically closed when the test finishes via [testing.T.Cleanup],
+// so no explicit teardown is required in the common case. Use [CloseTestDB] only when
+// you need to close the connection before the test ends (e.g. to test reconnect behavior).
+//
+// Parameters:
+//   - t: The testing.T instance; marks this as a test helper and registers cleanup.
+//
+// Returns:
+//   - *gorm.DB: A connected, empty database. No tables are created — use
+//     [SetupTestDBWithModels] or [DBMigrate] to add schema.
+//
+// Example:
+//
+//        db := zentests.SetupTestDB(t)
+//        // db is connected; no tables yet
+//        zentests.DBMigrate(t, db, &amp;Post{})
+func SetupTestDB(t *testing.T) *gorm.DB <span class="cov8" title="1">{
+        t.Helper()
+
+        db, err := gorm.Open(sqlite.Open(":memory:"), &amp;gorm.Config{
+                NowFunc: func() time.Time </span><span class="cov8" title="1">{ return time.Now().Local() }</span>,
+                Logger:  logger.Default.LogMode(logger.Silent),
+        })
+        <span class="cov8" title="1">require.NoError(t, err, "SetupTestDB: failed to open in-memory SQLite")
+
+        t.Cleanup(func() </span><span class="cov8" title="1">{
+                sqlDB, err := db.DB()
+                if err == nil </span><span class="cov8" title="1">{
+                        _ = sqlDB.Close()
+                }</span>
+        })
+
+        <span class="cov8" title="1">return db</span>
+}
+
+// SetupTestDBWithModels opens an in-memory SQLite database and runs AutoMigrate
+// for every provided model in a single call. This is the most common entry point
+// for database tests — it replaces the three-line open/migrate/check sequence with
+// one line.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - models: One or more pointers to GORM model structs (e.g. &amp;User{}, &amp;Post{}).
+//
+// Returns:
+//   - *gorm.DB: A connected database with the requested tables created.
+//
+// Example — suite-level setup, data reset between tests:
+//
+//        func (s *MySuite) SetupSuite() {
+//            s.db = zentests.SetupTestDBWithModels(s.T(), &amp;User{}, &amp;Post{})
+//        }
+//
+//        func (s *MySuite) SetupTest() {
+//            zentests.DBReset(s.T(), s.db)
+//        }
+func SetupTestDBWithModels(t *testing.T, models ...any) *gorm.DB <span class="cov8" title="1">{
+        t.Helper()
+
+        db := SetupTestDB(t)
+        DBMigrate(t, db, models...)
+
+        return db
+}</span>
+
+// DBMigrate runs GORM AutoMigrate for the provided models on an existing database.
+// Use this when you have a DB from [SetupTestDB] and want to add or update tables
+// without recreating the connection.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB connection.
+//   - models: One or more pointers to GORM model structs.
+//
+// Example:
+//
+//        db := zentests.SetupTestDB(t)
+//        zentests.DBMigrate(t, db, &amp;User{}, &amp;Post{})
+func DBMigrate(t *testing.T, db *gorm.DB, models ...any) <span class="cov8" title="1">{
+        t.Helper()
+
+        require.NoError(t, db.AutoMigrate(models...), "DBMigrate: AutoMigrate failed")
+}</span>
+
+// DBReset deletes all rows from every table in the database and resets SQLite auto-increment
+// sequences, leaving the schema intact. This is faster than recreating the database and is
+// the right tool for [testing.T.SetupTest] hooks in suites that share a single
+// database connection across tests.
+//
+// NOTE: This function is SQLite-specific. The sequence reset step (sqlite_sequence) is a
+// no-op on other databases but the DELETE statements will still clear data correctly on
+// any GORM-supported driver.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB connection.
+//
+// Example:
+//
+//        func (s *MySuite) SetupTest() {
+//            zentests.DBReset(s.T(), s.db)
+//        }
+func DBReset(t *testing.T, db *gorm.DB) <span class="cov8" title="1">{
+        t.Helper()
+
+        tables, err := db.Migrator().GetTables()
+        require.NoError(t, err, "DBReset: could not list tables")
+
+        for _, table := range tables </span><span class="cov8" title="1">{
+                require.NoError(t,
+                        db.Exec("DELETE FROM "+table).Error, //nolint:gosec // table names come from the migrator, not user input
+                        "DBReset: failed to delete from table %s", table,
+                )
+        }</span>
+
+        // Reset SQLite auto-increment counters. This is a no-op if the
+        // sqlite_sequence table does not exist (i.e. no AUTOINCREMENT columns).
+        <span class="cov8" title="1">db.Exec("DELETE FROM sqlite_sequence")</span> //nolint:errcheck // intentionally best-effort
+}
+
+// CloseTestDB explicitly closes the underlying database connection.
+// In most tests this is not needed because [SetupTestDB] registers an automatic close via
+// [testing.T.Cleanup]. Use this only when you need to close the connection before the test ends
+// — for example, to verify reconnect behavior or to release a file-based SQLite lock mid-test.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB connection.
+//
+// Example:
+//
+//        db := zentests.SetupTestDB(t)
+//        // ... tests ...
+//        zentests.CloseTestDB(t, db) // close early; t.Cleanup will be a no-op
+func CloseTestDB(t *testing.T, db *gorm.DB) <span class="cov8" title="1">{
+        t.Helper()
+
+        sqlDB, err := db.DB()
+        require.NoError(t, err, "CloseTestDB: could not retrieve underlying sql.DB")
+        require.NoError(t, sqlDB.Close(), "CloseTestDB: close failed")
+}</span>
+
+// DBCreate saves a single record to the database and returns it with any auto-populated fields
+// (ID, CreatedAt, etc.) filled in. The test is failed immediately if the insert fails.
+//
+// Type parameter T must be a GORM model struct; pass a pointer to an initialized value.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB with the model's table already migrated.
+//   - record: Pointer to the record to insert.
+//
+// Returns:
+//   - *T: The same pointer, with auto-generated fields populated by GORM.
+//
+// Example:
+//
+//        user := zentests.DBCreate(t, db, &amp;User{Name: "Alice", Email: "alice@example.com"})
+//
+//        s.NotZero(user.ID)      // ID populated after save
+//        s.NotZero(user.CreatedAt)
+func DBCreate[T any](t *testing.T, db *gorm.DB, record *T) *T <span class="cov8" title="1">{
+        t.Helper()
+
+        require.NoError(t, db.Create(record).Error, "DBCreate: insert failed")
+
+        return record
+}</span>
+
+// DBCreateN creates count records by calling factory once per record with a 1-based index
+// (1, 2, … count). Each record is inserted and returned with auto-populated fields.
+// The test is failed immediately if any insert fails.
+//
+// The 1-based index means you can use i directly in format strings without the i+1 offset:
+//
+//        zentests.DBCreateN(t, db, 5, func(i int) User {
+//            return User{Email: fmt.Sprintf("user%d@example.com", i)} // user1, user2, ...
+//        })
+//
+// Type parameter T must be a GORM model struct (not a pointer — the factory returns values;
+// DBCreateN handles taking their address internally).
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB with the model's table already migrated.
+//   - count: Number of records to create (must be &gt; 0).
+//   - factory: Function called with i = 1..count; returns an initialized T value.
+//
+// Returns:
+//   - []*T: Slice of inserted record pointers, each with auto-generated fields.
+//
+// Example:
+//
+//        posts := zentests.DBCreateN(t, db, 3, func(i int) Post {
+//            return Post{Title: fmt.Sprintf("Post %d", i), Body: "content"}
+//        })
+//
+//        s.Len(posts, 3)
+//        s.Equal("Post 1", posts[0].Title)
+func DBCreateN[T any](t *testing.T, db *gorm.DB, count int, factory func(i int) T) []*T <span class="cov8" title="1">{
+        t.Helper()
+
+        records := make([]*T, count)
+
+        for i := range count </span><span class="cov8" title="1">{
+                v := factory(i + 1) // 1-based index
+                records[i] = DBCreate(t, db, &amp;v)
+        }</span>
+
+        <span class="cov8" title="1">return records</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package zentests
+
+import (
+        "fmt"
+        "strings"
+        "testing"
+
+        "github.com/gofiber/fiber/v3"
+        "github.com/stretchr/testify/assert"
+)
+
+// HasRoute asserts that a route with the given HTTP method and path is registered
+// in the Fiber app. The method is case-insensitive. Returns the receiver for chaining.
+//
+// This is useful in tests that verify route registration without making an actual
+// HTTP request — for example, when testing that a router setup function wires up
+// all expected endpoints.
+//
+// Parameters:
+//   - method: HTTP method to check (e.g. "GET", "POST"); case-insensitive
+//   - path: The exact route path as registered (e.g. "/users/:id")
+//   - app: The Fiber application to inspect
+//   - msgAndArgs: Optional failure message and format arguments (testify-style)
+//
+// Returns:
+//   - *T: The receiver for method chaining
+//
+// Example:
+//
+//        zt := zentests.New(t)
+//        zt.HasRoute("GET", "/users", app, "user list route must be registered")
+//        zt.HasRoute("POST", "/users", app).
+//            HasRoute("DELETE", "/users/:id", app)
+func (zt *T) HasRoute(method, path string, app *fiber.App, msgAndArgs ...any) *T <span class="cov8" title="1">{
+        zt.T.Helper()
+
+        found := hasRoute(app, method, path)
+        assert.True(zt.T, found, buildRouteMsg(method, path, msgAndArgs...))
+
+        return zt
+}</span>
+
+// NotHasRoute asserts that no route with the given HTTP method and path is registered
+// in the Fiber app. The complement of HasRoute. Returns the receiver for chaining.
+//
+// Parameters:
+//   - method: HTTP method to check; case-insensitive
+//   - path: The route path to verify is absent
+//   - app: The Fiber application to inspect
+//   - msgAndArgs: Optional failure message and format arguments
+//
+// Returns:
+//   - *T: The receiver for method chaining
+//
+// Example:
+//
+//        zt.NotHasRoute("DELETE", "/users", app, "bulk delete must not be exposed").
+//            NotHasRoute("PATCH", "/users", app)
+func (zt *T) NotHasRoute(method, path string, app *fiber.App, msgAndArgs ...any) *T <span class="cov8" title="1">{
+        zt.T.Helper()
+
+        found := hasRoute(app, method, path)
+        assert.False(zt.T, found, buildRouteMsg(method, path, msgAndArgs...))
+
+        return zt
+}</span>
+
+// NewApp creates a Fiber application for testing with automatic shutdown registered
+// via t.Cleanup, so the app is always stopped when the test finishes regardless of
+// pass or fail. The app is created fresh on each call — no shared state between tests.
+//
+// An optional [fiber.Config] can be passed to customise the app (views engine,
+// app name, middleware, error handler, etc.). When no config is supplied the app is
+// created with Fiber's defaults, identical to fiber.New().
+//
+// Parameters:
+//   - t: The testing.T instance; marks this as a test helper and registers cleanup.
+//   - cfg: Optional Fiber configuration. Only the first value is used if multiple are passed.
+//
+// Returns:
+//   - *fiber.App: A fresh Fiber app ready for route registration.
+//
+// Example — zero config:
+//
+//        func (s *MySuite) SetupTest() {
+//            s.app = zentests.NewApp(s.T())
+//            s.app.Get("/ping", handler)
+//        }
+//
+// Example — with views engine:
+//
+//                engine := html.New("./views", ".html")
+//         // register view helpers
+//
+//                app := zentests.NewApp(t, fiber.Config{
+//                    Views:             engine,
+//                    AppName:           "MyApp",
+//                    PassLocalsToViews: true,
+//                })
+func NewApp(t *testing.T, cfg ...fiber.Config) *fiber.App <span class="cov8" title="1">{
+        t.Helper()
+
+        var app *fiber.App
+        if len(cfg) &gt; 0 </span><span class="cov8" title="1">{
+                app = fiber.New(cfg[0])
+        }</span> else<span class="cov8" title="1"> {
+                app = fiber.New()
+        }</span>
+
+        <span class="cov8" title="1">t.Cleanup(func() </span><span class="cov8" title="1">{
+                _ = app.Shutdown()
+        }</span>)
+
+        <span class="cov8" title="1">return app</span>
+}
+
+// hasRoute is the internal implementation used by HasRoute and NotHasRoute.
+// It scans the Fiber app's route stack to check whether a route with the given method and path
+// is registered. Method comparison is case-insensitive.
+//
+// In Fiber v3 the stack is indexed by HTTP method integer. Each Route carries a Method field
+// (uppercase string) and a Path field (original registered path). Middleware routes registered
+// with Use() appear in every method bucket with an empty Method field; they are excluded from
+// this check since they are not bound to a specific HTTP verb.
+func hasRoute(app *fiber.App, method, path string) bool <span class="cov8" title="1">{
+        upper := strings.ToUpper(method)
+
+        for _, routeGroup := range app.Stack() </span><span class="cov8" title="1">{
+                for _, route := range routeGroup </span><span class="cov8" title="1">{
+                        if route.Method == upper &amp;&amp; route.Path == path </span><span class="cov8" title="1">{
+                                return true
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return false</span>
+}
+
+// buildRouteMsg constructs a human-readable failure message for route assertions.
+// When msgAndArgs is provided its first element is appended to the base label.
+// String values are used directly; any other type is formatted with fmt.Sprint.
+func buildRouteMsg(method, path string, msgAndArgs ...any) string <span class="cov8" title="1">{
+        base := strings.ToUpper(method) + " " + path
+
+        if len(msgAndArgs) == 0 </span><span class="cov8" title="1">{
+                return base
+        }</span>
+
+        <span class="cov8" title="1">if msg, ok := msgAndArgs[0].(string); ok </span><span class="cov8" title="1">{
+                return base + " - " + msg
+        }</span>
+
+        <span class="cov8" title="1">return base + " - " + fmt.Sprint(msgAndArgs[0])</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package zentests
+
+import (
+        "fmt"
+        "log"
+        "os"
+)
+
+// Logger defines the minimal logging interface for use with zentests-compatible packages.
+// It allows the host application to inject a logger for debug messages, warnings, and
+// fatal errors. Implement this interface in your own code, then inject a [MockLogger]
+// in tests to capture and assert on log output without any side effects.
+//
+// Example — production code:
+//
+//        type MyService struct {
+//            log zentests.Logger
+//        }
+//
+// Example — test code:
+//
+//        ml := &amp;zentests.MockLogger{}
+//        svc := MyService{log: ml}
+//        svc.DoSomething()
+//        s.True(ml.WarnCalled)
+type Logger interface {
+        // Debugf logs a formatted debug message.
+        Debugf(format string, v ...any)
+
+        // Warnf logs a formatted warning message (non-fatal).
+        Warnf(format string, v ...any)
+
+        // Fatalf logs a formatted fatal error message and terminates the process.
+        Fatalf(format string, v ...any)
+}
+
+// DefaultLogger is a production-ready [Logger] implementation backed by the standard
+// library's log package. All output is written to stderr with level prefixes:
+// "DEBUG: ", "WARN: ", or "FATAL: ".
+//
+// Fatalf calls os.Exit(1) after logging. The exit behaviour can be overridden via the
+// unexported exitFn field, which is only used in tests for the DefaultLogger itself.
+//
+// Example:
+//
+//        var log zentests.Logger = zentests.DefaultLogger{}
+//        log.Warnf("retrying in %d seconds", 5)
+type DefaultLogger struct {
+        exitFn func(int) // injectable for testing; nil means use os.Exit
+}
+
+func (l DefaultLogger) exit(code int) <span class="cov8" title="1">{
+        if l.exitFn != nil </span><span class="cov8" title="1">{
+                l.exitFn(code)
+                return
+        }</span>
+        <span class="cov0" title="0">os.Exit(code)</span>
+}
+
+// Debugf logs a formatted debug message prefixed with "DEBUG: ".
+func (l DefaultLogger) Debugf(format string, v ...any) <span class="cov8" title="1">{
+        log.Printf("DEBUG: "+format, v...)
+}</span>
+
+// Warnf logs a formatted warning message prefixed with "WARN: ".
+func (l DefaultLogger) Warnf(format string, v ...any) <span class="cov8" title="1">{
+        log.Printf("WARN: "+format, v...)
+}</span>
+
+// Fatalf logs a formatted fatal message prefixed with "FATAL: " then exits with code 1.
+// NOTE: uses Printf internally (not log.Fatalf) so the exit is handled by exitFn,
+// making it safe to test without actually terminating the process.
+func (l DefaultLogger) Fatalf(format string, v ...any) <span class="cov8" title="1">{
+        log.Printf("FATAL: "+format, v...)
+        l.exit(1)
+}</span>
+
+// MockLogger is an exported test double that implements [Logger] by capturing all log
+// calls without any side effects. Inject *MockLogger into code-under-test, then inspect
+// the exported fields in assertions.
+//
+// Example:
+//
+//        func (s *MySuite) Test_Warns_On_Missing_Config() {
+//            ml := &amp;zentests.MockLogger{}
+//            svc := NewMyService(ml)
+//            svc.Start() // triggers Warnf internally
+//            s.True(ml.WarnCalled)
+//            s.Equal("config not found", ml.WarnMsg)
+//        }
+//
+// All three methods (Debugf, Warnf, Fatalf) set their respective *Called and *Msg fields.
+// Fatalf does NOT call os.Exit — safe to use in tests.
+type MockLogger struct {
+        // DebugCalled is true if Debugf was called at least once.
+        DebugCalled bool
+        // WarnCalled is true if Warnf was called at least once.
+        WarnCalled bool
+        // FatalCalled is true if Fatalf was called at least once.
+        FatalCalled bool
+
+        // DebugMsg holds the last formatted message passed to Debugf.
+        DebugMsg string
+        // WarnMsg holds the last formatted message passed to Warnf.
+        WarnMsg string
+        // FatalMsg holds the last formatted message passed to Fatalf.
+        FatalMsg string
+}
+
+// Debugf records the call and formatted message. Does not produce any output.
+func (m *MockLogger) Debugf(format string, v ...any) <span class="cov8" title="1">{
+        m.DebugCalled = true
+        m.DebugMsg = fmt.Sprintf(format, v...)
+}</span>
+
+// Warnf records the call and formatted message. Does not produce any output.
+func (m *MockLogger) Warnf(format string, v ...any) <span class="cov8" title="1">{
+        m.WarnCalled = true
+        m.WarnMsg = fmt.Sprintf(format, v...)
+}</span>
+
+// Fatalf records the call and formatted message. Does NOT call os.Exit — safe in tests.
+func (m *MockLogger) Fatalf(format string, v ...any) <span class="cov8" title="1">{
+        m.FatalCalled = true
+        m.FatalMsg = fmt.Sprintf(format, v...)
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package zentests
 
 import (
         "bytes"
@@ -569,7 +1088,7 @@ func SetHeader(key, value string) map[string]string <span class="cov8" title="1"
 }</span>
 </pre>
 		
-		<pre class="file" id="file1" style="display: none">package zentests
+		<pre class="file" id="file4" style="display: none">package zentests
 
 import (
         "encoding/json"
@@ -694,7 +1213,7 @@ func (r *Response) Dump() string <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package zentests
+		<pre class="file" id="file5" style="display: none">package zentests
 
 import (
         "regexp"
@@ -787,7 +1306,7 @@ func (r *Response) IsEmpty() *Response <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file3" style="display: none">package zentests
+		<pre class="file" id="file6" style="display: none">package zentests
 
 import (
         "github.com/stretchr/testify/assert"
@@ -1273,7 +1792,7 @@ func (r *Response) IsWebP() *Response <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package zentests
+		<pre class="file" id="file7" style="display: none">package zentests
 
 import (
         "encoding/json"
@@ -1612,7 +2131,7 @@ func getNestedValue(data map[string]any, path string) (any, bool) <span class="c
 }
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package zentests
+		<pre class="file" id="file8" style="display: none">package zentests
 
 import (
         "testing"
@@ -1736,7 +2255,7 @@ func (ctx *SuiteContext) AfterEach(fn func(*T)) *SuiteContext <span class="cov8"
 }</span>
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">// Package zentests provides utilities for testing Go Fiber applications.
+		<pre class="file" id="file9" style="display: none">// Package zentests provides utilities for testing Go Fiber applications.
 //
 // Basic usage:
 //
