@@ -123,10 +123,18 @@ release: check changelog-release
 	@echo ""
 	@echo -e "Starting release: \033[32m${TAG}\033[0m"
 	@echo ""
+
+	# Commit the generated CHANGELOG before tagging
+	@git commit -m "docs(changelog): update CHANGELOG for ${TAG}"
+
+	# Create annotated tag
 	@git tag -a ${TAG} -m "Release ${TAG}"
+
+	# Push tag first (triggers CI/CD release), then push commit
 	@git remote | xargs -I% git push % ${TAG}
+	@git remote | xargs -I% git push %
 	@echo ""
-	@echo -e "\033[32mTag - ${TAG} - pushed to remote(s) & published.\033[0m"
+	@echo -e "\033[32mRelease ${TAG} committed and pushed.\033[0m"
 	@echo ""
 	@echo "To install:"
 	@echo "  go get $(REPO)@${TAG}"
@@ -144,7 +152,7 @@ release: check changelog-release
 changelog:
 	@git-cliff --tag ${VERSION} --output CHANGELOG.md
 
-## changelog-release: Generate changelog using git-cliff & Git committ it
+## changelog-release: Generate changelog using git-cliff & Git commit it
 changelog-release: changelog
 	@git add CHANGELOG.md
 
