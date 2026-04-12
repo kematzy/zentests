@@ -225,3 +225,405 @@ func DBCreateN[T any](t *testing.T, db *gorm.DB, count int, factory func(i int) 
 
 	return records
 }
+
+// =================================================================================================
+// QUERY HELPERS
+// =================================================================================================
+
+// DBFind finds a record by ID and populates the result into the provided pointer.
+// Fails the test if the record is not found or on database error.
+// This is the idiomatic way to fetch a record by primary key in tests.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB with the model's table migrated.
+//   - record: Pointer to model struct to populate (must be allocated).
+//   - id: The primary key value to find.
+//
+// Returns:
+//   - *T: The same pointer, populated with the found record.
+//
+// Example:
+//
+//	user := &User{}
+//	zentests.DBFind(t, db, user, 1)
+//	s.Equal("alice", user.Name)
+func DBFind[T any](t *testing.T, db *gorm.DB, record *T, id any) *T {
+	t.Helper()
+
+	err := db.First(record, id).Error
+	require.NoError(t, err, "DBFind: record not found with id=%v", id)
+
+	return record
+}
+
+// DBFindBy finds a record by a specific field condition.
+// Fails the test if exactly one record is not found or on error.
+// Use this for non-ID lookups (e.g., by email, unique constraint).
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB with the model's table migrated.
+//   - record: Pointer to model struct to populate.
+//   - where: Where clause (e.g., "email = ?" or "name LIKE ?").
+//   - args: Arguments matching the where clause placeholders.
+//
+// Returns:
+//   - *T: The same pointer, populated with the found record.
+//
+// Example:
+//
+//	user := &User{}
+//	zentests.DBFindBy(t, db, user, "email = ?", "alice@example.com")
+//	s.Equal("Alice", user.Name)
+func DBFindBy[T any](t *testing.T, db *gorm.DB, record *T, where string, args ...any) *T {
+	t.Helper()
+
+	err := db.Where(where, args...).First(record).Error
+	require.NoError(t, err, "DBFindBy: record not found where %s", where)
+
+	return record
+}
+
+// DBFirst retrieves the first record ordered by primary key.
+// Fails the test if no records exist or on error.
+// Use this when you need the oldest/first record by natural order.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB with the model's table migrated.
+//   - record: Pointer to model struct to populate.
+//
+// Returns:
+//   - *T: The same pointer, populated with the first record.
+//
+// Example:
+//
+//	user := &User{}
+//	zentests.DBFirst(t, db, user)
+//	s.Equal("Alice", user.Name) // first created user
+func DBFirst[T any](t *testing.T, db *gorm.DB, record *T) *T {
+	t.Helper()
+
+	err := db.First(record).Error
+	require.NoError(t, err, "DBFirst: no records found")
+
+	return record
+}
+
+// DBLast retrieves the last record ordered by primary key (descending).
+// Fails the test if no records exist or on error.
+// Use this when you need the most recent record.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB with the model's table migrated.
+//   - record: Pointer to model struct to populate.
+//
+// Returns:
+//   - *T: The same pointer, populated with the last record.
+//
+// Example:
+//
+//	user := &User{}
+//	zentests.DBLast(t, db, user)
+//	s.Equal("Zoe", user.Name) // most recently created
+func DBLast[T any](t *testing.T, db *gorm.DB, record *T) *T {
+	t.Helper()
+
+	err := db.Last(record).Error
+	require.NoError(t, err, "DBLast: no records found")
+
+	return record
+}
+
+// DBCount counts records matching the given conditions.
+// Fails the test on database error.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB with the model's table migrated.
+//   - model: Pointer to model struct (used only for type, can be &Model{}).
+//   - conditions: Optional - pass a where string, then args. e.g., "status = ?", "active"
+//
+// Returns:
+//   - int64: The count of matching records.
+//
+// Example:
+//
+//	count := zentests.DBCount(t, db, &User{})
+//	s.Equal(int64(5), count)
+//
+//	count := zentests.DBCount(t, db, &User{}, "status = ?", "active")
+func DBCount[T any](t *testing.T, db *gorm.DB, model *T, conditions ...any) int64 {
+	t.Helper()
+
+	var count int64
+	query := db.Model(model)
+	if len(conditions) > 0 {
+		query = query.Where(conditions[0].(string), conditions[1:]...)
+	}
+	err := query.Count(&count).Error
+	require.NoError(t, err, "DBCount: count failed")
+
+	return count
+}
+
+// DBExists asserts that at least one record matches the given conditions.
+// Fails the test if no records are found.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB with the model's table migrated.
+//   - model: Pointer to model struct (type used for table).
+//   - conditions: Optional - pass a where string, then args. e.g., "status = ?", "active"
+//
+// Returns:
+//   - bool: Always true if check passes.
+//
+// Example:
+//
+//	s.True(zentests.DBExists(t, db, &User{}))
+//	s.True(zentests.DBExists(t, db, &User{}, "status = ?", "active"))
+func DBExists[T any](t *testing.T, db *gorm.DB, model *T, conditions ...any) bool {
+	t.Helper()
+
+	var count int64
+	query := db.Model(model)
+	if len(conditions) > 0 {
+		query = query.Where(conditions[0].(string), conditions[1:]...)
+	}
+	err := query.Count(&count).Error
+	require.NoError(t, err, "DBExists: count failed")
+
+	require.Positive(t, count, "DBExists: no records found matching condition")
+
+	return true
+}
+
+// DBNotExists asserts that no records match the given conditions.
+// Fails the test if any records are found.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB with the model's table migrated.
+//   - model: Pointer to model struct (type used for table).
+//   - conditions: Optional - pass a where string, then args. e.g., "email = ?", "deleted@example.com"
+//
+// Returns:
+//
+//	bool: Always true if check passes.
+//
+// Example:
+//
+//	s.True(zentests.DBNotExists(t, db, &User{}))
+//	s.True(zentests.DBNotExists(t, db, &User{}, "email = ?", "deleted@example.com"))
+func DBNotExists[T any](t *testing.T, db *gorm.DB, model *T, conditions ...any) bool {
+	t.Helper()
+
+	var count int64
+	query := db.Model(model)
+	if len(conditions) > 0 {
+		query = query.Where(conditions[0].(string), conditions[1:]...)
+	}
+	err := query.Count(&count).Error
+	require.NoError(t, err, "DBNotExists: count failed")
+
+	require.Zero(t, count, "DBNotExists: expected no records but found %d", count)
+
+	return true
+}
+
+// =================================================================================================
+// UPDATE/DELETE HELPERS
+// =================================================================================================
+
+// DBUpdate performs an update query and fails the test on error.
+// Use this for simple field updates without loading the record first.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB with the model's table migrated.
+//   - model: Pointer to model struct (used for table, must have ID if using byID).
+//   - byID: Primary key value to identify record; use nil for where clause.
+//   - updates: Map of column to new value (e.g., map[string]any{"status": "inactive"}).
+//
+// Example:
+//
+//	zentests.DBUpdate(t, db, &User{}, 1, map[string]any{"status": "inactive"})
+func DBUpdate[T any](t *testing.T, db *gorm.DB, model *T, byID any, updates map[string]any) {
+	t.Helper()
+
+	query := db.Model(model)
+	if byID != nil {
+		query = query.Where("id = ?", byID)
+	}
+	err := query.Updates(updates).Error
+	require.NoError(t, err, "DBUpdate: update failed")
+}
+
+// DBUpdateBy performs an update using a where clause.
+// Use this when you need to update records matching a non-ID condition.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB with the model's table migrated.
+//   - model: Pointer to model struct.
+//   - where: Where clause (e.g., "status = ?" or "id > ?").
+//   - args: Arguments for where clause placeholders.
+//   - updates: Map of column to new value.
+//
+// Example:
+//
+//	zentests.DBUpdateBy(t, db, &User{}, "status = ?", "pending", map[string]any{"processed": true})
+func DBUpdateBy[T any](t *testing.T, db *gorm.DB, model *T, where string, args []any, updates map[string]any) {
+	t.Helper()
+
+	err := db.Model(model).Where(where, args...).Updates(updates).Error
+	require.NoError(t, err, "DBUpdateBy: update failed")
+}
+
+// DBDelete deletes a record by ID and fails the test on error.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB with the model's table migrated.
+//   - record: Pointer to model struct with ID set.
+//
+// Example:
+//
+//	user := &User{ID: 1}
+//	zentests.DBDelete(t, db, user)
+func DBDelete[T any](t *testing.T, db *gorm.DB, record *T) {
+	t.Helper()
+
+	err := db.Delete(record).Error
+	require.NoError(t, err, "DBDelete: delete failed")
+}
+
+// DBDeleteBy deletes records matching a where clause and fails the test on error.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB with the model's table migrated.
+//   - model: Pointer to model struct (type used for table).
+//   - where: Where clause.
+//   - args: Arguments for where clause.
+//
+// Returns:
+//   - int64: Number of records deleted.
+//
+// Example:
+//
+//	deleted := zentests.DBDeleteBy(t, db, &User{}, "status = ?", "deleted")
+func DBDeleteBy[T any](t *testing.T, db *gorm.DB, model *T, where string, args ...any) int64 {
+	t.Helper()
+
+	result := db.Where(where, args...).Delete(model)
+	err := result.Error
+	require.NoError(t, err, "DBDeleteBy: delete failed")
+
+	return result.RowsAffected
+}
+
+// =================================================================================================
+// TRANSACTION HELPERS
+// =================================================================================================
+
+// DBTx executes a function within a transaction.
+// The transaction is automatically rolled back if the function returns an error,
+// otherwise it is committed when the function completes successfully.
+// This is useful for testing multiple operations that should succeed or fail together.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB connection.
+//   - fn: Function that executes operations on a transacted *gorm.DB.
+//
+// Returns:
+//   - error: Any error returned by fn, which causes rollback.
+//
+// Example:
+//
+//	err := zentests.DBTx(t, db, func(tx *gorm.DB) error {
+//	    if err := tx.Create(&user).Error; err != nil {
+//	        return err
+//	    }
+//	    return tx.Create(&balance).Error
+//	})
+//	s.NoError(err)
+func DBTx(t *testing.T, db *gorm.DB, fn func(tx *gorm.DB) error) error {
+	t.Helper()
+
+	tx := db.Begin()
+	if tx.Error != nil {
+		require.NoError(t, tx.Error, "DBTx: begin failed")
+	}
+
+	err := fn(tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	require.NoError(t, tx.Commit().Error, "DBTx: commit failed")
+
+	return nil
+}
+
+// =================================================================================================
+// DATA SEEDING
+// =================================================================================================
+
+// DBSeed loads test data from a map of slices (table -> records).
+// This is useful for populating a database with test fixtures defined inline.
+// Each key in data should be a pointer to a model struct; the value should be a slice of
+// pointers to already-populated model instances.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB.
+//   - data: Map of model pointers to slices of populated records.
+//
+// Example:
+//
+//	users := []*User{
+//	    {Name: "Alice", Email: "alice@example.com"},
+//	    {Name: "Bob", Email: "bob@example.com"},
+//	}
+//	posts := []*Post{
+//	    {Title: "First Post", Body: "Hello world"},
+//	}
+//	zentests.DBSeed(t, db, users, posts)
+func DBSeed[T any](t *testing.T, db *gorm.DB, records []*T) {
+	t.Helper()
+
+	for _, record := range records {
+		err := db.Create(record).Error
+		require.NoError(t, err, "DBSeed: failed to create record")
+	}
+}
+
+// DBSeedSlice loads test data from a slice of records.
+// This is a convenience wrapper around DBSeed for single-table seeding.
+//
+// Parameters:
+//   - t: The testing.T instance.
+//   - db: An open *gorm.DB.
+//   - records: Slice of pointers to already-populated model instances.
+//
+// Example:
+//
+//	users := []*User{
+//	    {Name: "Alice", Email: "alice@example.com"},
+//	    {Name: "Bob", Email: "bob@example.com"},
+//	}
+//	zentests.DBSeedSlice(t, db, users)
+func DBSeedSlice[T any](t *testing.T, db *gorm.DB, records []T) {
+	t.Helper()
+
+	for i := range records {
+		err := db.Create(&records[i]).Error
+		require.NoError(t, err, "DBSeedSlice: failed to create record at index %d", i)
+	}
+}
