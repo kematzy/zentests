@@ -471,6 +471,88 @@ func (s *UserSuite) Test_ListUsers() {
 | `CloseTestDB` | `(t, db)` | Explicit close for mid-test control |
 | `DBCreate[T]` | `(t, db, *T) *T` | Insert one record, return with ID populated |
 | `DBCreateN[T]` | `(t, db, int, func(int) T) []*T` | Insert N records via 1-based factory |
+| `DBFind[T]` | `(t, db, *T, id) *T` | Find record by ID |
+| `DBFindBy[T]` | `(t, db, *T, where, args...) *T` | Find record by field condition |
+| `DBFirst[T]` | `(t, db, *T) *T` | Get first record by PK |
+| `DBLast[T]` | `(t, db, *T) *T` | Get last record by PK |
+| `DBCount[T]` | `(t, db, *T, conditions...) int64` | Count records matching conditions |
+| `DBExists[T]` | `(t, db, *T, conditions...) bool` | Assert at least one record exists |
+| `DBNotExists[T]` | `(t, db, *T, conditions...) bool` | Assert no records exist |
+| `DBUpdate[T]` | `(t, db, *T, id, updates)` | Update record by ID |
+| `DBUpdateBy[T]` | `(t, db, *T, where, args, updates)` | Update by where clause |
+| `DBDelete[T]` | `(t, db, *T)` | Delete record by instance |
+| `DBDeleteBy[T]` | `(t, db, *T, where, args...) int64` | Delete by where clause |
+| `DBTx` | `(t, db, fn) error` | Execute function within transaction |
+| `DBSeed[T]` | `(t, db, []*T)` | Load test data from slice of pointers |
+| `DBSeedSlice[T]` | `(t, db, []T)` | Load test data from slice of values |
+
+#### Query Helpers
+
+```go
+// Find by primary key
+user := zentests.DBFind(t, db, &User{}, 1)
+s.Equal("Alice", user.Name)
+
+// Find by specific field
+user := zentests.DBFindBy(t, db, &User{}, "email = ?", "alice@example.com")
+
+// Get first/last
+user := zentests.DBFirst(t, db, &User{})
+user := zentests.DBLast(t, db, &User{})
+
+// Count records
+count := zentests.DBCount(t, db, &User{})
+activeCount := zentests.DBCount(t, db, &User{}, "status = ?", "active")
+
+// Assert existence
+zentests.DBExists(t, db, &User{}, "email = ?", "alice@example.com")
+zentests.DBNotExists(t, db, &User{}, "status = ?", "deleted")
+```
+
+#### Update/Delete Helpers
+
+```go
+// Update by ID
+zentests.DBUpdate(t, db, &User{}, 1, map[string]any{"status": "active"})
+
+// Update by condition
+zentests.DBUpdateBy(t, db, &User{}, "status = ?", []any{"pending"}, map[string]any{"processed": true})
+
+// Delete by instance
+zentests.DBDelete(t, db, user)
+
+// Delete by condition
+deleted := zentests.DBDeleteBy(t, db, &User{}, "status = ?", "deleted")
+```
+
+#### Transaction Helpers
+
+```go
+err := zentests.DBTx(t, db, func(tx *gorm.DB) error {
+    if err := tx.Create(&order).Error; err != nil {
+        return err
+    }
+    return tx.Create(&payment).Error
+})
+s.NoError(err)
+```
+
+#### Data Seeding
+
+```go
+// From slice of pointers
+users := []*User{
+    {Name: "Alice", Email: "alice@example.com"},
+    {Name: "Bob", Email: "bob@example.com"},
+}
+zentests.DBSeed(t, db, users)
+
+// From slice of values
+names := []User{
+    {Name: "Alice"}, {Name: "Bob"},
+}
+zentests.DBSeedSlice(t, db, names)
+```
 
 ### BDD Style with Describe/It
 
