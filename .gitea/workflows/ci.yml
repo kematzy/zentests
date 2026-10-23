@@ -62,6 +62,9 @@ jobs:
             - name: Run go vet
               run: go vet ./...
 
+            - name: Vet examples (build tag manual)
+              run: go vet -tags manual ./examples/
+
             - name: Run goimports
               run: |
                   # Check if goimports is available, if not install it
