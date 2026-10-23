@@ -416,3 +416,26 @@ func TestArrayLength_NotArray_ReportsOnce(t *testing.T) {
 	resp.ArrayLength("n", 1)
 	assert.Len(t, rec.errors, 1)
 }
+
+// TestHas_UnsignedAndFloat32Expected_MatchJSONNumber checks that unsigned and float32
+// expected values are normalized to match JSON numbers.
+func TestHas_UnsignedAndFloat32Expected_MatchJSONNumber(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"u":7,"f":0.5}`)
+	resp.Has("u", uint8(7)).Has("f", float32(0.5))
+	assert.Empty(t, rec.errors)
+}
+
+// TestHas_StringForNumber_ReportsTypeMismatchOnce checks that a string expected for a
+// JSON number is reported once as a type mismatch.
+func TestHas_StringForNumber_ReportsTypeMismatchOnce(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"n":7}`)
+	resp.Has("n", "7")
+	assert.Len(t, rec.errors, 1)
+}
+
+// TestMatchesRegex_InvalidPattern_ReportsOnce checks that an invalid pattern is reported once.
+func TestMatchesRegex_InvalidPattern_ReportsOnce(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"s":"x"}`)
+	resp.MatchesRegex("s", "(")
+	assert.Len(t, rec.errors, 1)
+}
