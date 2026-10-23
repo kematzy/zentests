@@ -6,7 +6,7 @@
 
 # Set the current version or default
 VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
-# Set the minimun coverage percentage
+# Set the minimum coverage percentage
 COVERAGE_MIN ?= 95
 # Coverage profile written by coverage-profile and read by the coverage targets
 COVERAGE_PROFILE := .code-status/coverage.out
@@ -34,7 +34,9 @@ endef
 .DEFAULT_GOAL := help
 
 # non-file targets (commands)
-.PHONY: help test test-verbose coverage-profile test-coverage fmt vet lint tidy check release changelog git-push gitea-push github-push docs docs-md modernize modernize-check
+.PHONY: help fmt fmt-check vet lint tidy check spellcheck
+.PHONY: test test-verbose coverage-profile test-coverage
+.PHONY: release changelog git-push gitea-push github-push docs docs-md modernize modernize-check
 
 ## help: Show this help message
 help:
@@ -52,10 +54,20 @@ help:
 ## fmt: Format source code
 fmt:
 	@gofmt -l -w .
+	@# -l	list files whose formatting differs from gofmt's
+	@# -w	write result to (source) file instead of stdout
+
+## fmt-check: (Dry-run) Check source code formatting
+fmt-check:
+	@gofmt -l -d -e -s .
+	@# -d	display diffs instead of rewriting files
+	@# -e	report all errors (not just the first 10 on different lines)
+	@# -l	list files whose formatting differs from gofmt's
+	@# -s	simplify code
 
 ## lint: Run linter
 lint:
-	@golangci-lint run ./...
+	@golangci-lint run --color=always ./...
 
 ## tidy: Run tidy on Go modules
 tidy:
@@ -65,13 +77,32 @@ tidy:
 vet:
 	@go vet ./...
 
-## modernize: Run tool to identify & replace old Go code with newer standards.
+## modernize: Identify & replace old Go code with newer standards.
 modernize:
-	@go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -fix ./...
+	@go fix ./...
 
-## modernize-check: Dry-run with diffs to identify old Go code with newer standards.
+## modernize-check: (Dry-run) Identify old Go code with newer standards with diff.
 modernize-check:
-	@go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -diff -fix ./...
+	@go fix -diff ./... | delta
+
+## check: Check everything before a commit or push
+check: check-test-coverage
+	@gofmt -l -w .
+	@echo -e "Checking code formatting:       󰄬 (passed)"
+	@go vet ./...
+	@echo -e "Checked for suspicious code:    󰄬 (passed)"
+	@golangci-lint run ./...
+	@echo -e "Checked code linting:           󰄬 (passed)\n"
+	@go test ./...
+	@echo -e "\nChecked test suite:           󰄬 (passed)"
+	@cspell --unique --color --no-progress --quiet .
+	@echo -e "\nChecked spelling:             󰄬 (passed)"
+
+	@echo -e "\n\033[32m 󰄬   All checks passed \033[0m"
+
+## spellcheck: Check spelling (cspell)
+spellcheck:
+	@cspell --unique --color --no-progress .
 
 #======================================================================================================================
 # TEST COMMANDS
@@ -102,11 +133,6 @@ test-coverage: coverage-profile
 #======================================================================================================================
 # RELEASE
 #======================================================================================================================
-
-## check: Run all checks (fmt, vet, lint, check-test-coverage)
-check: fmt vet lint check-test-coverage
-	@echo "All checks passed."
-	@echo ""
 
 ## check-test-coverage: Run tests and enforce coverage threshold (default: 95%)
 check-test-coverage: coverage-profile
