@@ -63,6 +63,7 @@ func TestEndpoint(t *testing.T) {
   - [func \(r \*Response\) IsXHR\(\) \*Response](<#Response.IsXHR>)
   - [func \(r \*Response\) IsXML\(\) \*Response](<#Response.IsXML>)
   - [func \(r \*Response\) JSON\(\) \*Response](<#Response.JSON>)
+  - [func \(r \*Response\) JSONHasValues\(expected map\[string\]any\) \*Response](<#Response.JSONHasValues>)
   - [func \(r \*Response\) JSONMatches\(expected map\[string\]any\) \*Response](<#Response.JSONMatches>)
   - [func \(r \*Response\) MatchesRegex\(path, pattern string\) \*Response](<#Response.MatchesRegex>)
   - [func \(r \*Response\) NoContent\(\) \*Response](<#Response.NoContent>)
@@ -76,20 +77,31 @@ func TestEndpoint(t *testing.T) {
 - [type SuiteContext](<#SuiteContext>)
   - [func \(ctx \*SuiteContext\) AfterEach\(fn func\(\*T\)\) \*SuiteContext](<#SuiteContext.AfterEach>)
   - [func \(ctx \*SuiteContext\) BeforeEach\(fn func\(\*T\)\) \*SuiteContext](<#SuiteContext.BeforeEach>)
+  - [func \(ctx \*SuiteContext\) Describe\(name string, fn func\(ctx \*SuiteContext\)\)](<#SuiteContext.Describe>)
   - [func \(ctx \*SuiteContext\) It\(name string, fn func\(\*T\)\)](<#SuiteContext.It>)
 - [type T](<#T>)
   - [func New\(t \*testing.T\) \*T](<#New>)
   - [func \(zt \*T\) Delete\(app \*fiber.App, path string\) \*Response](<#T.Delete>)
   - [func \(zt \*T\) DeleteJSON\(app \*fiber.App, path string, data any\) \*Response](<#T.DeleteJSON>)
+  - [func \(zt \*T\) DeleteJSONWithConfig\(app \*fiber.App, path string, data any, cfg fiber.TestConfig\) \*Response](<#T.DeleteJSONWithConfig>)
+  - [func \(zt \*T\) DeleteWithConfig\(app \*fiber.App, path string, cfg fiber.TestConfig\) \*Response](<#T.DeleteWithConfig>)
   - [func \(zt \*T\) Describe\(name string, fn func\(ctx \*SuiteContext\)\)](<#T.Describe>)
   - [func \(zt \*T\) Get\(app \*fiber.App, path string\) \*Response](<#T.Get>)
+  - [func \(zt \*T\) GetWithConfig\(app \*fiber.App, path string, cfg fiber.TestConfig\) \*Response](<#T.GetWithConfig>)
   - [func \(zt \*T\) Patch\(app \*fiber.App, path string, body \[\]byte\) \*Response](<#T.Patch>)
   - [func \(zt \*T\) PatchJSON\(app \*fiber.App, path string, data any\) \*Response](<#T.PatchJSON>)
+  - [func \(zt \*T\) PatchJSONWithConfig\(app \*fiber.App, path string, data any, cfg fiber.TestConfig\) \*Response](<#T.PatchJSONWithConfig>)
+  - [func \(zt \*T\) PatchWithConfig\(app \*fiber.App, path string, body \[\]byte, cfg fiber.TestConfig\) \*Response](<#T.PatchWithConfig>)
   - [func \(zt \*T\) Post\(app \*fiber.App, path string, body \[\]byte\) \*Response](<#T.Post>)
   - [func \(zt \*T\) PostForm\(app \*fiber.App, path string, data map\[string\]string\) \*Response](<#T.PostForm>)
+  - [func \(zt \*T\) PostFormWithConfig\(app \*fiber.App, path string, data map\[string\]string, cfg fiber.TestConfig\) \*Response](<#T.PostFormWithConfig>)
   - [func \(zt \*T\) PostJSON\(app \*fiber.App, path string, data any\) \*Response](<#T.PostJSON>)
+  - [func \(zt \*T\) PostJSONWithConfig\(app \*fiber.App, path string, data any, cfg fiber.TestConfig\) \*Response](<#T.PostJSONWithConfig>)
+  - [func \(zt \*T\) PostWithConfig\(app \*fiber.App, path string, body \[\]byte, cfg fiber.TestConfig\) \*Response](<#T.PostWithConfig>)
   - [func \(zt \*T\) Put\(app \*fiber.App, path string, body \[\]byte\) \*Response](<#T.Put>)
   - [func \(zt \*T\) PutJSON\(app \*fiber.App, path string, data any\) \*Response](<#T.PutJSON>)
+  - [func \(zt \*T\) PutJSONWithConfig\(app \*fiber.App, path string, data any, cfg fiber.TestConfig\) \*Response](<#T.PutJSONWithConfig>)
+  - [func \(zt \*T\) PutWithConfig\(app \*fiber.App, path string, body \[\]byte, cfg fiber.TestConfig\) \*Response](<#T.PutWithConfig>)
   - [func \(zt \*T\) Use\(app \*fiber.App\) \*T](<#T.Use>)
 
 
@@ -127,12 +139,13 @@ Response maintains internal state including the parsed JSON body and tracks whet
 
 Fields:
 
-- t: The testing.T instance for making assertions
+- t: The testing.TB instance for making assertions
 - StatusCode: The HTTP status code from the response
 - Header: The HTTP headers from the response
 - resp: The underlying http.Response
 - body: The cached response body bytes \(lazy loaded\)
 - bodyRead: Flag indicating if body has been read
+- parsed: Flag indicating if JSON parsing has been attempted
 - parsedJSON: The parsed JSON body as a map \(cached after first parse\)
 
 ```go
@@ -344,7 +357,7 @@ zt.PostJSON(app, "/users", data).Created()
 func (r *Response) Debug() *Response
 ```
 
-Debug prints detailed response information to stdout for troubleshooting. Outputs status code, headers, body, and parsed JSON \(if available\). This is useful during test development to inspect response details. Returns the receiver for method chaining.
+Debug prints detailed response information to stdout for troubleshooting. Outputs status code, headers, body, and parsed JSON \(if available\). Sensitive headers such as Authorization and Set\-Cookie are redacted. This is useful during test development to inspect response details. Returns the receiver for method chaining.
 
 Returns:
 
@@ -363,7 +376,7 @@ zt.Get(app, "/users").Debug().OK()
 func (r *Response) Dump() string
 ```
 
-Dump returns raw response details as a formatted string. Useful for custom logging or including response details in test failure messages. Unlike Debug\(\), this returns a string instead of printing to stdout.
+Dump returns raw response details as a formatted string. Useful for custom logging or including response details in test failure messages. Unlike Debug\(\), this returns a string instead of printing to stdout. Sensitive headers such as Authorization and Set\-Cookie are redacted.
 
 Returns:
 
@@ -425,12 +438,12 @@ zt.Get(app, "/admin").Forbidden()
 func (r *Response) Has(path string, expected any) *Response
 ```
 
-Has asserts that the JSON key equals the expected value with strict type checking. Supports dot notation for nested keys. Fails if the key doesn't exist or if the type doesn't match exactly.
+Has asserts that the JSON key equals the expected value. Supports dot notation for nested keys. Fails if the key doesn't exist or if the value differs. Any Go numeric type \(int, float32, ...\) is accepted for numbers and compared as float64, because JSON numbers always decode to float64. Other types must match exactly.
 
 Parameters:
 
 - path: The JSON key path using dot notation
-- expected: The expected value \(type must match exactly\)
+- expected: The expected value
 
 Returns:
 
@@ -440,7 +453,7 @@ Example:
 
 ```
 zt.Get(app, "/api/users/1").Has("data.user.name", "John")
-zt.Get(app, "/api/count").Has("data.count", float64(42)) // JSON numbers are float64
+zt.Get(app, "/api/count").Has("data.count", 42) // any numeric type works
 ```
 
 <a name="Response.HasBool"></a>
@@ -536,6 +549,8 @@ Example:
 
 ```
 zt.Get(app, "/api/users").HasHeader("Content-Type", "application/json")
+
+zt.Get(app, "/api/users").HasHeader("Content-Type", "application/css") // raises an error
 ```
 
 <a name="Response.HasInt"></a>
@@ -545,7 +560,7 @@ zt.Get(app, "/api/users").HasHeader("Content-Type", "application/json")
 func (r *Response) HasInt(path string, expected int) *Response
 ```
 
-HasInt asserts that the JSON key equals the expected integer value. Handles JSON number conversion \(JSON numbers are parsed as float64\).
+HasInt asserts that the JSON key equals the expected integer value. Fails for non\-integer numbers, so 42.9 does not match 42.
 
 Parameters:
 
@@ -631,6 +646,8 @@ Example:
 
 ```
 zt.Get(app, "/api/users").HeaderContains("Content-Type", "json")
+
+zt.Get(app, "/api/users").HeaderContains("Content-Type", "image") // raises an error
 ```
 
 <a name="Response.HeaderHasValues"></a>
@@ -1022,7 +1039,7 @@ zt.Get(app, "/api/data.xml").OK().IsXML()
 func (r *Response) JSON() *Response
 ```
 
-JSON parses and caches the response body as JSON. Enables JSON\-specific assertions on the response. The parsed JSON is cached to avoid re\-parsing on subsequent JSON assertions. Fails the test if JSON parsing fails.
+JSON parses and caches the response body as JSON. Enables JSON\-specific assertions on the response. The body is parsed once; later calls reuse the result, even when parsing failed. Fails the test if JSON parsing fails.
 
 Returns:
 
@@ -1034,14 +1051,14 @@ Example:
 zt.Get(app, "/api/users").JSON().Has("data.0.name", "John")
 ```
 
-<a name="Response.JSONMatches"></a>
-### func \(\*Response\) JSONMatches
+<a name="Response.JSONHasValues"></a>
+### func \(\*Response\) JSONHasValues
 
 ```go
-func (r *Response) JSONMatches(expected map[string]any) *Response
+func (r *Response) JSONHasValues(expected map[string]any) *Response
 ```
 
-JSONMatches asserts that the entire JSON structure matches the expected map. Performs Has\(\) assertions for each key\-value pair in the expected map.
+JSONHasValues asserts that each listed key path holds its expected value. This is a subset check: keys that are not listed are ignored. Each entry is checked with Has, so the same type rules apply. Keys are checked in sorted order, so failures are reported in a stable order.
 
 Parameters:
 
@@ -1054,9 +1071,34 @@ Returns:
 Example:
 
 ```
-zt.Get(app, "/api/users/1").JSONMatches(map[string]interface{}{
-    "data.user.name": "John",
+zt.Get(app, "/api/users/1").JSONHasValues(map[string]any{
+    "data.user.name":   "John",
     "data.user.active": true,
+})
+```
+
+<a name="Response.JSONMatches"></a>
+### func \(\*Response\) JSONMatches
+
+```go
+func (r *Response) JSONMatches(expected map[string]any) *Response
+```
+
+JSONMatches is an alias for JSONHasValues. It is a subset check: it asserts that each listed key path holds its expected value, and ignores any other keys in the body. Prefer JSONHasValues in new code.
+
+Parameters:
+
+- expected: Map of key paths to expected values
+
+Returns:
+
+- \*Response: The receiver for method chaining
+
+Example:
+
+```
+zt.Get(app, "/api/users/1").JSONMatches(map[string]any{
+    "data.user.name": "John",
 })
 ```
 
@@ -1250,9 +1292,14 @@ zt.PostJSON(app, "/users", invalidUserData).Unprocessable()
 
 SuiteContext holds hooks and state for a BDD\-style describe block. Provides lifecycle hooks \(BeforeEach, AfterEach\) for test setup and teardown. Each describe block gets its own SuiteContext to manage test isolation.
 
+Describe blocks can be nested. Hooks of enclosing blocks apply to tests in nested blocks: BeforeEach hooks run outermost first, and AfterEach hooks run innermost first.
+
+Hooks are captured when It\(\) is called, so BeforeEach and AfterEach must be declared before the It\(\) calls they should apply to.
+
 Fields:
 
 - t: The testing.T instance for running subtests
+- parent: The enclosing SuiteContext, or nil for a top\-level block
 - beforeEach: Function to run before each test case in the suite
 - afterEach: Function to run after each test case in the suite
 
@@ -1269,7 +1316,7 @@ type SuiteContext struct {
 func (ctx *SuiteContext) AfterEach(fn func(*T)) *SuiteContext
 ```
 
-AfterEach sets the teardown hook function to run after each test case. Use this for cleanup like closing database connections or shutting down apps. Returns the SuiteContext for method chaining.
+AfterEach sets the teardown hook function to run after each test case. Use this for cleanup like closing database connections or shutting down apps. Must be called before the It\(\) calls it should apply to. Returns the SuiteContext for method chaining.
 
 Parameters:
 
@@ -1295,7 +1342,7 @@ ctx.AfterEach(func(zt *zentests.T) {
 func (ctx *SuiteContext) BeforeEach(fn func(*T)) *SuiteContext
 ```
 
-BeforeEach sets the setup hook function to run before each test case. Use this for common setup like creating fresh app instances or test data. Returns the SuiteContext for method chaining with AfterEach.
+BeforeEach sets the setup hook function to run before each test case. Use this for common setup like creating fresh app instances or test data. Must be called before the It\(\) calls it should apply to. Returns the SuiteContext for method chaining with AfterEach.
 
 Parameters:
 
@@ -1316,6 +1363,34 @@ ctx.BeforeEach(func(zt *zentests.T) {
 })
 ```
 
+<a name="SuiteContext.Describe"></a>
+### func \(\*SuiteContext\) Describe
+
+```go
+func (ctx *SuiteContext) Describe(name string, fn func(ctx *SuiteContext))
+```
+
+Describe creates a nested describe block inside this one. Hooks declared in the enclosing block apply to the tests in the nested block.
+
+Parameters:
+
+- name: The descriptive name for the nested group
+- fn: Function that receives the nested SuiteContext
+
+Example:
+
+```
+zt.Describe("Users", func(ctx *zentests.SuiteContext) {
+    ctx.BeforeEach(func(zt *zentests.T) { app = setupTestApp() })
+
+    ctx.Describe("when logged in", func(ctx *zentests.SuiteContext) {
+        ctx.It("lists users", func(zt *zentests.T) {
+            zt.Get(app, "/users").OK()
+        })
+    })
+})
+```
+
 <a name="SuiteContext.It"></a>
 ### func \(\*SuiteContext\) It
 
@@ -1323,7 +1398,7 @@ ctx.BeforeEach(func(zt *zentests.T) {
 func (ctx *SuiteContext) It(name string, fn func(*T))
 ```
 
-It runs a test case within a describe block. Individual test cases that execute with BeforeEach/AfterEach hooks. Each It\(\) call creates a sub\-test that runs independently.
+It runs a test case within a describe block. Runs the BeforeEach hooks of this block and its enclosing blocks, then fn, then the AfterEach hooks. AfterEach hooks are registered with t.Cleanup, so they still run when the test stops early \(for example through require\). Each It\(\) call creates a sub\-test that runs independently.
 
 Parameters:
 
@@ -1381,43 +1456,24 @@ Returns:
 
 - \*T: A new zentests context with no Fiber app configured
 
-Example usage in your test file:
+Example:
 
 ```
-func TestMyEndpoint(t *testing.T) {
-    app := fiber.New()
-    app.Get("/users", func(c *fiber.Ctx) error {
-        return c.SendStatus(200)
-    })
+func TestExample(t *testing.T) {
+	zt := zentests.New(t)
+	app := fiber.New()
+	// declare app routes
+	zt.Use(app)
+}
 
-    zt := zentests.New(t).
-    zt.Get(app, "/users").Status(200)
+func TestExample(t *testing.T) {
+    zt := zentests.New(t)
+    app := fiber.New()
+    // declare app routes
+
+    zt.Get(app, "/").OK()
 }
 ```
-
-<details><summary>Example</summary>
-<p>
-
-
-
-```go
-t := &testing.T{}
-app := fiber.New()
-
-zt := zentests.New(t)
-zt.Use(app)
-
-// Output:
-```
-
-#### Output
-
-```
-
-```
-
-</p>
-</details>
 
 <a name="T.Delete"></a>
 ### func \(\*T\) Delete
@@ -1468,6 +1524,45 @@ Example:
 data := map[string][]int{"ids": {1, 2, 3}}
 zt.DeleteJSON(app, "/users/bulk", data).OK()
 ```
+
+<a name="T.DeleteJSONWithConfig"></a>
+### func \(\*T\) DeleteJSONWithConfig
+
+```go
+func (zt *T) DeleteJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.TestConfig) *Response
+```
+
+DeleteJSONWithConfig performs a DELETE request with JSON body and custom TestConfig.
+
+Parameters:
+
+- app: The Fiber application to test against
+- path: The request path \(e.g., "/api/users/bulk"\)
+- data: Any data structure to be JSON\-encoded
+- cfg: TestConfig for custom timeout/behavior settings
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
+<a name="T.DeleteWithConfig"></a>
+### func \(\*T\) DeleteWithConfig
+
+```go
+func (zt *T) DeleteWithConfig(app *fiber.App, path string, cfg fiber.TestConfig) *Response
+```
+
+DeleteWithConfig performs a DELETE request with custom TestConfig.
+
+Parameters:
+
+- app: The Fiber application to test against
+- path: The request path \(e.g., "/api/users/1"\)
+- cfg: TestConfig for custom timeout/behavior settings
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
 
 <a name="T.Describe"></a>
 ### func \(\*T\) Describe
@@ -1524,6 +1619,33 @@ resp := zt.Get(app, "/users")
 resp.OK().IsJSON().Has("data.users.0.name", "John")
 ```
 
+<a name="T.GetWithConfig"></a>
+### func \(\*T\) GetWithConfig
+
+```go
+func (zt *T) GetWithConfig(app *fiber.App, path string, cfg fiber.TestConfig) *Response
+```
+
+GetWithConfig performs a GET request with custom TestConfig for timeout/behavior control. Use this when you need to customize test behavior beyond defaults.
+
+Parameters:
+
+- app: The Fiber application to test against
+- path: The request path \(e.g., "/api/users"\)
+- cfg: TestConfig for custom timeout/behavior settings
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
+Example:
+
+```
+zt.GetWithConfig(app, "/slow-endpoint", fiber.TestConfig{
+    Timeout: 5 * time.Second,
+}).OK()
+```
+
 <a name="T.Patch"></a>
 ### func \(\*T\) Patch
 
@@ -1575,6 +1697,46 @@ Example:
 data := map[string]string{"status": "active"}
 zt.PatchJSON(app, "/users/1", data).OK()
 ```
+
+<a name="T.PatchJSONWithConfig"></a>
+### func \(\*T\) PatchJSONWithConfig
+
+```go
+func (zt *T) PatchJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.TestConfig) *Response
+```
+
+PatchJSONWithConfig performs a PATCH request with JSON data and custom TestConfig.
+
+Parameters:
+
+- app: The Fiber application to test against
+- path: The request path \(e.g., "/api/users/1"\)
+- data: Any data structure to be JSON\-encoded
+- cfg: TestConfig for custom timeout/behavior settings
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
+<a name="T.PatchWithConfig"></a>
+### func \(\*T\) PatchWithConfig
+
+```go
+func (zt *T) PatchWithConfig(app *fiber.App, path string, body []byte, cfg fiber.TestConfig) *Response
+```
+
+PatchWithConfig performs a PATCH request with raw body and custom TestConfig.
+
+Parameters:
+
+- app: The Fiber application to test against
+- path: The request path \(e.g., "/api/users/1"\)
+- body: The raw request body as bytes
+- cfg: TestConfig for custom timeout/behavior settings
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
 
 <a name="T.Post"></a>
 ### func \(\*T\) Post
@@ -1628,6 +1790,34 @@ data := map[string]string{"username": "john", "password": "secret"}
 zt.PostForm(app, "/login", data).OK()
 ```
 
+<a name="T.PostFormWithConfig"></a>
+### func \(\*T\) PostFormWithConfig
+
+```go
+func (zt *T) PostFormWithConfig(app *fiber.App, path string, data map[string]string, cfg fiber.TestConfig) *Response
+```
+
+PostFormWithConfig performs a POST request with form data and custom TestConfig.
+
+Parameters:
+
+- app: The Fiber application to test against
+- path: The request path \(e.g., "/login"\)
+- data: Map of form field names to values
+- cfg: TestConfig for custom timeout/behavior settings
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
+Example:
+
+```
+zt.PostFormWithConfig(app, "/login", data, fiber.TestConfig{
+    Timeout: 5 * time.Second,
+}).OK()
+```
+
 <a name="T.PostJSON"></a>
 ### func \(\*T\) PostJSON
 
@@ -1652,6 +1842,63 @@ Example:
 ```
 data := map[string]string{"name": "John", "email": "john@example.com"}
 zt.PostJSON(app, "/users", data).Created().Has("id", float64(1))
+```
+
+<a name="T.PostJSONWithConfig"></a>
+### func \(\*T\) PostJSONWithConfig
+
+```go
+func (zt *T) PostJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.TestConfig) *Response
+```
+
+PostJSONWithConfig performs a POST request with JSON data and custom TestConfig.
+
+Parameters:
+
+- app: The Fiber application to test against
+- path: The request path \(e.g., "/api/users"\)
+- data: Any data structure to be JSON\-encoded
+- cfg: TestConfig for custom timeout/behavior settings
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
+Example:
+
+```
+zt.PostJSONWithConfig(app, "/users", data, fiber.TestConfig{
+    Timeout:       5 * time.Second,
+    FailOnTimeout: true,
+}).Created()
+```
+
+<a name="T.PostWithConfig"></a>
+### func \(\*T\) PostWithConfig
+
+```go
+func (zt *T) PostWithConfig(app *fiber.App, path string, body []byte, cfg fiber.TestConfig) *Response
+```
+
+PostWithConfig performs a POST request with raw body and custom TestConfig.
+
+Parameters:
+
+- app: The Fiber application to test against
+- path: The request path \(e.g., "/api/users"\)
+- body: The raw request body as bytes
+- cfg: TestConfig for custom timeout/behavior settings
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
+Example:
+
+```
+zt.PostWithConfig(app, "/upload", body, fiber.TestConfig{
+    Timeout: 10 * time.Second,
+}).OK()
 ```
 
 <a name="T.Put"></a>
@@ -1706,6 +1953,46 @@ data := map[string]string{"name": "Updated Name"}
 zt.PutJSON(app, "/users/1", data).OK()
 ```
 
+<a name="T.PutJSONWithConfig"></a>
+### func \(\*T\) PutJSONWithConfig
+
+```go
+func (zt *T) PutJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.TestConfig) *Response
+```
+
+PutJSONWithConfig performs a PUT request with JSON data and custom TestConfig.
+
+Parameters:
+
+- app: The Fiber application to test against
+- path: The request path \(e.g., "/api/users/1"\)
+- data: Any data structure to be JSON\-encoded
+- cfg: TestConfig for custom timeout/behavior settings
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
+<a name="T.PutWithConfig"></a>
+### func \(\*T\) PutWithConfig
+
+```go
+func (zt *T) PutWithConfig(app *fiber.App, path string, body []byte, cfg fiber.TestConfig) *Response
+```
+
+PutWithConfig performs a PUT request with raw body and custom TestConfig.
+
+Parameters:
+
+- app: The Fiber application to test against
+- path: The request path \(e.g., "/api/users/1"\)
+- body: The raw request body as bytes
+- cfg: TestConfig for custom timeout/behavior settings
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
 <a name="T.Use"></a>
 ### func \(\*T\) Use
 
@@ -1717,13 +2004,11 @@ Use sets the Fiber app for making test requests and enables fluent method chaini
 
 Parameters:
 
-- app: The Fiber application instance to test against
+- app: The Fiber application instance to test against; must not be nil
 
 Returns:
 
 - \*T: The receiver for method chaining
-
-TODO: Add nil check for app parameter to prevent panics
 
 Example:
 

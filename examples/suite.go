@@ -42,7 +42,7 @@ func SetupRoutes(app *fiber.App) *fiber.App {
 	app.Get("/api/users", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"success": true,
-			"data": []interface{}{
+			"data": []any{
 				fiber.Map{"id": 1, "email": "test@example.com"},
 				fiber.Map{"id": 2, "email": "test2@example.com"},
 			},
@@ -61,7 +61,7 @@ func SetupRoutes(app *fiber.App) *fiber.App {
 
 	// User creation endpoint (Fiber v3 uses Bind().Body() instead of BodyParser)
 	app.Post("/api/users", func(c fiber.Ctx) error {
-		var data map[string]interface{}
+		var data map[string]any
 		if err := c.Bind().Body(&data); err != nil {
 			return err
 		}

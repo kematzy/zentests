@@ -370,7 +370,7 @@ func (r *Response) IsNotNull(path string) *Response {
 //   - path: Dot-notation path (e.g., "user.name", "items.0.name")
 //
 // Returns:
-//   - interface{}: The value at the path (nil if not found)
+//   - any: The value at the path (nil if not found)
 //   - bool: True if the path exists, false otherwise
 //
 // Example:
