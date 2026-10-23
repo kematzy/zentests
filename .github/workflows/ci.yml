@@ -18,7 +18,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                go-version: ["1.26", "1.27"]
+                go-version: ["1.25", "1.26", "1.27"]
 
         steps:
             - name: Checkout code
@@ -113,7 +113,7 @@ jobs:
             - name: Run golangci-lint
               uses: golangci/golangci-lint-action@v7
               with:
-                  version: v2.7.2
+                  version: v2.15.0
                   args: --timeout=5m
 
     # Job 3: Build check
