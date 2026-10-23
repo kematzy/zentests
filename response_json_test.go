@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -327,4 +328,91 @@ func (s *ResponseJSONAssertionsSuite) Test_JSON_getNestedValue_NilTraversal() {
 
 func TestResponseJSONAssertionsSuite(t *testing.T) {
 	suite.Run(t, new(ResponseJSONAssertionsSuite))
+}
+
+// jsonRecorder returns a recordingTB-backed Response for a handler that sends body as JSON.
+// The request is made with the recorder as the test, so failures are recorded instead of failing the test.
+func jsonRecorder(t *testing.T, body string) (*recordingTB, *Response) {
+	t.Helper()
+	app := fiber.New()
+	app.Get("/json", func(c fiber.Ctx) error {
+		return c.SendString(body)
+	})
+
+	var resp *Response
+	rec := runRecorded(t, func(tb testing.TB) {
+		resp = execute(tb, app, "GET", "/json", nil, nil, fiber.TestConfig{})
+	})
+	return rec, resp
+}
+
+// TestHasInt_FractionalValue_Fails checks that 42.9 does not match an expected 42.
+func TestHasInt_FractionalValue_Fails(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"n":42.9}`)
+	resp.HasInt("n", 42)
+	assert.NotEmpty(t, rec.errors, "HasInt should reject a fractional value")
+}
+
+// TestHasInt_WholeValue_Passes checks that a whole JSON number matches its integer.
+func TestHasInt_WholeValue_Passes(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"n":42}`)
+	resp.HasInt("n", 42)
+	assert.Empty(t, rec.errors)
+}
+
+// TestHas_MissingKey_ReportsOnce checks that a missing key produces a single failure.
+func TestHas_MissingKey_ReportsOnce(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{}`)
+	resp.Has("missing", "x")
+	assert.Len(t, rec.errors, 1)
+}
+
+// TestHas_IntExpected_MatchesJSONNumber checks that a Go int matches a decoded JSON number.
+func TestHas_IntExpected_MatchesJSONNumber(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"count":7}`)
+	resp.Has("count", 7)
+	assert.Empty(t, rec.errors)
+}
+
+// TestHas_WrongValue_Fails checks that a differing value is reported.
+func TestHas_WrongValue_Fails(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"count":7}`)
+	resp.Has("count", 8)
+	assert.NotEmpty(t, rec.errors)
+}
+
+// TestJSON_InvalidBody_ParsedOnce checks that a parse failure is reported once,
+// even when several assertions use the same body.
+func TestJSON_InvalidBody_ParsedOnce(t *testing.T) {
+	rec, resp := jsonRecorder(t, `not json`)
+	resp.JSON().JSON()
+	assert.Len(t, rec.errors, 1)
+}
+
+// TestJSONHasValues_IgnoresExtraKeys checks that JSONHasValues is a subset check.
+func TestJSONHasValues_IgnoresExtraKeys(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"name":"John","age":30}`)
+	resp.JSONHasValues(map[string]any{"name": "John"})
+	assert.Empty(t, rec.errors)
+}
+
+// TestJSONMatches_IgnoresExtraKeys checks that the JSONMatches alias is also a subset check.
+func TestJSONMatches_IgnoresExtraKeys(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"name":"John","age":30}`)
+	resp.JSONMatches(map[string]any{"name": "John"})
+	assert.Empty(t, rec.errors)
+}
+
+// TestMatchesRegex_NotString_ReportsOnce checks that a non-string value gives one failure.
+func TestMatchesRegex_NotString_ReportsOnce(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"n":1}`)
+	resp.MatchesRegex("n", `.*`)
+	assert.Len(t, rec.errors, 1)
+}
+
+// TestArrayLength_NotArray_ReportsOnce checks that a non-array value gives one failure.
+func TestArrayLength_NotArray_ReportsOnce(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"n":1}`)
+	resp.ArrayLength("n", 1)
+	assert.Len(t, rec.errors, 1)
 }

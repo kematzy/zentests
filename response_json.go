@@ -2,7 +2,10 @@ package zentests
 
 import (
 	"encoding/json"
+	"maps"
+	"reflect"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -10,9 +13,8 @@ import (
 )
 
 // JSON parses and caches the response body as JSON.
-// Enables JSON-specific assertions on the response. The parsed JSON is cached
-// to avoid re-parsing on subsequent JSON assertions. Fails the test if JSON
-// parsing fails.
+// Enables JSON-specific assertions on the response. The body is parsed once; later calls
+// reuse the result, even when parsing failed. Fails the test if JSON parsing fails.
 //
 // Returns:
 //   - *Response: The receiver for method chaining
@@ -21,11 +23,51 @@ import (
 //
 //	zt.Get(app, "/api/users").JSON().Has("data.0.name", "John")
 func (r *Response) JSON() *Response {
-	if r.parsedJSON == nil {
-		err := json.Unmarshal(r.Body(), &r.parsedJSON)
-		assert.NoError(r.t, err, "JSON parsing failed")
+	if r.parsed {
+		return r
 	}
+	r.parsed = true
+
+	err := json.Unmarshal(r.Body(), &r.parsedJSON)
+	assert.NoError(r.t, err, "JSON parsing failed")
 	return r
+}
+
+// lookup parses the JSON body and returns the value at the dot-notation path.
+// If the path does not exist, it records a failure and returns false, so callers can
+// stop without reporting a second failure for the same key.
+//
+// Parameters:
+//   - path: The JSON key path using dot notation
+//
+// Returns:
+//   - any: The value at path (nil if not found)
+//   - bool: True if the path exists
+func (r *Response) lookup(path string) (any, bool) {
+	r.JSON()
+	value, exists := getNestedValue(r.parsedJSON, path)
+	assert.True(r.t, exists, "JSON key %q not found", path)
+	return value, exists
+}
+
+// lookupNumber returns the JSON number at path as a float64. It records a failure and
+// returns false if the path does not exist or the value is not a number.
+//
+// Parameters:
+//   - path: The JSON key path using dot notation
+//
+// Returns:
+//   - float64: The numeric value at path
+//   - bool: True if the value exists and is a number
+func (r *Response) lookupNumber(path string) (float64, bool) {
+	actual, exists := r.lookup(path)
+	if !exists {
+		return 0, false
+	}
+
+	number, isNumber := actual.(float64)
+	assert.True(r.t, isNumber, "expected numeric value for key %q, got %T", path, actual)
+	return number, isNumber
 }
 
 // HasKey asserts that the JSON response contains the specified key path.
@@ -41,19 +83,19 @@ func (r *Response) JSON() *Response {
 //
 //	zt.Get(app, "/api/users/1").HasKey("data.user.name")
 func (r *Response) HasKey(path string) *Response {
-	r.JSON()
-	_, exists := getNestedValue(r.parsedJSON, path)
-	assert.True(r.t, exists, "JSON should have key %q", path)
+	r.lookup(path)
 	return r
 }
 
-// Has asserts that the JSON key equals the expected value with strict type checking.
-// Supports dot notation for nested keys. Fails if the key doesn't exist or if
-// the type doesn't match exactly.
+// Has asserts that the JSON key equals the expected value.
+// Supports dot notation for nested keys. Fails if the key doesn't exist or if the
+// value differs. Any Go numeric type (int, float32, ...) is accepted for numbers and
+// compared as float64, because JSON numbers always decode to float64. Other types must
+// match exactly.
 //
 // Parameters:
 //   - path: The JSON key path using dot notation
-//   - expected: The expected value (type must match exactly)
+//   - expected: The expected value
 //
 // Returns:
 //   - *Response: The receiver for method chaining
@@ -61,20 +103,45 @@ func (r *Response) HasKey(path string) *Response {
 // Example:
 //
 //	zt.Get(app, "/api/users/1").Has("data.user.name", "John")
-//	zt.Get(app, "/api/count").Has("data.count", float64(42)) // JSON numbers are float64
+//	zt.Get(app, "/api/count").Has("data.count", 42) // any numeric type works
 func (r *Response) Has(path string, expected any) *Response {
-	r.JSON()
-	actual, exists := getNestedValue(r.parsedJSON, path)
-	assert.True(r.t, exists, "JSON key %q not found", path)
+	actual, exists := r.lookup(path)
+	if !exists {
+		return r
+	}
 
-	// Type strictness: compare types first
-	assert.IsType(r.t, expected, actual, "type mismatch for key %q", path)
+	expected = normalizeNumber(expected)
+	if !assert.IsType(r.t, expected, actual, "type mismatch for key %q", path) {
+		return r
+	}
 	assert.Equal(r.t, expected, actual, "value mismatch for key %q", path)
 	return r
 }
 
+// normalizeNumber converts any Go numeric value to float64, the type JSON numbers decode to.
+// Non-numeric values are returned unchanged.
+//
+// Parameters:
+//   - value: The value to normalize
+//
+// Returns:
+//   - any: float64 for numeric values, otherwise value unchanged
+func normalizeNumber(value any) any {
+	rv := reflect.ValueOf(value)
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return float64(rv.Int())
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return float64(rv.Uint())
+	case reflect.Float32, reflect.Float64:
+		return rv.Float()
+	default:
+		return value
+	}
+}
+
 // HasInt asserts that the JSON key equals the expected integer value.
-// Handles JSON number conversion (JSON numbers are parsed as float64).
+// Fails for non-integer numbers, so 42.9 does not match 42.
 //
 // Parameters:
 //   - path: The JSON key path using dot notation
@@ -87,18 +154,9 @@ func (r *Response) Has(path string, expected any) *Response {
 //
 //	zt.Get(app, "/api/count").HasInt("data.total", 42)
 func (r *Response) HasInt(path string, expected int) *Response {
-	r.JSON()
-	actual, exists := getNestedValue(r.parsedJSON, path)
-	assert.True(r.t, exists, "JSON key %q not found", path)
-
-	// JSON numbers are float64, convert for comparison
-	switch v := actual.(type) {
-	case float64:
-		assert.Equal(r.t, expected, int(v), "int value mismatch for key %q", path)
-	case int:
-		assert.Equal(r.t, expected, v, "int value mismatch for key %q", path)
-	default:
-		assert.Fail(r.t, "type mismatch", "expected numeric value for key %q, got %T", path, actual)
+	number, ok := r.lookupNumber(path)
+	if ok {
+		assert.Equal(r.t, float64(expected), number, "int value mismatch for key %q", path)
 	}
 	return r
 }
@@ -117,18 +175,9 @@ func (r *Response) HasInt(path string, expected int) *Response {
 //
 //	zt.Get(app, "/api/score").HasFloat("data.score", 95.5)
 func (r *Response) HasFloat(path string, expected float64) *Response {
-	r.JSON()
-	actual, exists := getNestedValue(r.parsedJSON, path)
-	assert.True(r.t, exists, "JSON key %q not found", path)
-
-	// Handle both float64 and int from JSON
-	switch v := actual.(type) {
-	case float64:
-		assert.InDelta(r.t, expected, v, 0.0001, "float value mismatch for key %q", path)
-	case int:
-		assert.InDelta(r.t, expected, float64(v), 0.0001, "float value mismatch for key %q", path)
-	default:
-		assert.Fail(r.t, "type mismatch", "expected numeric value for key %q, got %T", path, actual)
+	number, ok := r.lookupNumber(path)
+	if ok {
+		assert.InDelta(r.t, expected, number, 0.0001, "float value mismatch for key %q", path)
 	}
 	return r
 }
@@ -146,10 +195,10 @@ func (r *Response) HasFloat(path string, expected float64) *Response {
 //
 //	zt.Get(app, "/api/users/1").HasString("data.user.email", "john@example.com")
 func (r *Response) HasString(path, expected string) *Response {
-	r.JSON()
-	actual, exists := getNestedValue(r.parsedJSON, path)
-	assert.True(r.t, exists, "JSON key %q not found", path)
-	assert.Equal(r.t, expected, actual, "string value mismatch for key %q", path)
+	actual, exists := r.lookup(path)
+	if exists {
+		assert.Equal(r.t, expected, actual, "string value mismatch for key %q", path)
+	}
 	return r
 }
 
@@ -166,10 +215,10 @@ func (r *Response) HasString(path, expected string) *Response {
 //
 //	zt.Get(app, "/api/status").HasBool("data.active", true)
 func (r *Response) HasBool(path string, expected bool) *Response {
-	r.JSON()
-	actual, exists := getNestedValue(r.parsedJSON, path)
-	assert.True(r.t, exists, "JSON key %q not found", path)
-	assert.Equal(r.t, expected, actual, "bool value mismatch for key %q", path)
+	actual, exists := r.lookup(path)
+	if exists {
+		assert.Equal(r.t, expected, actual, "bool value mismatch for key %q", path)
+	}
 	return r
 }
 
@@ -187,21 +236,28 @@ func (r *Response) HasBool(path string, expected bool) *Response {
 //
 //	zt.Get(app, "/api/users/1").MatchesRegex("data.user.email", `^[\w.-]+@[\w.-]+\.\w+$`)
 func (r *Response) MatchesRegex(path, pattern string) *Response {
-	r.JSON()
-	actual, exists := getNestedValue(r.parsedJSON, path)
-	assert.True(r.t, exists, "JSON key %q not found", path)
+	actual, exists := r.lookup(path)
+	if !exists {
+		return r
+	}
 
-	str, ok := actual.(string)
-	assert.True(r.t, ok, "expected string value for key %q to match regex, got %T", path, actual)
+	str, isString := actual.(string)
+	if !assert.True(r.t, isString, "expected string value for key %q to match regex, got %T", path, actual) {
+		return r
+	}
 
 	matched, err := regexp.MatchString(pattern, str)
-	assert.NoError(r.t, err, "invalid regex pattern")
+	if !assert.NoError(r.t, err, "invalid regex pattern") {
+		return r
+	}
 	assert.True(r.t, matched, "value %q should match pattern %q for key %s", str, pattern, path)
 	return r
 }
 
-// JSONMatches asserts that the entire JSON structure matches the expected map.
-// Performs Has() assertions for each key-value pair in the expected map.
+// JSONHasValues asserts that each listed key path holds its expected value.
+// This is a subset check: keys that are not listed are ignored. Each entry is checked
+// with Has, so the same type rules apply. Keys are checked in sorted order, so failures
+// are reported in a stable order.
 //
 // Parameters:
 //   - expected: Map of key paths to expected values
@@ -211,16 +267,34 @@ func (r *Response) MatchesRegex(path, pattern string) *Response {
 //
 // Example:
 //
-//	zt.Get(app, "/api/users/1").JSONMatches(map[string]interface{}{
-//	    "data.user.name": "John",
+//	zt.Get(app, "/api/users/1").JSONHasValues(map[string]any{
+//	    "data.user.name":   "John",
 //	    "data.user.active": true,
 //	})
-func (r *Response) JSONMatches(expected map[string]any) *Response {
-	r.JSON()
-	for path, expectedValue := range expected {
-		r.Has(path, expectedValue)
+func (r *Response) JSONHasValues(expected map[string]any) *Response {
+	for _, path := range slices.Sorted(maps.Keys(expected)) {
+		r.Has(path, expected[path])
 	}
 	return r
+}
+
+// JSONMatches is an alias for JSONHasValues. It is a subset check: it asserts that each
+// listed key path holds its expected value, and ignores any other keys in the body.
+// Prefer JSONHasValues in new code.
+//
+// Parameters:
+//   - expected: Map of key paths to expected values
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//	zt.Get(app, "/api/users/1").JSONMatches(map[string]any{
+//	    "data.user.name": "John",
+//	})
+func (r *Response) JSONMatches(expected map[string]any) *Response {
+	return r.JSONHasValues(expected)
 }
 
 // ArrayLength asserts that the JSON key is an array with the expected length.
@@ -236,12 +310,15 @@ func (r *Response) JSONMatches(expected map[string]any) *Response {
 //
 //	zt.Get(app, "/api/users").ArrayLength("data.users", 10)
 func (r *Response) ArrayLength(path string, expected int) *Response {
-	r.JSON()
-	actual, exists := getNestedValue(r.parsedJSON, path)
-	assert.True(r.t, exists, "JSON key %q not found", path)
+	actual, exists := r.lookup(path)
+	if !exists {
+		return r
+	}
 
-	arr, ok := actual.([]any)
-	assert.True(r.t, ok, "expected array for key %q, got %T", path, actual)
+	arr, isArray := actual.([]any)
+	if !assert.True(r.t, isArray, "expected array for key %q, got %T", path, actual) {
+		return r
+	}
 	assert.Equal(r.t, expected, len(arr), "array length mismatch for key %q", path)
 	return r
 }
@@ -258,10 +335,10 @@ func (r *Response) ArrayLength(path string, expected int) *Response {
 //
 //	zt.Get(app, "/api/users/999").IsNull("data.user")
 func (r *Response) IsNull(path string) *Response {
-	r.JSON()
-	actual, exists := getNestedValue(r.parsedJSON, path)
-	assert.True(r.t, exists, "JSON key %q not found", path)
-	assert.Nil(r.t, actual, "expected null for key %q", path)
+	actual, exists := r.lookup(path)
+	if exists {
+		assert.Nil(r.t, actual, "expected null for key %q", path)
+	}
 	return r
 }
 
@@ -277,10 +354,10 @@ func (r *Response) IsNull(path string) *Response {
 //
 //	zt.Get(app, "/api/users/1").IsNotNull("data.user")
 func (r *Response) IsNotNull(path string) *Response {
-	r.JSON()
-	actual, exists := getNestedValue(r.parsedJSON, path)
-	assert.True(r.t, exists, "JSON key %q not found", path)
-	assert.NotNil(r.t, actual, "expected non-null for key %q", path)
+	actual, exists := r.lookup(path)
+	if exists {
+		assert.NotNil(r.t, actual, "expected non-null for key %q", path)
+	}
 	return r
 }
 

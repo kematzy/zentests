@@ -25,6 +25,7 @@ import (
 //   - resp: The underlying http.Response
 //   - body: The cached response body bytes (lazy loaded)
 //   - bodyRead: Flag indicating if body has been read
+//   - parsed: Flag indicating if JSON parsing has been attempted
 //   - parsedJSON: The parsed JSON body as a map (cached after first parse)
 type Response struct {
 	t          testing.TB
@@ -34,6 +35,7 @@ type Response struct {
 	body       []byte
 	StatusCode int
 	bodyRead   bool
+	parsed     bool
 }
 
 // Body returns the response body as bytes.
