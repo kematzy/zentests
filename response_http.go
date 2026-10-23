@@ -286,8 +286,11 @@ func (r *Response) CookieHasValues(expected map[string]string) *Response {
 		actual[c.Name] = c.Value
 	}
 
-	for name, val := range expected {
-		assert.Equal(r.t, val, actual[name], "Cookie %s value mismatch", name)
+	for name, wantValue := range expected {
+		gotValue, found := actual[name]
+		if assert.True(r.t, found, "Cookie %s was not set", name) {
+			assert.Equal(r.t, wantValue, gotValue, "Cookie %s value mismatch", name)
+		}
 	}
 	return r
 }

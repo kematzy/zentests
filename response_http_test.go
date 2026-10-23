@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -384,4 +385,20 @@ func (s *ResponseHTTPTestSuite) Test_Assertion_IsImage() {
 // TestAssetSuite runs the test suite.
 func TestResponseHTTPTestSuite(t *testing.T) {
 	suite.Run(t, new(ResponseHTTPTestSuite))
+}
+
+// TestCookieHasValues_MissingCookie_Fails checks that a cookie that was never set is
+// reported, even when the expected value is the empty string.
+func TestCookieHasValues_MissingCookie_Fails(t *testing.T) {
+	app := fiber.New()
+	app.Get("/no-cookie", func(c fiber.Ctx) error {
+		return c.SendString("ok")
+	})
+
+	rec := runRecorded(t, func(tb testing.TB) {
+		execute(tb, app, "GET", "/no-cookie", nil, nil, fiber.TestConfig{}).
+			CookieHasValues(map[string]string{"session": ""})
+	})
+
+	assert.Len(t, rec.errors, 1, "a missing cookie should be reported once")
 }
