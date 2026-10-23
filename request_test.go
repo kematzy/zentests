@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -264,4 +265,22 @@ func (s *HTTPRequestsSuite) Test_HTTP_DELETE_JSON_WithConfig_Timeout() {
 
 func TestHTTPRequestsSuite(t *testing.T) {
 	suite.Run(t, new(HTTPRequestsSuite))
+}
+
+// TestExecute_TransportError_StopsTest checks that a failed app.Test call is
+// reported and stops the test before the nil response is dereferenced.
+func TestExecute_TransportError_StopsTest(t *testing.T) {
+	app := fiber.New()
+	app.Get("/slow", func(c fiber.Ctx) error {
+		time.Sleep(100 * time.Millisecond)
+		return c.SendString("late")
+	})
+	cfg := fiber.TestConfig{Timeout: 5 * time.Millisecond, FailOnTimeout: true}
+
+	rec := runRecorded(t, func(tb testing.TB) {
+		execute(tb, app, "GET", "/slow", nil, nil, cfg)
+	})
+
+	assert.True(t, rec.fatal, "execute should stop the test on transport error")
+	assert.NotEmpty(t, rec.errors, "transport error should be reported")
 }

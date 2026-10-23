@@ -11,6 +11,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // execute performs an HTTP request against the Fiber app and returns a Response.
@@ -47,7 +48,7 @@ func execute(t testing.TB, app *fiber.App, method, path string, body io.Reader, 
 	} else {
 		resp, err = app.Test(req) //nolint:bodyclose // body is stored in Response for lazy reading
 	}
-	assert.NoError(t, err, "request execution failed")
+	require.NoError(t, err, "request execution failed")
 
 	return &Response{
 		t:          t,
