@@ -9,7 +9,7 @@ import (
 )
 
 // recordingTB captures assertion failures instead of failing the real test.
-// It embeds a real testing.TB so methods it does not override (Helper, Log, ...)
+// It embeds a real [testing.TB] so methods it does not override (Helper, Log, ...)
 // keep working. FailNow stops the calling goroutine, like the real one does.
 type recordingTB struct {
 	testing.TB
@@ -29,7 +29,7 @@ func (r *recordingTB) FailNow() {
 }
 
 // runRecorded runs fn against a recordingTB in its own goroutine, so that
-// FailNow (runtime.Goexit) only ends fn and not the test. It returns the recorder.
+// FailNow ([runtime.Goexit]) only ends fn and not the test. It returns the recorder.
 func runRecorded(t *testing.T, fn func(tb testing.TB)) *recordingTB {
 	t.Helper()
 	rec := &recordingTB{TB: t}

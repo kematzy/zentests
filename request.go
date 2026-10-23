@@ -2,6 +2,7 @@ package zentests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http/httptest"
@@ -35,11 +36,11 @@ func testConfig(cfg fiber.TestConfig) fiber.TestConfig {
 // It stops the test (via require) if the request cannot be executed, for example on timeout.
 //
 // Parameters:
-//   - t: The testing.TB instance for assertions
+//   - t: The [testing.TB] instance for assertions
 //   - app: The Fiber application to test against
 //   - method: The HTTP method (GET, POST, PUT, etc.)
 //   - path: The request path (e.g., "/api/users")
-//   - body: The request body as an io.Reader (nil for requests without a body)
+//   - body: The request body as an [io.Reader] (nil for requests without a body)
 //   - headers: Map of headers to set on the request
 //   - cfg: TestConfig for timeout/behavior; the zero value uses defaultTestConfig
 //
@@ -51,7 +52,7 @@ func testConfig(cfg fiber.TestConfig) fiber.TestConfig {
 //	// Internal usage only - use Get(), Post(), etc. instead
 //	resp := execute(t, app, "GET", "/users", nil, nil, fiber.TestConfig{})
 func execute(t testing.TB, app *fiber.App, method, path string, body io.Reader, headers map[string]string, cfg fiber.TestConfig) *Response {
-	req := httptest.NewRequest(method, path, body)
+	req := httptest.NewRequestWithContext(context.Background(), method, path, body)
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
@@ -71,7 +72,7 @@ func execute(t testing.TB, app *fiber.App, method, path string, body io.Reader, 
 // performs the request. It stops the test if marshaling fails.
 //
 // Parameters:
-//   - t: The testing.TB instance for assertions
+//   - t: The [testing.TB] instance for assertions
 //   - app: The Fiber application to test against
 //   - method: The HTTP method
 //   - path: The request path

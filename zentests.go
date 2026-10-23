@@ -14,7 +14,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-// T wraps testing.T with additional context for testing Fiber applications.
+// T wraps [testing.T] with additional context for testing Fiber applications.
 // It provides a fluent API for making HTTP requests against a Fiber app in tests.
 // T maintains a reference to the Fiber app and testing context to enable chainable assertions.
 //
@@ -26,20 +26,20 @@ import (
 //	}
 //
 // Fields:
-//   - T: The embedded testing.T instance for standard Go test functionality
+//   - T: The embedded [testing.T] instance for standard Go test functionality
 //   - app: The Fiber application instance for making HTTP requests
 type T struct {
 	*testing.T
 	app *fiber.App
 }
 
-// New creates a new zentests context wrapping the provided testing.T.
+// New creates a new zentests context wrapping the provided [testing.T].
 // This is the main entry point for using zentests. The returned *T has no app set initially
 // - call Use() to set the Fiber application for method chaining, or pass the app directly
 // to request methods like Get(app, "/").
 //
 // Parameters:
-//   - t: The testing.T instance from your test function
+//   - t: The [testing.T] instance from your test function
 //
 // Returns:
 //   - *T: A new zentests context with no Fiber app configured

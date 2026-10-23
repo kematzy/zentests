@@ -15,7 +15,7 @@ import (
 // before the It() calls they should apply to.
 //
 // Fields:
-//   - t: The testing.T instance for running subtests
+//   - t: The [testing.T] instance for running subtests
 //   - parent: The enclosing SuiteContext, or nil for a top-level block
 //   - beforeEach: Function to run before each test case in the suite
 //   - afterEach: Function to run after each test case in the suite

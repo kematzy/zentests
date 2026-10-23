@@ -2,6 +2,7 @@ package zentests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -21,7 +22,7 @@ func TestResponse_Body(t *testing.T) {
 		return c.SendString("Hello, World!")
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 
 	assert.NoError(t, err)
@@ -52,7 +53,7 @@ func TestResponse_BodyString(t *testing.T) {
 		return c.SendString("Test Body Content")
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
 
@@ -77,7 +78,7 @@ func TestResponse_Dump(t *testing.T) {
 		return c.SendString("Dump Test Body")
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
 
@@ -105,7 +106,7 @@ func TestResponse_Dump_WithJSON(t *testing.T) {
 		return c.JSON(fiber.Map{"key": "value"})
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
 
@@ -132,7 +133,7 @@ func TestResponse_Body_MultipleCalls(t *testing.T) {
 		return c.SendString("Single Read Test")
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
 
@@ -158,7 +159,7 @@ func TestResponse_EmptyBody(t *testing.T) {
 		return c.SendStatus(204) // No content
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
 
@@ -184,7 +185,7 @@ func TestResponse_LargeBody(t *testing.T) {
 		return c.Send(largeContent)
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
 
@@ -208,7 +209,7 @@ func TestResponse_BodyWithParsedJSON(t *testing.T) {
 		return c.JSON(fiber.Map{"message": "hello"})
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
 
@@ -240,7 +241,7 @@ func TestResponse_DumpWithCustomHeaders(t *testing.T) {
 		return c.SendString("Custom Headers Test")
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
 
@@ -266,7 +267,7 @@ func TestResponse_StructFields(t *testing.T) {
 		return c.SendStatus(201)
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
 
@@ -296,7 +297,7 @@ func TestResponse_BodyReadFlag(t *testing.T) {
 		return c.SendString("Flag Test")
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
 
@@ -315,7 +316,7 @@ func TestResponse_BodyReadFlag(t *testing.T) {
 	assert.True(t, r.bodyRead)
 }
 
-// TestResponse_WithHTTPResponse tests creating Response with raw http.Response.
+// TestResponse_WithHTTPResponse tests creating Response with raw [http.Response].
 func TestResponse_WithHTTPResponse(t *testing.T) {
 	// Create a raw http.Response
 	bodyContent := "Raw HTTP Response"
@@ -345,7 +346,7 @@ func TestResponse_DumpFormatting(t *testing.T) {
 		return c.JSON(fiber.Map{"test": "data"})
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
 
@@ -374,7 +375,7 @@ func TestResponse_BodyAfterBodyString(t *testing.T) {
 		return c.SendString("Body After String Test")
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
 
@@ -403,7 +404,7 @@ func TestResponse_Debug_WithParsedJSON(t *testing.T) {
 		return c.JSON(fiber.Map{"test": "debug_json"})
 	})
 
-	req := httptest.NewRequest("GET", "/test", http.NoBody)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/test", http.NoBody)
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
 

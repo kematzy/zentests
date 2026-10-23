@@ -19,10 +19,10 @@ import (
 // whether the body has been read to prevent multiple reads from the response stream.
 //
 // Fields:
-//   - t: The testing.TB instance for making assertions
+//   - t: The [testing.TB] instance for making assertions
 //   - StatusCode: The HTTP status code from the response
 //   - Header: The HTTP headers from the response
-//   - resp: The underlying http.Response
+//   - resp: The underlying [http.Response]
 //   - body: The cached response body bytes (lazy loaded)
 //   - bodyRead: Flag indicating if body has been read
 //   - parsed: Flag indicating if JSON parsing has been attempted
@@ -82,7 +82,7 @@ const redactedValue = "[REDACTED]"
 
 // sensitiveHeaders lists canonical header names whose values must not be printed,
 // because test logs are often shared or stored in CI.
-var sensitiveHeaders = map[string]bool{ //nolint:gochecknoglobals // read-only lookup table
+var sensitiveHeaders = map[string]bool{
 	"Authorization":       true,
 	"Proxy-Authorization": true,
 	"Cookie":              true,
@@ -92,7 +92,7 @@ var sensitiveHeaders = map[string]bool{ //nolint:gochecknoglobals // read-only l
 // redactedHeaders returns a copy of the response headers with sensitive values masked.
 //
 // Returns:
-//   - http.Header: The headers safe to print
+//   - [http.Header]: The headers safe to print
 func (r *Response) redactedHeaders() http.Header {
 	redacted := make(http.Header, len(r.Header))
 	for key, values := range r.Header {
