@@ -49,19 +49,50 @@ func TestSuiteWithHTTP(t *testing.T) {
 	})
 }
 
-func TestSuiteNested(t *testing.T) {
+func TestSuiteNested_HooksRunOuterBeforeInnerAndInnerAfterOuter(t *testing.T) {
 	zt := New(t)
-	var count int
+	var order []string
 
-	zt.Describe("Outer", func(ctx *SuiteContext) {
-		ctx.It("outer test", func(zt *T) { //nolint:revive
-			count++
+	zt.Describe("Outer", func(outer *SuiteContext) {
+		outer.BeforeEach(func(zt *T) { order = append(order, "outer-before") }).
+			AfterEach(func(zt *T) { order = append(order, "outer-after") })
+
+		outer.Describe("Inner", func(inner *SuiteContext) {
+			inner.BeforeEach(func(zt *T) { order = append(order, "inner-before") }).
+				AfterEach(func(zt *T) { order = append(order, "inner-after") })
+
+			inner.It("test", func(zt *T) { order = append(order, "test") })
 		})
-
-		// Note: Nested describes would need more implementation
 	})
 
-	assert.Equal(t, 1, count)
+	assert.Equal(t, []string{"outer-before", "inner-before", "test", "inner-after", "outer-after"}, order)
+}
+
+func TestSuiteNested_InnerBlockWithoutHooks_InheritsOuterHooks(t *testing.T) {
+	zt := New(t)
+	var order []string
+
+	zt.Describe("Outer", func(outer *SuiteContext) {
+		outer.BeforeEach(func(zt *T) { order = append(order, "before") })
+
+		outer.Describe("Inner", func(inner *SuiteContext) {
+			inner.It("test", func(zt *T) { order = append(order, "test") })
+		})
+	})
+
+	assert.Equal(t, []string{"before", "test"}, order)
+}
+
+func TestSuiteHooks_DeclaredAfterIt_NotApplied(t *testing.T) {
+	zt := New(t)
+	var order []string
+
+	zt.Describe("Late hooks", func(ctx *SuiteContext) {
+		ctx.It("test", func(zt *T) { order = append(order, "test") })
+		ctx.BeforeEach(func(zt *T) { order = append(order, "before") })
+	})
+
+	assert.Equal(t, []string{"test"}, order)
 }
 
 func TestSuiteNoHooks(t *testing.T) {

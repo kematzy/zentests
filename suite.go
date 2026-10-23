@@ -8,12 +8,20 @@ import (
 // Provides lifecycle hooks (BeforeEach, AfterEach) for test setup and teardown.
 // Each describe block gets its own SuiteContext to manage test isolation.
 //
+// Describe blocks can be nested. Hooks of enclosing blocks apply to tests in nested blocks:
+// BeforeEach hooks run outermost first, and AfterEach hooks run innermost first.
+//
+// Hooks are captured when It() is called, so BeforeEach and AfterEach must be declared
+// before the It() calls they should apply to.
+//
 // Fields:
 //   - t: The testing.T instance for running subtests
+//   - parent: The enclosing SuiteContext, or nil for a top-level block
 //   - beforeEach: Function to run before each test case in the suite
 //   - afterEach: Function to run after each test case in the suite
 type SuiteContext struct {
 	t          *testing.T
+	parent     *SuiteContext
 	beforeEach func(*T)
 	afterEach  func(*T)
 }
@@ -40,13 +48,38 @@ type SuiteContext struct {
 //	})
 func (zt *T) Describe(name string, fn func(ctx *SuiteContext)) {
 	zt.Run(name, func(t *testing.T) {
-		ctx := &SuiteContext{t: t}
-		fn(ctx)
+		fn(&SuiteContext{t: t})
+	})
+}
+
+// Describe creates a nested describe block inside this one.
+// Hooks declared in the enclosing block apply to the tests in the nested block.
+//
+// Parameters:
+//   - name: The descriptive name for the nested group
+//   - fn: Function that receives the nested SuiteContext
+//
+// Example:
+//
+//	zt.Describe("Users", func(ctx *zentests.SuiteContext) {
+//	    ctx.BeforeEach(func(zt *zentests.T) { app = setupTestApp() })
+//
+//	    ctx.Describe("when logged in", func(ctx *zentests.SuiteContext) {
+//	        ctx.It("lists users", func(zt *zentests.T) {
+//	            zt.Get(app, "/users").OK()
+//	        })
+//	    })
+//	})
+func (ctx *SuiteContext) Describe(name string, fn func(ctx *SuiteContext)) {
+	ctx.t.Run(name, func(t *testing.T) {
+		fn(&SuiteContext{t: t, parent: ctx})
 	})
 }
 
 // It runs a test case within a describe block.
-// Individual test cases that execute with BeforeEach/AfterEach hooks.
+// Runs the BeforeEach hooks of this block and its enclosing blocks, then fn, then the
+// AfterEach hooks. AfterEach hooks are registered with t.Cleanup, so they still run when
+// the test stops early (for example through require).
 // Each It() call creates a sub-test that runs independently.
 //
 // Parameters:
@@ -59,26 +92,40 @@ func (zt *T) Describe(name string, fn func(ctx *SuiteContext)) {
 //	    zt.Get(app, "/users").OK().IsJSON()
 //	})
 func (ctx *SuiteContext) It(name string, fn func(*T)) {
+	before, after := ctx.hooks()
+
 	ctx.t.Run(name, func(t *testing.T) {
 		zt := &T{T: t}
 
-		// Run beforeEach if defined
-		if ctx.beforeEach != nil {
-			ctx.beforeEach(zt)
+		for _, hook := range before {
+			hook(zt)
+		}
+		// Cleanups run last-in first-out, so registering outermost first runs innermost first.
+		for _, hook := range after {
+			t.Cleanup(func() { hook(zt) })
 		}
 
-		// Run test
 		fn(zt)
-
-		// Run afterEach if defined
-		if ctx.afterEach != nil {
-			ctx.afterEach(zt)
-		}
 	})
+}
+
+// hooks collects the BeforeEach and AfterEach hooks that apply to this block, including
+// those of enclosing blocks. Both slices are ordered outermost first.
+func (ctx *SuiteContext) hooks() (before, after []func(*T)) {
+	for block := ctx; block != nil; block = block.parent {
+		if block.beforeEach != nil {
+			before = append([]func(*T){block.beforeEach}, before...)
+		}
+		if block.afterEach != nil {
+			after = append([]func(*T){block.afterEach}, after...)
+		}
+	}
+	return before, after
 }
 
 // BeforeEach sets the setup hook function to run before each test case.
 // Use this for common setup like creating fresh app instances or test data.
+// Must be called before the It() calls it should apply to.
 // Returns the SuiteContext for method chaining with AfterEach.
 //
 // Parameters:
@@ -102,6 +149,7 @@ func (ctx *SuiteContext) BeforeEach(fn func(*T)) *SuiteContext {
 
 // AfterEach sets the teardown hook function to run after each test case.
 // Use this for cleanup like closing database connections or shutting down apps.
+// Must be called before the It() calls it should apply to.
 // Returns the SuiteContext for method chaining.
 //
 // Parameters:
