@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"runtime"
 	"testing"
+
+	"github.com/gofiber/fiber/v3"
 )
 
 // recordingTB captures assertion failures instead of failing the real test.
@@ -38,4 +40,32 @@ func runRecorded(t *testing.T, fn func(tb testing.TB)) *recordingTB {
 	}()
 	<-done
 	return rec
+}
+
+// failuresOf runs assertion against the response of GET / served by handler and returns
+// the failure messages it recorded. Used to check that assertions report wrong responses.
+func failuresOf(t *testing.T, handler fiber.Handler, assertion func(*Response)) []string {
+	t.Helper()
+	app := fiber.New()
+	app.Get("/", handler)
+
+	rec := runRecorded(t, func(tb testing.TB) {
+		assertion(execute(tb, app, "GET", "/", nil, nil, fiber.TestConfig{}))
+	})
+	return rec.errors
+}
+
+// sendString returns a handler that replies with body as text/plain.
+func sendString(body string) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		return c.SendString(body)
+	}
+}
+
+// sendRawJSON returns a handler that replies with body as application/json.
+func sendRawJSON(body string) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		c.Set("Content-Type", "application/json")
+		return c.SendString(body)
+	}
 }
