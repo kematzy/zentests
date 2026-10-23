@@ -77,8 +77,37 @@ func (r *Response) BodyString() string {
 	return string(r.Body())
 }
 
+// redactedValue replaces the values of sensitive headers in Debug and Dump output.
+const redactedValue = "[REDACTED]"
+
+// sensitiveHeaders lists canonical header names whose values must not be printed,
+// because test logs are often shared or stored in CI.
+var sensitiveHeaders = map[string]bool{ //nolint:gochecknoglobals // read-only lookup table
+	"Authorization":       true,
+	"Proxy-Authorization": true,
+	"Cookie":              true,
+	"Set-Cookie":          true,
+}
+
+// redactedHeaders returns a copy of the response headers with sensitive values masked.
+//
+// Returns:
+//   - http.Header: The headers safe to print
+func (r *Response) redactedHeaders() http.Header {
+	redacted := make(http.Header, len(r.Header))
+	for key, values := range r.Header {
+		if sensitiveHeaders[http.CanonicalHeaderKey(key)] {
+			redacted[key] = []string{redactedValue}
+			continue
+		}
+		redacted[key] = values
+	}
+	return redacted
+}
+
 // Debug prints detailed response information to stdout for troubleshooting.
 // Outputs status code, headers, body, and parsed JSON (if available).
+// Sensitive headers such as Authorization and Set-Cookie are redacted.
 // This is useful during test development to inspect response details.
 // Returns the receiver for method chaining.
 //
@@ -89,28 +118,23 @@ func (r *Response) BodyString() string {
 //
 //	zt.Get(app, "/users").Debug().OK()
 func (r *Response) Debug() *Response {
-	fmt.Println("")
-	fmt.Println("=== ZENTESTS DEBUG ===")
-	fmt.Println("")
-	fmt.Printf("Status: %d\n", r.StatusCode)
-	fmt.Printf("Headers: %v\n", r.Header)
-	fmt.Printf("Body: %s\n", r.BodyString())
+	fmt.Printf("\n=== ZENTESTS DEBUG ===\n\n%s\n", r.Dump())
 
 	if r.parsedJSON != nil {
-		var err error
 		pretty, err := json.MarshalIndent(r.parsedJSON, "", "  ")
-		assert.NoErrorf(r.t, err, "error marshalIndenting parsed JSON: %s", err)
-		fmt.Printf("Parsed JSON:\n%s\n", string(pretty))
+		if assert.NoError(r.t, err, "error marshalIndenting parsed JSON") {
+			fmt.Printf("Parsed JSON:\n%s\n", pretty)
+		}
 	}
-	fmt.Println("")
-	fmt.Println("======================")
-	fmt.Println("")
+
+	fmt.Printf("\n======================\n\n")
 	return r
 }
 
 // Dump returns raw response details as a formatted string.
 // Useful for custom logging or including response details in test failure messages.
 // Unlike Debug(), this returns a string instead of printing to stdout.
+// Sensitive headers such as Authorization and Set-Cookie are redacted.
 //
 // Returns:
 //   - string: Formatted string with status, headers, and body
@@ -121,5 +145,5 @@ func (r *Response) Debug() *Response {
 //	t.Logf("Response details: %s", details)
 func (r *Response) Dump() string {
 	return fmt.Sprintf("Status: %d\nHeaders: %v\nBody: %s",
-		r.StatusCode, r.Header, r.BodyString())
+		r.StatusCode, r.redactedHeaders(), r.BodyString())
 }

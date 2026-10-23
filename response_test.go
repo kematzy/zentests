@@ -446,3 +446,19 @@ func TestResponse_Debug_WithParsedJSON(t *testing.T) {
 	assert.Contains(t, output, "test")
 	assert.Contains(t, output, "debug_json")
 }
+
+// TestDump_SensitiveHeaders_Redacted checks that Authorization values never appear in Dump output.
+func TestDump_SensitiveHeaders_Redacted(t *testing.T) {
+	app := fiber.New()
+	app.Get("/secret", func(c fiber.Ctx) error {
+		c.Set("Authorization", "Bearer super-secret-token")
+		c.Set("X-Request-Id", "visible")
+		return c.SendString("ok")
+	})
+
+	dump := execute(t, app, "GET", "/secret", nil, nil, fiber.TestConfig{}).Dump()
+
+	assert.NotContains(t, dump, "super-secret-token")
+	assert.Contains(t, dump, redactedValue)
+	assert.Contains(t, dump, "visible", "non-sensitive headers should still be printed")
+}
