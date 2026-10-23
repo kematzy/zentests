@@ -645,7 +645,7 @@ make modernize              # Run tool to identify & replace old Go code with ne
 make modernize-check        # Dry-run with diffs to identify old Go code with newer standards.
 
 make check                  # Run all checks (fmt, vet, lint, check-test-coverage)
-make check-test-coverage    # Run tests and enforce coverage threshold (default: 90%)
+make check-test-coverage    # Run tests and enforce coverage threshold (default: 95%)
 
 # Release
 make release                # Release a new tagged version (e.g. make release VERSION=v1.2.3)

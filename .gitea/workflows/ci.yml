@@ -17,7 +17,7 @@ jobs:
         name: CI Pipeline
         runs-on: ubuntu-latest
         container:
-            image: golang:1.25-bookworm
+            image: golang:1.27-bookworm
 
         steps:
             - name: Install dependencies

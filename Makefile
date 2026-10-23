@@ -7,7 +7,9 @@
 # Set the current version or default
 VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
 # Set the minimun coverage percentage
-COVERAGE_MIN ?= 90
+COVERAGE_MIN ?= 95
+# Coverage profile written by coverage-profile and read by the coverage targets
+COVERAGE_PROFILE := .code-status/coverage.out
 # Get the current commit hash
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 # Set the date for
@@ -32,7 +34,7 @@ endef
 .DEFAULT_GOAL := help
 
 # non-file targets (commands)
-.PHONY: help test test-verbose test-coverage fmt vet lint tidy check release changelog git-push gitea-push github-push docs docs-md modernize modernize-check
+.PHONY: help test test-verbose coverage-profile test-coverage fmt vet lint tidy check release changelog git-push gitea-push github-push docs docs-md modernize modernize-check
 
 ## help: Show this help message
 help:
@@ -86,10 +88,14 @@ test-verbose:
 
 # @gotest -v ./...
 
+## coverage-profile: Run tests and write the coverage profile
+coverage-profile:
+	@mkdir -p $(dir $(COVERAGE_PROFILE))
+	@go test -coverprofile=$(COVERAGE_PROFILE) ./...
+
 ## test-coverage: Run tests and generate coverage report
-test-coverage:
-	@go test -coverprofile=.code-status/coverage.out ./...
-	@go tool cover -html=.code-status/coverage.out -o code-coverage.html
+test-coverage: coverage-profile
+	@go tool cover -html=$(COVERAGE_PROFILE) -o code-coverage.html
 	@echo -e "\033[32mCoverage report generated: code-coverage.html \033[0m"
 
 
@@ -102,10 +108,9 @@ check: fmt vet lint check-test-coverage
 	@echo "All checks passed."
 	@echo ""
 
-## check-test-coverage: Run tests and enforce coverage threshold (default: 90%)
-check-test-coverage:
-	@go test -coverprofile=.code-status/coverage.out ./...
-	@go tool cover -func=coverage.out | tail -1 | awk '{print $$3}' | \
+## check-test-coverage: Run tests and enforce coverage threshold (default: 95%)
+check-test-coverage: coverage-profile
+	@go tool cover -func=$(COVERAGE_PROFILE) | tail -1 | awk '{print $$3}' | \
 	  tr -d '%' | awk -v threshold=${COVERAGE_MIN} \
 	  '{ if ($$1 < threshold) \
 	       { print "FAIL: Coverage " $$1 "% is below threshold " threshold "%"; exit 1 } \
@@ -200,5 +205,5 @@ docs-md:
 ## clean: Clean build artifacts
 clean:
 	@echo -e "\033[2mCleaning... \033[0m"
-	@rm -f coverage.out .code-status/coverage.out
+	@rm -f coverage.out $(COVERAGE_PROFILE)
 	@echo -e "\033[32mDone! \033[0m"

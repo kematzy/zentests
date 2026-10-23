@@ -8,8 +8,6 @@ on:
     workflow_dispatch:
 
 env:
-    GO_VERSION_1: "1.24"
-    GO_VERSION_2: "1.25"
     COVERAGE_THRESHOLD: 95
 
 jobs:
@@ -20,7 +18,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                go-version: ["1.24", "1.25"]
+                go-version: ["1.26", "1.27"]
 
         steps:
             - name: Checkout code
@@ -74,7 +72,7 @@ jobs:
             - name: Setup Go
               uses: actions/setup-go@v5
               with:
-                  go-version: "1.24"
+                  go-version: "1.27"
                   cache: true
 
             - name: Download dependencies
@@ -126,7 +124,7 @@ jobs:
             - name: Setup Go
               uses: actions/setup-go@v5
               with:
-                  go-version: "1.24"
+                  go-version: "1.27"
                   cache: true
 
             - name: Download dependencies
