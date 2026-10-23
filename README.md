@@ -128,6 +128,7 @@ zt.Get(app, "/api/users").
 
 ### [suite.go](./examples/suite.go) - BDD Style Testing
 Demonstrates BDD-style testing with `Describe`, `It`, and lifecycle hooks (`BeforeEach`, `AfterEach`).
+Describe blocks can be nested; hooks of enclosing blocks apply to inner tests. Declare hooks before the `It` calls they should apply to.
 
 ```go
 zt.Describe("User API", func(ctx *zentests.SuiteContext) {
@@ -224,6 +225,8 @@ func TestSlowEndpoint(t *testing.T) {
 | `Timeout` | `time.Duration` | `1s` | Request timeout duration |
 | `FailOnTimeout` | `bool` | `true` | Return error on timeout (true) or partial response (false) |
 
+A zero-value `fiber.TestConfig{}` uses the defaults above. The plain methods (`Get`, `PostJSON`, ...) use it.
+
 
 ### Status Assertions
 
@@ -290,7 +293,7 @@ Dot notation for nested keys: `user.profile.name`
 ```go
 resp.JSON()                            // Parse & cache JSON
 resp.HasKey("user.name")               // Key exists
-resp.Has("user.name", "John")          // Strict type match
+resp.Has("user.name", "John")          // Exact match (any numeric type matches a JSON number)
 resp.HasString("user.name", "John")    // String value
 resp.HasInt("user.age", 30)            // Integer value (handles JSON float64)
 resp.HasFloat("user.score", 9.5)       // Float value
@@ -298,6 +301,9 @@ resp.HasBool("user.active", true)      // Boolean value
 resp.MatchesRegex("user.email", `[\w\.]+@`) // Regex match
 resp.IsNull("user.deleted_at")         // Null check
 resp.IsNotNull("user.id")              // Not null check
+resp.JSONHasValues(map[string]any{     // Subset check: other keys are ignored
+    "user.name": "John",
+})
 resp.ArrayLength("items", 3)           // Array length
 
 // Bulk assertion
