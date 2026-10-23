@@ -19,7 +19,7 @@ import (
 // whether the body has been read to prevent multiple reads from the response stream.
 //
 // Fields:
-//   - t: The testing.T instance for making assertions
+//   - t: The testing.TB instance for making assertions
 //   - StatusCode: The HTTP status code from the response
 //   - Header: The HTTP headers from the response
 //   - resp: The underlying http.Response
@@ -27,7 +27,7 @@ import (
 //   - bodyRead: Flag indicating if body has been read
 //   - parsedJSON: The parsed JSON body as a map (cached after first parse)
 type Response struct {
-	t          *testing.T
+	t          testing.TB
 	Header     http.Header
 	resp       *http.Response
 	parsedJSON map[string]any

@@ -19,7 +19,7 @@ import (
 // It automatically fails the test if the request execution fails.
 //
 // Parameters:
-//   - t: The testing.T instance for assertions
+//   - t: The testing.TB instance for assertions
 //   - app: The Fiber application to test against
 //   - method: The HTTP method (GET, POST, PUT, etc.)
 //   - path: The request path (e.g., "/api/users")
@@ -34,7 +34,7 @@ import (
 //
 //	// Internal usage only - use Get(), Post(), etc. instead
 //	resp := execute(t, app, "GET", "/users", nil, nil)
-func execute(t *testing.T, app *fiber.App, method, path string, body io.Reader, headers map[string]string, cfg ...fiber.TestConfig) *Response {
+func execute(t testing.TB, app *fiber.App, method, path string, body io.Reader, headers map[string]string, cfg ...fiber.TestConfig) *Response {
 	req := httptest.NewRequest(method, path, body)
 	for k, v := range headers {
 		req.Header.Set(k, v)
