@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -64,4 +65,17 @@ func (s *ResponseBodyAssertionsSuite) Test_BodyAssertions_Contains_Chaining() {
 
 func TestResponseBodyAssertionsSuite(t *testing.T) {
 	suite.Run(t, new(ResponseBodyAssertionsSuite))
+}
+
+// TestBodyMatches_InvalidPattern_ReportsOnce checks that an invalid regex is reported once,
+// without a second "body should match" failure.
+func TestBodyMatches_InvalidPattern_ReportsOnce(t *testing.T) {
+	app := fiber.New()
+	app.Get("/", func(c fiber.Ctx) error { return c.SendString("hello") })
+
+	rec := runRecorded(t, func(tb testing.TB) {
+		execute(tb, app, "GET", "/", nil, nil, fiber.TestConfig{}).BodyMatches("(")
+	})
+
+	assert.Len(t, rec.errors, 1)
 }
