@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -139,14 +140,8 @@ func (zt *T) PostJSON(app *fiber.App, path string, data any) *Response {
 //	data := map[string]string{"username": "john", "password": "secret"}
 //	zt.PostForm(app, "/login", data).OK()
 func (zt *T) PostForm(app *fiber.App, path string, data map[string]string) *Response {
-	form := make([]string, 0, len(data))
-	for k, v := range data {
-		form = append(form, k+"="+v)
-	}
-	body := strings.NewReader(strings.Join(form, "&"))
-
 	headers := map[string]string{"Content-Type": "application/x-www-form-urlencoded"}
-	return execute(zt.T, app, "POST", path, body, headers)
+	return execute(zt.T, app, "POST", path, formBody(data), headers)
 }
 
 // Put performs a PUT request with a raw body.
@@ -362,14 +357,8 @@ func (zt *T) PostJSONWithConfig(app *fiber.App, path string, data any, cfg fiber
 //	    Timeout: 5 * time.Second,
 //	}).OK()
 func (zt *T) PostFormWithConfig(app *fiber.App, path string, data map[string]string, cfg fiber.TestConfig) *Response {
-	form := make([]string, 0, len(data))
-	for k, v := range data {
-		form = append(form, k+"="+v)
-	}
-	body := strings.NewReader(strings.Join(form, "&"))
-
 	headers := map[string]string{"Content-Type": "application/x-www-form-urlencoded"}
-	return execute(zt.T, app, "POST", path, body, headers, cfg)
+	return execute(zt.T, app, "POST", path, formBody(data), headers, cfg)
 }
 
 // PutWithConfig performs a PUT request with raw body and custom TestConfig.
@@ -465,6 +454,17 @@ func (zt *T) DeleteJSONWithConfig(app *fiber.App, path string, data any, cfg fib
 
 	headers := map[string]string{"Content-Type": "application/json"}
 	return execute(zt.T, app, "DELETE", path, bytes.NewReader(jsonBody), headers, cfg)
+}
+
+// formBody encodes data as an application/x-www-form-urlencoded request body.
+// Keys and values are escaped, so characters such as "&", "=", "+" and spaces
+// reach the server unchanged.
+func formBody(data map[string]string) io.Reader {
+	values := url.Values{}
+	for key, value := range data {
+		values.Set(key, value)
+	}
+	return strings.NewReader(values.Encode())
 }
 
 // SetHeader creates a header map with a single key-value pair.

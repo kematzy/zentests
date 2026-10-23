@@ -284,3 +284,16 @@ func TestExecute_TransportError_StopsTest(t *testing.T) {
 	assert.True(t, rec.fatal, "execute should stop the test on transport error")
 	assert.NotEmpty(t, rec.errors, "transport error should be reported")
 }
+
+// TestPostForm_SpecialCharacters_ReachServerUnchanged checks that reserved
+// form characters survive encoding instead of splitting or corrupting fields.
+func TestPostForm_SpecialCharacters_ReachServerUnchanged(t *testing.T) {
+	app := fiber.New()
+	app.Post("/form", func(c fiber.Ctx) error {
+		return c.SendString(c.FormValue("name"))
+	})
+	value := "a&b=c d+e"
+
+	zt := New(t)
+	zt.PostForm(app, "/form", map[string]string{"name": value}).Equals(value)
+}
