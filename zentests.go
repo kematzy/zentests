@@ -68,18 +68,19 @@ func New(t *testing.T) *T {
 // After calling Use(), subsequent request methods can be called without passing the app parameter.
 //
 // Parameters:
-//   - app: The Fiber application instance to test against
+//   - app: The Fiber application instance to test against; must not be nil
 //
 // Returns:
 //   - *T: The receiver for method chaining
-//
-// TODO: Add nil check for app parameter to prevent panics
 //
 // Example:
 //
 //	zt := zentests.New(t).Use(app)
 //	zt.Get("/users").OK()
 func (zt *T) Use(app *fiber.App) *T {
+	if app == nil {
+		zt.Fatal("zentests: Use called with a nil *fiber.App")
+	}
 	zt.app = app
 	return zt
 }
