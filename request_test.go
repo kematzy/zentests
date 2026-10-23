@@ -297,3 +297,17 @@ func TestPostForm_SpecialCharacters_ReachServerUnchanged(t *testing.T) {
 	zt := New(t)
 	zt.PostForm(app, "/form", map[string]string{"name": value}).Equals(value)
 }
+
+// TestTestConfig_ZeroValue_UsesDefaults checks that a zero-value config is replaced by
+// the default timeout, so a stuck handler cannot block the test forever.
+func TestTestConfig_ZeroValue_UsesDefaults(t *testing.T) {
+	assert.Equal(t, defaultTestConfig, testConfig(fiber.TestConfig{}))
+	assert.Positive(t, testConfig(fiber.TestConfig{}).Timeout)
+	assert.True(t, testConfig(fiber.TestConfig{}).FailOnTimeout)
+}
+
+// TestTestConfig_Custom_IsKept checks that an explicit config is passed through unchanged.
+func TestTestConfig_Custom_IsKept(t *testing.T) {
+	custom := fiber.TestConfig{Timeout: 3 * time.Second, FailOnTimeout: false}
+	assert.Equal(t, custom, testConfig(custom))
+}
