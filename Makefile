@@ -35,7 +35,7 @@ endef
 
 # non-file targets (commands)
 .PHONY: help fmt fmt-check vet lint tidy check spellcheck
-.PHONY: test test-verbose test-dox test-watch coverage-profile test-coverage
+.PHONY: test test-verbose test-dox test-watch test-coverage
 .PHONY: release changelog git-push gitea-push github-push docs docs-md modernize modernize-check
 
 ## help: Show this help message
@@ -129,13 +129,21 @@ test-watch:
 
 ## coverage-profile: Run tests and write the coverage profile
 coverage-profile:
-	@mkdir -p $(dir $(COVERAGE_PROFILE))
-	@go test -coverprofile=$(COVERAGE_PROFILE) ./...
+	@mkdir -p .code-status
+	@echo ""
+	@gotest -coverprofile=$(COVERAGE_PROFILE) ./...
+
 
 ## test-coverage: Run tests and generate coverage report
-test-coverage: coverage-profile
-	@go tool cover -html=$(COVERAGE_PROFILE) -o code-coverage.html
-	@echo -e "\033[32mCoverage report generated: code-coverage.html \033[0m"
+test-coverage:
+	@mkdir -p .code-status
+	@echo ""
+	@gotest -coverprofile=$(COVERAGE_PROFILE) ./...
+	@go-better-html-coverage -profile $(COVERAGE_PROFILE) -o code-coverage.html
+	@echo -e "\n\033[32mCoverage report generated: code-coverage.html \033[0m\n"
+	@#
+	@# depends upon: go install github.com/chmouel/go-better-html-coverage@latest
+
 
 
 #======================================================================================================================
