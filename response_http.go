@@ -1,6 +1,8 @@
 package zentests
 
 import (
+	"net/http"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -293,6 +295,31 @@ func (r *Response) CookieHasValues(expected map[string]string) *Response {
 		}
 	}
 	return r
+}
+
+// Cookie returns the named cookie from the response, failing the test when it was not set.
+// Use it to check attributes the [Jar] does not keep, such as HttpOnly, Path, Secure and SameSite.
+//
+// Parameters:
+//   - name: The cookie name
+//
+// Returns:
+//   - *[http.Cookie]: The parsed Set-Cookie entry with its attributes
+//
+// Example:
+//
+//	cookie := zt.Get(app, "/login").OK().Cookie("session")
+//	assert.True(t, cookie.HttpOnly)
+func (r *Response) Cookie(name string) *http.Cookie {
+	r.t.Helper()
+	for _, cookie := range r.resp.Cookies() {
+		if cookie.Name == name {
+			return cookie
+		}
+	}
+	r.t.Errorf("cookie %s was not set", name)
+	r.t.FailNow()
+	return nil
 }
 
 // ================================================================================================

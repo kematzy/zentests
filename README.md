@@ -315,6 +315,29 @@ resp.Matches(map[string]any{
 
 ```
 
+### Cookie Jar
+
+`NewJar` sends requests to one app and keeps the cookies it sets, the way a browser does.
+Use it for flows that span several requests, such as login, CSRF and session tests. Every
+request returns a `*Response`, so the usual assertions compose with jar requests.
+
+```go
+jar := zentests.NewJar(t, app)
+csrf := jar.Get("/login").OK().BodyString()          // app sets session cookie here
+jar.PostForm("/login", url.Values{"csrf": {csrf}, "user": {"jane"}}).Status(302)
+if jar.Cookie("session") == "" { t.Fatal("no session") }
+jar.Get("/settings").OK().Contains("Welcome Jane")
+```
+
+- `jar.Get(path)`, `jar.PostForm(path, url.Values)` and `jar.Send(req)` for a caller-built request
+- `jar.Cookie(name)` returns the stored value, or `""` when absent
+- `resp.Cookie(name)` returns the `*http.Cookie` the response set, so you can check `HttpOnly`,
+  `Path`, `Secure` and `SameSite`. It fails the test when the cookie is absent
+
+A cookie is forgotten when a response sets it with `MaxAge < 0` or an empty value. Fiber's
+`c.ClearCookie` sends an empty value. The jar is deliberately flat, with no `Path`, `Domain` or
+`Expires` matching: every stored cookie is sent to every request on the app.
+
 ### BDD Style with Describe/It
 
 ```go
