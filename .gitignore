@@ -50,3 +50,5 @@ go.work.sum
 # ...even if they are in subdirectories
 !*/
 .code-status
+
+TMP/
