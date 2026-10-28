@@ -4,7 +4,7 @@
 //
 //	func TestEndpoint(t *testing.T) {
 //	    zt := zentests.New(t).Use(app)
-//	    zt.Get("/users").ExpectStatus(200)
+//	    zt.Get("/users").Status(200)
 //	}
 package zentests
 
@@ -22,7 +22,7 @@ import (
 //
 //	func TestEndpoint(t *testing.T) {
 //	    zt := zentests.New(t).Use(app)
-//	    zt.Get("/users").ExpectStatus(200)
+//	    zt.Get("/users").Status(200)
 //	}
 //
 // Fields:
