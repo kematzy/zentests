@@ -35,7 +35,7 @@ endef
 
 # non-file targets (commands)
 .PHONY: help fmt fmt-check vet lint tidy check spellcheck
-.PHONY: test test-verbose coverage-profile test-coverage
+.PHONY: test test-verbose test-dox test-watch coverage-profile test-coverage
 .PHONY: release changelog git-push gitea-push github-push docs docs-md modernize modernize-check
 
 ## help: Show this help message
@@ -117,7 +117,15 @@ test-verbose:
 	@echo ""
 	@gotestsum --format testname
 
-# @gotest -v ./...
+## test-dox: Run all tests with testdox colored output
+test-dox:
+	@echo ""
+	@gotestsum --format testdox
+
+## test-watch: Run tests when a file is saved. Reruns failed tests 4 times
+test-watch:
+	@echo ""
+	@gotestsum --watch --format dots
 
 ## coverage-profile: Run tests and write the coverage profile
 coverage-profile:
