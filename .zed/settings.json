@@ -1,0 +1,20 @@
+{
+  "file_types": {
+    "JSON": [".prettierrc"],
+  },
+  "languages": {
+    "JSON": {
+      "formatter": "prettier",
+      "format_on_save": "on",
+    },
+  },
+  "lsp": {
+    "yaml-language-server": {
+      "settings": {
+        "yaml": {
+          "keyOrdering": false // disable to silence `config.yml` warnings
+        }
+      }
+    }
+  },
+}
