@@ -463,3 +463,18 @@ func TestDump_SensitiveHeaders_Redacted(t *testing.T) {
 	assert.Contains(t, dump, redactedValue)
 	assert.Contains(t, dump, "visible", "non-sensitive headers should still be printed")
 }
+
+// TestDump_CustomSecretHeaders_Redacted checks that API key and auth token headers are masked in Dump output.
+func TestDump_CustomSecretHeaders_Redacted(t *testing.T) {
+	app := fiber.New()
+	app.Get("/secret", func(c fiber.Ctx) error {
+		c.Set("X-Api-Key", "key-secret-123")
+		c.Set("X-Auth-Token", "token-secret-456")
+		return c.SendString("ok")
+	})
+
+	dump := execute(t, app, "GET", "/secret", nil, nil, fiber.TestConfig{}).Dump()
+
+	assert.NotContains(t, dump, "key-secret-123")
+	assert.NotContains(t, dump, "token-secret-456")
+}

@@ -87,6 +87,8 @@ var sensitiveHeaders = map[string]bool{
 	"Proxy-Authorization": true,
 	"Cookie":              true,
 	"Set-Cookie":          true,
+	"X-Api-Key":           true,
+	"X-Auth-Token":        true,
 }
 
 // redactedHeaders returns a copy of the response headers with sensitive values masked.
