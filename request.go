@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -32,7 +33,7 @@ func testConfig(cfg fiber.TestConfig) fiber.TestConfig {
 }
 
 // execute performs an HTTP request against the Fiber app and returns a Response.
-// This is the single place where requests are sent; every public method delegates here.
+// It builds the request from its parts and hands it to send, which runs it.
 // It stops the test (via require) if the request cannot be executed, for example on timeout.
 //
 // Parameters:
@@ -57,6 +58,13 @@ func execute(t testing.TB, app *fiber.App, method, path string, body io.Reader, 
 		req.Header.Set(k, v)
 	}
 
+	return send(t, app, req, cfg)
+}
+
+// send runs a prepared request against the Fiber app and wraps the result in a Response.
+// execute and Jar both delegate here, so every request is handled the same way.
+// It stops the test (via require) if the request cannot be executed, for example on timeout.
+func send(t testing.TB, app *fiber.App, req *http.Request, cfg fiber.TestConfig) *Response {
 	resp, err := app.Test(req, testConfig(cfg)) //nolint:bodyclose // body is stored in Response for lazy reading
 	require.NoError(t, err, "request execution failed")
 
