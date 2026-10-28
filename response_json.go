@@ -280,7 +280,9 @@ func (r *Response) JSONHasValues(expected map[string]any) *Response {
 
 // JSONMatches is an alias for JSONHasValues. It is a subset check: it asserts that each
 // listed key path holds its expected value, and ignores any other keys in the body.
-// Prefer JSONHasValues in new code.
+//
+// Deprecated: use JSONHasValues, which has the same behavior under a clearer name.
+// JSONMatches is kept so existing tests keep compiling.
 //
 // Parameters:
 //   - expected: Map of key paths to expected values
