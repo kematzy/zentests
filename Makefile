@@ -35,7 +35,7 @@ endef
 
 # non-file targets (commands)
 .PHONY: help fmt fmt-check vet lint tidy check spellcheck
-.PHONY: test test-verbose test-dox test-watch test-coverage
+.PHONY: test test-verbose test-dox test-watch coverage-profile test-coverage
 .PHONY: release changelog git-push gitea-push github-push docs docs-md modernize modernize-check
 
 ## help: Show this help message
@@ -93,8 +93,6 @@ check: check-test-coverage
 	@echo -e "Checked for suspicious code:    󰄬 (passed)"
 	@golangci-lint run ./...
 	@echo -e "Checked code linting:           󰄬 (passed)\n"
-	@go test ./...
-	@echo -e "\nChecked test suite:           󰄬 (passed)"
 	@cspell --unique --color --no-progress --quiet .
 	@echo -e "\nChecked spelling:             󰄬 (passed)"
 
