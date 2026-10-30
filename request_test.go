@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net/url"
 	"testing"
 	"time"
 
@@ -46,6 +47,11 @@ func (s *HTTPRequestsSuite) SetupTest() {
 			return err
 		}
 		return c.SendString(fmt.Sprintf("files=%d", len(form.File["file"])))
+	})
+
+	// Echoes the "x", "q" and "lang" query parameters.
+	s.app.Get("/search", func(c fiber.Ctx) error {
+		return c.SendString(c.Query("x") + "|" + c.Query("q") + "|" + c.Query("lang"))
 	})
 
 	// Echoes the request headers the default-header tests assert on.
@@ -434,4 +440,23 @@ func TestDefaultTimeout_InvalidEnvPanics(t *testing.T) {
 	t.Setenv("ZENTESTS_TIMEOUT", "not-a-duration")
 
 	assert.Panics(t, func() { defaultTimeout() })
+}
+
+// Test_GetQuery_SendsEncodedQuery checks that query values with special characters
+// reach the handler unchanged.
+func (s *HTTPRequestsSuite) Test_GetQuery_SendsEncodedQuery() {
+	query := url.Values{"q": {"go & rust = 1+1"}, "lang": {"en"}}
+
+	s.zt.GetQuery(s.app, "/search", query).OK().Equals("|go & rust = 1+1|en")
+}
+
+// Test_GetQuery_AppendsToExistingQuery checks that values append after an existing
+// query string in the path.
+func (s *HTTPRequestsSuite) Test_GetQuery_AppendsToExistingQuery() {
+	s.zt.GetQuery(s.app, "/search?x=1", url.Values{"q": {"z"}}).OK().Equals("1|z|")
+}
+
+// Test_GetQuery_EmptyValues checks that an empty query still produces a valid request.
+func (s *HTTPRequestsSuite) Test_GetQuery_EmptyValues() {
+	s.zt.GetQuery(s.app, "/search", nil).OK().Equals("||")
 }

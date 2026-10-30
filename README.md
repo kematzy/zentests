@@ -172,6 +172,8 @@ All methods accept `*fiber.App` and `path`, return `*Response` for chaining:
 | `PatchJSON(app, path, data)` | PATCH with JSON  |
 | `Delete(app, path)` | DELETE request  |
 | `DeleteJSON(app, path, data)` | DELETE with JSON body  |
+| `PostMultipart(app, path, fields, files)` | POST with multipart form data and files  |
+| `GetQuery(app, path, url.Values)` | GET with encoded query parameters  |
 
 ### HTTP Methods with TestConfig (Fiber v3+)
 

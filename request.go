@@ -505,6 +505,30 @@ func (zt *T) DeleteJSONWithConfig(app *fiber.App, path string, data any, cfg fib
 	return executeJSON(zt.T, app, "DELETE", path, data, zt.mergedHeaders(nil), cfg)
 }
 
+// GetQuery performs a GET request to path with query appended. The values are encoded
+// with [url.Values.Encode], so characters such as "&", "=" and spaces reach the handler
+// unchanged. When path already carries a query string, the values are appended after "&".
+//
+// Parameters:
+//   - app: The Fiber application to test against
+//   - path: The request path, with or without a query string
+//   - query: The query parameters (nil or empty sends path unchanged plus "?")
+//
+// Returns:
+//   - *Response: A Response wrapper for making assertions
+//
+// Example:
+//
+//	zt.GetQuery(app, "/search", url.Values{"q": {"go & rust"}, "page": {"2"}}).OK()
+func (zt *T) GetQuery(app *fiber.App, path string, query url.Values) *Response {
+	zt.Helper()
+	separator := "?"
+	if strings.Contains(path, "?") {
+		separator = "&"
+	}
+	return zt.GetWithConfig(app, path+separator+query.Encode(), fiber.TestConfig{})
+}
+
 // FileUpload describes one file in a PostMultipart request.
 type FileUpload struct {
 	// Name is the form field name. The same name may appear in several entries.
