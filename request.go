@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -89,11 +90,17 @@ func send(t testing.TB, app *fiber.App, req *http.Request, cfg fiber.TestConfig)
 //
 // Returns:
 //   - *Response: A Response wrapper for making assertions
-func executeJSON(t testing.TB, app *fiber.App, method, path string, data any, cfg fiber.TestConfig) *Response {
+func executeJSON(t testing.TB, app *fiber.App, method, path string, data any, headers map[string]string, cfg fiber.TestConfig) *Response {
 	jsonBody, err := json.Marshal(data)
 	require.NoError(t, err, "JSON marshaling failed")
 
-	return execute(t, app, method, path, bytes.NewReader(jsonBody), SetHeader("Content-Type", "application/json"), cfg)
+	allHeaders := maps.Clone(headers)
+	if allHeaders == nil {
+		allHeaders = map[string]string{}
+	}
+	allHeaders["Content-Type"] = "application/json"
+
+	return execute(t, app, method, path, bytes.NewReader(jsonBody), allHeaders, cfg)
 }
 
 // formBody encodes data as an application/x-www-form-urlencoded request body.
@@ -329,7 +336,7 @@ func (zt *T) DeleteJSON(app *fiber.App, path string, data any) *Response {
 //	    Timeout: 5 * time.Second,
 //	}).OK()
 func (zt *T) GetWithConfig(app *fiber.App, path string, cfg fiber.TestConfig) *Response {
-	return execute(zt.T, app, "GET", path, nil, nil, cfg)
+	return execute(zt.T, app, "GET", path, nil, zt.mergedHeaders(nil), cfg)
 }
 
 // PostWithConfig performs a POST request with raw body and custom TestConfig.
@@ -349,7 +356,7 @@ func (zt *T) GetWithConfig(app *fiber.App, path string, cfg fiber.TestConfig) *R
 //	    Timeout: 10 * time.Second,
 //	}).OK()
 func (zt *T) PostWithConfig(app *fiber.App, path string, body []byte, cfg fiber.TestConfig) *Response {
-	return execute(zt.T, app, "POST", path, bytes.NewReader(body), nil, cfg)
+	return execute(zt.T, app, "POST", path, bytes.NewReader(body), zt.mergedHeaders(nil), cfg)
 }
 
 // PostJSONWithConfig performs a POST request with JSON data and custom TestConfig.
@@ -370,7 +377,7 @@ func (zt *T) PostWithConfig(app *fiber.App, path string, body []byte, cfg fiber.
 //	    FailOnTimeout: true,
 //	}).Created()
 func (zt *T) PostJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.TestConfig) *Response {
-	return executeJSON(zt.T, app, "POST", path, data, cfg)
+	return executeJSON(zt.T, app, "POST", path, data, zt.mergedHeaders(nil), cfg)
 }
 
 // PostFormWithConfig performs a POST request with form data and custom TestConfig.
@@ -390,7 +397,7 @@ func (zt *T) PostJSONWithConfig(app *fiber.App, path string, data any, cfg fiber
 //	    Timeout: 5 * time.Second,
 //	}).OK()
 func (zt *T) PostFormWithConfig(app *fiber.App, path string, data map[string]string, cfg fiber.TestConfig) *Response {
-	headers := SetHeader("Content-Type", "application/x-www-form-urlencoded")
+	headers := zt.mergedHeaders(SetHeader("Content-Type", "application/x-www-form-urlencoded"))
 	return execute(zt.T, app, "POST", path, formBody(data), headers, cfg)
 }
 
@@ -405,7 +412,7 @@ func (zt *T) PostFormWithConfig(app *fiber.App, path string, data map[string]str
 // Returns:
 //   - *Response: A Response wrapper for making assertions
 func (zt *T) PutWithConfig(app *fiber.App, path string, body []byte, cfg fiber.TestConfig) *Response {
-	return execute(zt.T, app, "PUT", path, bytes.NewReader(body), nil, cfg)
+	return execute(zt.T, app, "PUT", path, bytes.NewReader(body), zt.mergedHeaders(nil), cfg)
 }
 
 // PutJSONWithConfig performs a PUT request with JSON data and custom TestConfig.
@@ -419,7 +426,7 @@ func (zt *T) PutWithConfig(app *fiber.App, path string, body []byte, cfg fiber.T
 // Returns:
 //   - *Response: A Response wrapper for making assertions
 func (zt *T) PutJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.TestConfig) *Response {
-	return executeJSON(zt.T, app, "PUT", path, data, cfg)
+	return executeJSON(zt.T, app, "PUT", path, data, zt.mergedHeaders(nil), cfg)
 }
 
 // PatchWithConfig performs a PATCH request with raw body and custom TestConfig.
@@ -433,7 +440,7 @@ func (zt *T) PutJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.
 // Returns:
 //   - *Response: A Response wrapper for making assertions
 func (zt *T) PatchWithConfig(app *fiber.App, path string, body []byte, cfg fiber.TestConfig) *Response {
-	return execute(zt.T, app, "PATCH", path, bytes.NewReader(body), nil, cfg)
+	return execute(zt.T, app, "PATCH", path, bytes.NewReader(body), zt.mergedHeaders(nil), cfg)
 }
 
 // PatchJSONWithConfig performs a PATCH request with JSON data and custom TestConfig.
@@ -447,7 +454,7 @@ func (zt *T) PatchWithConfig(app *fiber.App, path string, body []byte, cfg fiber
 // Returns:
 //   - *Response: A Response wrapper for making assertions
 func (zt *T) PatchJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.TestConfig) *Response {
-	return executeJSON(zt.T, app, "PATCH", path, data, cfg)
+	return executeJSON(zt.T, app, "PATCH", path, data, zt.mergedHeaders(nil), cfg)
 }
 
 // DeleteWithConfig performs a DELETE request with custom TestConfig.
@@ -460,7 +467,7 @@ func (zt *T) PatchJSONWithConfig(app *fiber.App, path string, data any, cfg fibe
 // Returns:
 //   - *Response: A Response wrapper for making assertions
 func (zt *T) DeleteWithConfig(app *fiber.App, path string, cfg fiber.TestConfig) *Response {
-	return execute(zt.T, app, "DELETE", path, nil, nil, cfg)
+	return execute(zt.T, app, "DELETE", path, nil, zt.mergedHeaders(nil), cfg)
 }
 
 // DeleteJSONWithConfig performs a DELETE request with JSON body and custom TestConfig.
@@ -474,7 +481,57 @@ func (zt *T) DeleteWithConfig(app *fiber.App, path string, cfg fiber.TestConfig)
 // Returns:
 //   - *Response: A Response wrapper for making assertions
 func (zt *T) DeleteJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.TestConfig) *Response {
-	return executeJSON(zt.T, app, "DELETE", path, data, cfg)
+	return executeJSON(zt.T, app, "DELETE", path, data, zt.mergedHeaders(nil), cfg)
+}
+
+// SetHeader sets a default header that is sent with every request made through zt.
+// A header set for a single request, such as PostJSON's Content-Type, takes precedence
+// over a default with the same name. Header names are canonicalised, so "x-api-key"
+// and "X-Api-Key" configure the same default.
+//
+// Parameters:
+//   - key: The header name (e.g., "Accept")
+//   - value: The header value
+//
+// Returns:
+//   - *T: The receiver for method chaining
+//
+// Example:
+//
+//	zt := zentests.New(t).Use(app).SetHeader("Accept", "application/json")
+func (zt *T) SetHeader(key, value string) *T {
+	zt.Helper()
+	zt.headers = setDefaultHeader(zt.headers, key, value)
+	return zt
+}
+
+// WithBearer sets the default Authorization header to "Bearer <token>", which is sent
+// with every request made through zt.
+//
+// Parameters:
+//   - token: The bearer token
+//
+// Returns:
+//   - *T: The receiver for method chaining
+//
+// Example:
+//
+//	zt := zentests.New(t).Use(app).WithBearer(token)
+func (zt *T) WithBearer(token string) *T {
+	return zt.SetHeader("Authorization", "Bearer "+token)
+}
+
+// mergedHeaders returns the default headers with headers taking precedence on conflict.
+// Returns headers unchanged when no defaults are set, so requests without defaults
+// allocate nothing.
+func (zt *T) mergedHeaders(headers map[string]string) map[string]string {
+	if len(zt.headers) == 0 {
+		return headers
+	}
+	merged := make(map[string]string, len(zt.headers)+len(headers))
+	maps.Copy(merged, zt.headers)
+	maps.Copy(merged, headers)
+	return merged
 }
 
 // SetHeader creates a header map with a single key-value pair.
@@ -494,4 +551,15 @@ func (zt *T) DeleteJSONWithConfig(app *fiber.App, path string, data any, cfg fib
 //	// Use with a method that accepts headers parameter
 func SetHeader(key, value string) map[string]string {
 	return map[string]string{key: value}
+}
+
+// setDefaultHeader stores key-value in headers, creating the map on first use.
+// Header names are canonicalised, so two spellings of a name cannot produce two
+// defaults for the same header. Shared by T and Jar.
+func setDefaultHeader(headers map[string]string, key, value string) map[string]string {
+	if headers == nil {
+		headers = make(map[string]string)
+	}
+	headers[http.CanonicalHeaderKey(key)] = value
+	return headers
 }

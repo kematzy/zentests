@@ -23,6 +23,21 @@ func TestJarSuite(t *testing.T) {
 func (s *JarSuite) SetupTest() {
 	s.app = fiber.New()
 
+	// Echoes the "X-Test" header and the "sid" cookie, comma-separated.
+	s.app.Get("/hdr", func(c fiber.Ctx) error {
+		return c.SendString(c.Get("X-Test") + "," + c.Cookies("sid"))
+	})
+
+	// Echoes the request's Authorization header.
+	s.app.Get("/auth", func(c fiber.Ctx) error {
+		return c.SendString(c.Get("Authorization"))
+	})
+
+	// Echoes the request's Content-Type header.
+	s.app.Post("/ctype", func(c fiber.Ctx) error {
+		return c.SendString(c.Get("Content-Type"))
+	})
+
 	// Echoes the raw Cookie header the request carried, or "" when it carried none.
 	// Raw, so a cookie sent with an empty value stays distinct from one not sent at all.
 	s.app.Get("/echo", func(c fiber.Ctx) error {
@@ -206,4 +221,33 @@ func (s *JarSuite) Test_NewJar_NilAppFailsTest() {
 	s.True(rec.fatal)
 	s.Require().Len(rec.errors, 1)
 	s.Contains(rec.errors[0], "nil *fiber.App")
+}
+
+// Test_Jar_SetHeader_SentWithEveryRequest checks that a default header reaches every jar
+// request, alongside the stored cookies.
+func (s *JarSuite) Test_Jar_SetHeader_SentWithEveryRequest() {
+	jar := NewJar(s.T(), s.app)
+	jar.Get("/set?sid=abc").OK()
+	jar.SetHeader("X-Test", "1")
+
+	jar.Get("/hdr").OK().Equals("1,abc")
+	jar.Get("/hdr").OK().Equals("1,abc")
+}
+
+// Test_Jar_WithBearer_SendsAuthorizationHeader checks that WithBearer sets the
+// Authorization header on jar requests.
+func (s *JarSuite) Test_Jar_WithBearer_SendsAuthorizationHeader() {
+	jar := NewJar(s.T(), s.app)
+	jar.WithBearer("tok-1")
+
+	jar.Get("/auth").OK().Equals("Bearer tok-1")
+}
+
+// Test_Jar_SetHeader_PerCallHeaderWins checks that a request's own Content-Type is not
+// replaced by a default with the same name.
+func (s *JarSuite) Test_Jar_SetHeader_PerCallHeaderWins() {
+	jar := NewJar(s.T(), s.app)
+	jar.SetHeader("Content-Type", "text/plain")
+
+	jar.PostForm("/ctype", url.Values{"name": {"Jane"}}).OK().Equals("application/x-www-form-urlencoded")
 }

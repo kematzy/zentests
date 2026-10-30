@@ -23,6 +23,11 @@ func (s *HTTPRequestsSuite) SetupTest() {
 		return c.SendString("GET response")
 	})
 
+	// Echoes the request headers the default-header tests assert on.
+	s.app.Get("/hdr", func(c fiber.Ctx) error {
+		return c.SendString(c.Get("Accept") + "|" + c.Get("Authorization") + "|" + c.Get("X-Api-Key"))
+	})
+
 	s.app.Post("/test", func(c fiber.Ctx) error {
 		body := c.Body()
 		return c.SendString("POST: " + string(body))
@@ -310,4 +315,37 @@ func TestTestConfig_ZeroValue_UsesDefaults(t *testing.T) {
 func TestTestConfig_Custom_IsKept(t *testing.T) {
 	custom := fiber.TestConfig{Timeout: 3 * time.Second, FailOnTimeout: false}
 	assert.Equal(t, custom, testConfig(custom))
+}
+
+// TestSetHeader_SentWithEveryRequest checks that a default header reaches every request.
+func (s *HTTPRequestsSuite) Test_SetHeader_SentWithEveryRequest() {
+	zt := New(s.T()).SetHeader("Accept", "application/json")
+
+	zt.Get(s.app, "/hdr").Equals("application/json||")
+	zt.Get(s.app, "/hdr").Equals("application/json||")
+}
+
+// TestSetHeader_CanonicalisesName checks that two spellings of a name configure the same default.
+func (s *HTTPRequestsSuite) Test_SetHeader_CanonicalisesName() {
+	zt := New(s.T()).SetHeader("x-api-key", "first")
+
+	zt.Get(s.app, "/hdr").Equals("||first")
+
+	zt.SetHeader("X-Api-Key", "second")
+	zt.Get(s.app, "/hdr").Equals("||second")
+}
+
+// TestWithBearer_SetsAuthorizationHeader checks that WithBearer sends the Authorization header.
+func (s *HTTPRequestsSuite) Test_WithBearer_SetsAuthorizationHeader() {
+	zt := New(s.T()).WithBearer("tok-1")
+
+	zt.Get(s.app, "/hdr").Equals("|Bearer tok-1|")
+}
+
+// TestSetHeader_PerCallHeaderWins checks that a request's own headers take precedence
+// over defaults with the same name.
+func (s *HTTPRequestsSuite) Test_SetHeader_PerCallHeaderWins() {
+	zt := New(s.T()).SetHeader("Content-Type", "text/plain")
+
+	zt.PostJSON(s.app, "/json", map[string]any{"name": "John"}).OK().IsJSON()
 }

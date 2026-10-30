@@ -228,6 +228,21 @@ func TestSlowEndpoint(t *testing.T) {
 A zero-value `fiber.TestConfig{}` uses the defaults above. The plain methods (`Get`, `PostJSON`, ...) use it.
 
 
+### Default Headers
+
+Headers set on `T` (or on a `Jar`) are sent with every request. A header belonging to a
+single request, such as `PostJSON`'s `Content-Type`, wins over a default with the same name.
+
+```go
+zt := zentests.New(t).Use(app).SetHeader("Accept", "application/json")
+zt.Get("/users").OK()                  // sends Accept: application/json
+zt.WithBearer(token)                   // sends Authorization: Bearer <token>
+
+jar := zentests.NewJar(t, app)
+jar.SetHeader("X-Api-Key", "key")      // same behavior on the jar
+```
+
+
 ### Status Assertions
 
 ```go

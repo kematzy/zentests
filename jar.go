@@ -34,6 +34,7 @@ import (
 type Jar struct {
 	t       testing.TB
 	app     *fiber.App
+	headers map[string]string
 	cookies map[string]string
 }
 
@@ -109,6 +110,13 @@ func (j *Jar) PostForm(path string, values url.Values) *Response {
 //	jar.Send(req).NoContent()
 func (j *Jar) Send(req *http.Request) *Response {
 	j.t.Helper()
+	for name, value := range j.headers {
+		// A header already on the request wins, so PostMultipart's Content-Type
+		// is not replaced by a default with the same name.
+		if req.Header.Get(name) == "" {
+			req.Header.Set(name, value)
+		}
+	}
 	for name, value := range j.cookies {
 		req.AddCookie(&http.Cookie{Name: name, Value: value})
 	}
@@ -116,6 +124,38 @@ func (j *Jar) Send(req *http.Request) *Response {
 	resp := send(j.t, j.app, req, fiber.TestConfig{})
 	j.store(resp.resp.Cookies())
 	return resp
+}
+
+// SetHeader sets a default header that is sent with every request made through the jar.
+// A header already on the request, such as PostForm's Content-Type, takes precedence
+// over a default with the same name. Header names are canonicalised, so "x-api-key"
+// and "X-Api-Key" configure the same default.
+//
+// Parameters:
+//   - key: The header name (e.g., "Accept")
+//   - value: The header value
+//
+// Example:
+//
+//	jar := zentests.NewJar(t, app)
+//	jar.SetHeader("Accept", "application/json")
+func (j *Jar) SetHeader(key, value string) {
+	j.t.Helper()
+	j.headers = setDefaultHeader(j.headers, key, value)
+}
+
+// WithBearer sets the default Authorization header to "Bearer <token>", which is sent
+// with every request made through the jar.
+//
+// Parameters:
+//   - token: The bearer token
+//
+// Example:
+//
+//	jar := zentests.NewJar(t, app)
+//	jar.WithBearer(token)
+func (j *Jar) WithBearer(token string) {
+	j.SetHeader("Authorization", "Bearer "+token)
 }
 
 // Cookie returns the value the jar holds for name, or "" when there is none.

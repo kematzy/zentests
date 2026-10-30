@@ -28,9 +28,11 @@ import (
 // Fields:
 //   - T: The embedded [testing.T] instance for standard Go test functionality
 //   - app: The Fiber application instance for making HTTP requests
+//   - headers: Default headers sent with every request (see SetHeader)
 type T struct {
 	*testing.T
-	app *fiber.App
+	app     *fiber.App
+	headers map[string]string
 }
 
 // New creates a new zentests context wrapping the provided [testing.T].
