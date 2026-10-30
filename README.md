@@ -41,12 +41,6 @@ go get github.com/kematzy/zentests
 - Go 1.25 or higher
 - [Fiber](https://github.com/gofiber/fiber) v3.x
 
-> **Fiber v2 Users:** If you're using Fiber v2, use the `fiber-v2` branch:
-> ```bash
-> go get github.com/kematzy/zentests@fiber-v2
-> ```
-> See [CONTRIBUTING.md](CONTRIBUTING.md) for branch policy, and the
-> [Fiber v2 → v3 migration notes](docs/MIGRATION-FIBER-V2.md) when upgrading.
 
 <br>
 
