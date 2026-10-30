@@ -28,6 +28,19 @@ func (s *JarSuite) SetupTest() {
 		return c.SendString(c.Get("X-Test") + "," + c.Cookies("sid"))
 	})
 
+	// Saves an uploaded file's name and content into the response string.
+	s.app.Post("/upload", func(c fiber.Ctx) error {
+		file, err := c.FormFile("file")
+		if err != nil {
+			return err
+		}
+		content, err := readFileHeader(file)
+		if err != nil {
+			return err
+		}
+		return c.SendString(c.Cookies("sid") + "|" + file.Filename + "|" + string(content))
+	})
+
 	// Echoes the request's Authorization header.
 	s.app.Get("/auth", func(c fiber.Ctx) error {
 		return c.SendString(c.Get("Authorization"))
@@ -250,4 +263,15 @@ func (s *JarSuite) Test_Jar_SetHeader_PerCallHeaderWins() {
 	jar.SetHeader("Content-Type", "text/plain")
 
 	jar.PostForm("/ctype", url.Values{"name": {"Jane"}}).OK().Equals("application/x-www-form-urlencoded")
+}
+
+// Test_Jar_PostMultipart_SendsCookiesAndFile checks that the jar sends its stored
+// cookies along with a multipart upload.
+func (s *JarSuite) Test_Jar_PostMultipart_SendsCookiesAndFile() {
+	jar := NewJar(s.T(), s.app)
+	jar.Get("/set?sid=abc").OK()
+
+	jar.PostMultipart("/upload", nil, []FileUpload{
+		{Name: "file", Filename: "a.txt", Content: []byte("hello")},
+	}).OK().Equals("abc|a.txt|hello")
 }

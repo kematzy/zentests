@@ -1,6 +1,7 @@
 package zentests
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
@@ -156,6 +157,32 @@ func (j *Jar) SetHeader(key, value string) {
 //	jar.WithBearer(token)
 func (j *Jar) WithBearer(token string) {
 	j.SetHeader("Authorization", "Bearer "+token)
+}
+
+// PostMultipart sends a POST request with multipart/form-data and the stored cookies,
+// typically for file uploads. See T.PostMultipart for the FileUpload fields.
+//
+// Parameters:
+//   - path: The request path (e.g., "/upload")
+//   - fields: Plain form fields (nil when there are none)
+//   - files: The files to upload (nil when there are none)
+//
+// Returns:
+//   - *Response: A Response wrapper for making assertions
+//
+// Example:
+//
+//	jar.PostMultipart("/upload", nil, []zentests.FileUpload{
+//	    {Name: "file", Filename: "a.txt", Content: []byte("hello")},
+//	}).OK()
+func (j *Jar) PostMultipart(path string, fields map[string]string, files []FileUpload) *Response {
+	j.t.Helper()
+	body, contentType, err := multipartBody(fields, files)
+	require.NoError(j.t, err, "building the multipart body failed")
+
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, path, bytes.NewReader(body))
+	req.Header.Set("Content-Type", contentType)
+	return j.Send(req)
 }
 
 // Cookie returns the value the jar holds for name, or "" when there is none.

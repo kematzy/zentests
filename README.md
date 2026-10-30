@@ -352,6 +352,9 @@ request returns a `*Response`, so the usual assertions compose with jar requests
 jar := zentests.NewJar(t, app)
 csrf := jar.Get("/login").OK().BodyString()          // app sets session cookie here
 jar.PostForm("/login", url.Values{"csrf": {csrf}, "user": {"jane"}}).Status(302)
+jar.PostMultipart("/upload", nil, []zentests.FileUpload{
+    {Name: "file", Filename: "a.txt", Content: []byte("hello")},
+}).OK()
 if jar.Cookie("session") == "" { t.Fatal("no session") }
 jar.Get("/settings").OK().Contains("Welcome Jane")
 ```

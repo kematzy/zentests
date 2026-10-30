@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"maps"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -482,6 +485,69 @@ func (zt *T) DeleteWithConfig(app *fiber.App, path string, cfg fiber.TestConfig)
 //   - *Response: A Response wrapper for making assertions
 func (zt *T) DeleteJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.TestConfig) *Response {
 	return executeJSON(zt.T, app, "DELETE", path, data, zt.mergedHeaders(nil), cfg)
+}
+
+// FileUpload describes one file in a PostMultipart request.
+type FileUpload struct {
+	// Name is the form field name. The same name may appear in several entries.
+	Name string
+	// Filename is the file name presented to the server.
+	Filename string
+	// Content is the file's bytes.
+	Content []byte
+}
+
+// multipartBody encodes fields and files as a multipart/form-data body and returns it
+// with the Content-Type header value, which includes the boundary. Fields are written
+// first in sorted key order, then files in slice order, so the body is deterministic.
+func multipartBody(fields map[string]string, files []FileUpload) ([]byte, string, error) {
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+
+	for _, key := range slices.Sorted(maps.Keys(fields)) {
+		if err := writer.WriteField(key, fields[key]); err != nil {
+			return nil, "", fmt.Errorf("write form field %q: %w", key, err)
+		}
+	}
+	for _, file := range files {
+		part, err := writer.CreateFormFile(file.Name, file.Filename)
+		if err != nil {
+			return nil, "", fmt.Errorf("create form file %q: %w", file.Name, err)
+		}
+		if _, err := part.Write(file.Content); err != nil {
+			return nil, "", fmt.Errorf("write file %q: %w", file.Filename, err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		return nil, "", fmt.Errorf("close multipart writer: %w", err)
+	}
+	return buf.Bytes(), writer.FormDataContentType(), nil
+}
+
+// PostMultipart performs a POST request with multipart/form-data, typically for file
+// uploads. The Content-Type header carries the multipart boundary.
+//
+// Parameters:
+//   - app: The Fiber application to test against
+//   - path: The request path (e.g., "/upload")
+//   - fields: Plain form fields (nil when there are none)
+//   - files: The files to upload (nil when there are none)
+//
+// Returns:
+//   - *Response: A Response wrapper for making assertions
+//
+// Example:
+//
+//	zt.PostMultipart(app, "/upload", map[string]string{"note": "hi"}, []zentests.FileUpload{
+//	    {Name: "file", Filename: "a.txt", Content: []byte("hello")},
+//	}).OK()
+func (zt *T) PostMultipart(app *fiber.App, path string, fields map[string]string, files []FileUpload) *Response {
+	zt.Helper()
+	body, contentType, err := multipartBody(fields, files)
+	require.NoError(zt.T, err, "building the multipart body failed")
+
+	headers := zt.mergedHeaders(SetHeader("Content-Type", contentType))
+	return execute(zt.T, app, "POST", path, bytes.NewReader(body), headers, fiber.TestConfig{})
 }
 
 // SetHeader sets a default header that is sent with every request made through zt.

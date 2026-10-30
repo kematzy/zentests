@@ -1,6 +1,9 @@
 package zentests
 
 import (
+	"fmt"
+	"io"
+	"mime/multipart"
 	"testing"
 	"time"
 
@@ -21,6 +24,28 @@ func (s *HTTPRequestsSuite) SetupTest() {
 
 	s.app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("GET response")
+	})
+
+	// Saves an uploaded file's name and content into the given response string.
+	s.app.Post("/upload", func(c fiber.Ctx) error {
+		file, err := c.FormFile("file")
+		if err != nil {
+			return err
+		}
+		content, err := readFileHeader(file)
+		if err != nil {
+			return err
+		}
+		return c.SendString(c.FormValue("note") + "|" + file.Filename + "|" + string(content))
+	})
+
+	// Counts the uploaded files on the "file" field.
+	s.app.Post("/upload-multi", func(c fiber.Ctx) error {
+		form, err := c.MultipartForm()
+		if err != nil {
+			return err
+		}
+		return c.SendString(fmt.Sprintf("files=%d", len(form.File["file"])))
 	})
 
 	// Echoes the request headers the default-header tests assert on.
@@ -348,4 +373,36 @@ func (s *HTTPRequestsSuite) Test_SetHeader_PerCallHeaderWins() {
 	zt := New(s.T()).SetHeader("Content-Type", "text/plain")
 
 	zt.PostJSON(s.app, "/json", map[string]any{"name": "John"}).OK().IsJSON()
+}
+
+// readFileHeader reads the full content of an uploaded file, for the upload test handlers.
+func readFileHeader(header *multipart.FileHeader) ([]byte, error) {
+	file, err := header.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close() //nolint:errcheck // read-only closer
+	return io.ReadAll(file)
+}
+
+// Test_PostMultipart_UploadsFile checks that fields and file content reach the handler.
+func (s *HTTPRequestsSuite) Test_PostMultipart_UploadsFile() {
+	s.zt.PostMultipart(s.app, "/upload", map[string]string{"note": "hi"}, []FileUpload{
+		{Name: "file", Filename: "a.txt", Content: []byte("hello")},
+	}).OK().Equals("hi|a.txt|hello")
+}
+
+// Test_PostMultipart_FieldsOnly checks that multipart fields read as form values,
+// without any files in the request.
+func (s *HTTPRequestsSuite) Test_PostMultipart_FieldsOnly() {
+	s.zt.PostMultipart(s.app, "/form", map[string]string{"name": "Jane"}, nil).
+		OK().IsJSON().Has("name", "Jane")
+}
+
+// Test_PostMultipart_SameFieldTwice checks that a field name can carry two files.
+func (s *HTTPRequestsSuite) Test_PostMultipart_SameFieldTwice() {
+	s.zt.PostMultipart(s.app, "/upload-multi", nil, []FileUpload{
+		{Name: "file", Filename: "a.txt", Content: []byte("a")},
+		{Name: "file", Filename: "b.txt", Content: []byte("b")},
+	}).OK().Equals("files=2")
 }
