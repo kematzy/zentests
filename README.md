@@ -242,6 +242,12 @@ resp.NotFound()        // 404
 resp.Unprocessable()   // 422
 resp.ServerError()     // 500
 resp.Status(code)      // Custom status
+resp.StatusIn(200, 204) // One of several statuses
+resp.IsSuccess()       // Any 2xx
+resp.IsClientError()   // Any 4xx
+resp.IsServerError()   // Any 5xx
+resp.IsRedirect()      // 301, 302, 303, 307 or 308
+resp.RedirectsTo("/dashboard") // Redirect + exact Location
 ```
 
 ### Header Assertions

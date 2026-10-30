@@ -19,7 +19,7 @@ type ResponseHTTPTestSuite struct {
 func (s *ResponseHTTPTestSuite) SetupSuite() {
 	s.app = fiber.New()
 	s.zt = New(s.T())
-	s.statusCodes = []int{200, 201, 202, 204, 400, 401, 403, 404, 422, 500}
+	s.statusCodes = []int{200, 201, 202, 204, 301, 302, 303, 307, 308, 400, 401, 403, 404, 422, 500, 502, 503}
 	// declare status routes
 	for _, code := range s.statusCodes {
 		path := fmt.Sprintf("/%d", code)
@@ -27,6 +27,18 @@ func (s *ResponseHTTPTestSuite) SetupSuite() {
 			return c.SendStatus(code)
 		})
 	}
+
+	// declare redirect routes, each pointing at /landing
+	for _, code := range []int{301, 302, 303, 307, 308} {
+		path := fmt.Sprintf("/redirect/%d", code)
+		s.app.Get(path, func(c fiber.Ctx) error {
+			c.Set("Location", "/landing")
+			return c.SendStatus(code)
+		})
+	}
+	s.app.Get("/redirect/no-location", func(c fiber.Ctx) error {
+		return c.SendStatus(302)
+	})
 
 	s.app.Get("/json", func(c fiber.Ctx) error {
 		c.Type("json")
@@ -130,6 +142,46 @@ func (s *ResponseHTTPTestSuite) Test_Assertion_Status() {
 			s.True(true, "no chain errors raised") // documents intent
 		})
 	}
+}
+
+func (s *ResponseHTTPTestSuite) Test_Assertion_IsRedirect() {
+	for _, code := range []int{301, 302, 303, 307, 308} {
+		s.Run(fmt.Sprintf("redirect %d", code), func() {
+			s.zt.Get(s.app, fmt.Sprintf("/redirect/%d", code)).IsRedirect()
+		})
+	}
+}
+
+func (s *ResponseHTTPTestSuite) Test_Assertion_RedirectsTo() {
+	s.zt.Get(s.app, "/redirect/302").RedirectsTo("/landing")
+}
+
+func (s *ResponseHTTPTestSuite) Test_Assertion_IsSuccess() {
+	for _, code := range []int{200, 201, 202, 204} {
+		s.Run(fmt.Sprintf("success %d", code), func() {
+			s.zt.Get(s.app, fmt.Sprintf("/%d", code)).IsSuccess()
+		})
+	}
+}
+
+func (s *ResponseHTTPTestSuite) Test_Assertion_IsClientError() {
+	for _, code := range []int{400, 401, 403, 404, 422} {
+		s.Run(fmt.Sprintf("client error %d", code), func() {
+			s.zt.Get(s.app, fmt.Sprintf("/%d", code)).IsClientError()
+		})
+	}
+}
+
+func (s *ResponseHTTPTestSuite) Test_Assertion_IsServerError() {
+	for _, code := range []int{500, 502, 503} {
+		s.Run(fmt.Sprintf("server error %d", code), func() {
+			s.zt.Get(s.app, fmt.Sprintf("/%d", code)).IsServerError()
+		})
+	}
+}
+
+func (s *ResponseHTTPTestSuite) Test_Assertion_StatusIn() {
+	s.zt.Get(s.app, "/204").StatusIn(200, 202, 204)
 }
 
 func (s *ResponseHTTPTestSuite) Test_Assertion_Status_Mismatch_Reports_Failure() {
@@ -401,4 +453,78 @@ func TestCookieHasValues_MissingCookie_Fails(t *testing.T) {
 	})
 
 	assert.Len(t, rec.errors, 1, "a missing cookie should be reported once")
+}
+
+// TestIsRedirect_NonRedirectStatus_Fails checks that a 2xx response is not accepted as a redirect.
+func TestIsRedirect_NonRedirectStatus_Fails(t *testing.T) {
+	errs := failuresOf(t, sendString("ok"), func(r *Response) {
+		r.IsRedirect()
+	})
+
+	assert.Len(t, errs, 1, "a non-redirect status should be reported once")
+}
+
+// TestRedirectsTo_WrongLocation_Fails checks that a mismatching Location header is reported.
+func TestRedirectsTo_WrongLocation_Fails(t *testing.T) {
+	errs := failuresOf(t, func(c fiber.Ctx) error {
+		c.Set("Location", "/elsewhere")
+		return c.SendStatus(302)
+	}, func(r *Response) {
+		r.RedirectsTo("/landing")
+	})
+
+	assert.Len(t, errs, 1, "a wrong redirect location should be reported once")
+}
+
+// TestRedirectsTo_MissingLocation_Fails checks that a redirect without a Location header is reported.
+func TestRedirectsTo_MissingLocation_Fails(t *testing.T) {
+	errs := failuresOf(t, func(c fiber.Ctx) error {
+		return c.SendStatus(302)
+	}, func(r *Response) {
+		r.RedirectsTo("/landing")
+	})
+
+	assert.Len(t, errs, 1, "a missing redirect location should be reported once")
+}
+
+// TestIsSuccess_ClientError_Fails checks that a 4xx response does not pass IsSuccess.
+func TestIsSuccess_ClientError_Fails(t *testing.T) {
+	errs := failuresOf(t, func(c fiber.Ctx) error {
+		return c.SendStatus(400)
+	}, func(r *Response) {
+		r.IsSuccess()
+	})
+
+	assert.Len(t, errs, 1, "a 4xx status should be reported once")
+}
+
+// TestIsClientError_ServerError_Fails checks that a 5xx response does not pass IsClientError.
+func TestIsClientError_ServerError_Fails(t *testing.T) {
+	errs := failuresOf(t, func(c fiber.Ctx) error {
+		return c.SendStatus(500)
+	}, func(r *Response) {
+		r.IsClientError()
+	})
+
+	assert.Len(t, errs, 1, "a 5xx status should be reported once")
+}
+
+// TestIsServerError_ClientError_Fails checks that a 4xx response does not pass IsServerError.
+func TestIsServerError_ClientError_Fails(t *testing.T) {
+	errs := failuresOf(t, func(c fiber.Ctx) error {
+		return c.SendStatus(404)
+	}, func(r *Response) {
+		r.IsServerError()
+	})
+
+	assert.Len(t, errs, 1, "a 4xx status should be reported once")
+}
+
+// TestStatusIn_CodeOutsideSet_Fails checks that a status outside the accepted set is reported.
+func TestStatusIn_CodeOutsideSet_Fails(t *testing.T) {
+	errs := failuresOf(t, sendString("ok"), func(r *Response) {
+		r.StatusIn(201, 204)
+	})
+
+	assert.Len(t, errs, 1, "a status outside the set should be reported once")
 }

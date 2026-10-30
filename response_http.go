@@ -2,6 +2,7 @@ package zentests
 
 import (
 	"net/http"
+	"slices"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -161,6 +162,115 @@ func (r *Response) Unprocessable() *Response {
 //	zt.Get(app, "/broken").ServerError()
 func (r *Response) ServerError() *Response {
 	return r.Status(500)
+}
+
+// IsRedirect asserts that the HTTP status code is one of the redirects that carry a
+// Location header: 301, 302, 303, 307 or 308. 304 (Not Modified) is not included.
+// Use RedirectsTo to also check where the response points.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//	zt.Get(app, "/old-url").IsRedirect()
+func (r *Response) IsRedirect() *Response {
+	r.t.Helper()
+	assert.True(r.t, redirectStatuses[r.StatusCode],
+		"expected a redirect status (301, 302, 303, 307, 308), got %d", r.StatusCode)
+	return r
+}
+
+// RedirectsTo asserts that the response is a redirect to the expected location.
+// It checks IsRedirect and an exact match on the Location header.
+//
+// Parameters:
+//   - location: The expected Location header value
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//	zt.PostForm(app, "/login", data).RedirectsTo("/dashboard")
+func (r *Response) RedirectsTo(location string) *Response {
+	r.t.Helper()
+	r.IsRedirect()
+	assert.Equal(r.t, location, r.Header.Get("Location"), "redirect location mismatch")
+	return r
+}
+
+// redirectStatuses lists the redirect codes whose responses carry a Location header.
+var redirectStatuses = map[int]bool{
+	http.StatusMovedPermanently:  true,
+	http.StatusFound:             true,
+	http.StatusSeeOther:          true,
+	http.StatusTemporaryRedirect: true,
+	http.StatusPermanentRedirect: true,
+}
+
+// IsSuccess asserts that the HTTP status code is in the 2xx range.
+// Use Status or its shortcuts when the exact code matters.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//	zt.Get(app, "/health").IsSuccess()
+func (r *Response) IsSuccess() *Response {
+	r.t.Helper()
+	assert.True(r.t, r.StatusCode >= 200 && r.StatusCode < 300, "expected a 2xx status, got %d", r.StatusCode)
+	return r
+}
+
+// IsClientError asserts that the HTTP status code is in the 4xx range.
+// Use Status or its shortcuts when the exact code matters.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//	zt.Get(app, "/missing").IsClientError()
+func (r *Response) IsClientError() *Response {
+	r.t.Helper()
+	assert.True(r.t, r.StatusCode >= 400 && r.StatusCode < 500, "expected a 4xx status, got %d", r.StatusCode)
+	return r
+}
+
+// IsServerError asserts that the HTTP status code is in the 5xx range.
+// Use Status or its shortcuts when the exact code matters.
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//	zt.Get(app, "/broken").IsServerError()
+func (r *Response) IsServerError() *Response {
+	r.t.Helper()
+	assert.True(r.t, r.StatusCode >= 500 && r.StatusCode < 600, "expected a 5xx status, got %d", r.StatusCode)
+	return r
+}
+
+// StatusIn asserts that the HTTP status code is one of the expected values.
+// Use it when a handler may answer with a small set of codes.
+//
+// Parameters:
+//   - codes: The acceptable HTTP status codes
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//	zt.Delete(app, "/users/1").StatusIn(200, 202, 204)
+func (r *Response) StatusIn(codes ...int) *Response {
+	r.t.Helper()
+	assert.True(r.t, slices.Contains(codes, r.StatusCode),
+		"expected one of the statuses %v, got %d", codes, r.StatusCode)
+	return r
 }
 
 // ================================================================================================
