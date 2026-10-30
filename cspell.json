@@ -23,6 +23,7 @@
     "postprocessors",
     "princjef",
     "stretchr",
+    "httptest",
     "striptags",
     "subtests",
     "topo",

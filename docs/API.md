@@ -13,107 +13,132 @@ Basic usage:
 ```
 func TestEndpoint(t *testing.T) {
     zt := zentests.New(t).Use(app)
-    zt.Get("/users").ExpectStatus(200)
+    zt.Get("/users").Status(200)
 }
 ```
 
 ## Index
 
-- [func SetHeader\(key, value string\) map\[string\]string](#SetHeader)
-- [type Response](#Response)
-    - [func \(r \*Response\) Accepted\(\) \*Response](#Response.Accepted)
-    - [func \(r \*Response\) ArrayLength\(path string, expected int\) \*Response](#Response.ArrayLength)
-    - [func \(r \*Response\) BadRequest\(\) \*Response](#Response.BadRequest)
-    - [func \(r \*Response\) Body\(\) \[\]byte](#Response.Body)
-    - [func \(r \*Response\) BodyMatches\(pattern string\) \*Response](#Response.BodyMatches)
-    - [func \(r \*Response\) BodyString\(\) string](#Response.BodyString)
-    - [func \(r \*Response\) Contains\(substring string\) \*Response](#Response.Contains)
-    - [func \(r \*Response\) CookieHasValues\(expected map\[string\]string\) \*Response](#Response.CookieHasValues)
-    - [func \(r \*Response\) Created\(\) \*Response](#Response.Created)
-    - [func \(r \*Response\) Debug\(\) \*Response](#Response.Debug)
-    - [func \(r \*Response\) Dump\(\) string](#Response.Dump)
-    - [func \(r \*Response\) Equals\(expected string\) \*Response](#Response.Equals)
-    - [func \(r \*Response\) Forbidden\(\) \*Response](#Response.Forbidden)
-    - [func \(r \*Response\) Has\(path string, expected any\) \*Response](#Response.Has)
-    - [func \(r \*Response\) HasBool\(path string, expected bool\) \*Response](#Response.HasBool)
-    - [func \(r \*Response\) HasContentType\(contentType string\) \*Response](#Response.HasContentType)
-    - [func \(r \*Response\) HasFloat\(path string, expected float64\) \*Response](#Response.HasFloat)
-    - [func \(r \*Response\) HasHeader\(key, value string\) \*Response](#Response.HasHeader)
-    - [func \(r \*Response\) HasInt\(path string, expected int\) \*Response](#Response.HasInt)
-    - [func \(r \*Response\) HasKey\(path string\) \*Response](#Response.HasKey)
-    - [func \(r \*Response\) HasString\(path, expected string\) \*Response](#Response.HasString)
-    - [func \(r \*Response\) HeaderContains\(key, substring string\) \*Response](#Response.HeaderContains)
-    - [func \(r \*Response\) HeaderHasValues\(key string, values \[\]string\) \*Response](#Response.HeaderHasValues)
-    - [func \(r \*Response\) HeaderNotPresent\(key string\) \*Response](#Response.HeaderNotPresent)
-    - [func \(r \*Response\) HeaderPresent\(key string\) \*Response](#Response.HeaderPresent)
-    - [func \(r \*Response\) IsCSS\(\) \*Response](#Response.IsCSS)
-    - [func \(r \*Response\) IsEmpty\(\) \*Response](#Response.IsEmpty)
-    - [func \(r \*Response\) IsGIF\(\) \*Response](#Response.IsGIF)
-    - [func \(r \*Response\) IsHTML\(\) \*Response](#Response.IsHTML)
-    - [func \(r \*Response\) IsImage\(\) \*Response](#Response.IsImage)
-    - [func \(r \*Response\) IsJPEG\(\) \*Response](#Response.IsJPEG)
-    - [func \(r \*Response\) IsJS\(\) \*Response](#Response.IsJS)
-    - [func \(r \*Response\) IsJSON\(\) \*Response](#Response.IsJSON)
-    - [func \(r \*Response\) IsNotNull\(path string\) \*Response](#Response.IsNotNull)
-    - [func \(r \*Response\) IsNull\(path string\) \*Response](#Response.IsNull)
-    - [func \(r \*Response\) IsPNG\(\) \*Response](#Response.IsPNG)
-    - [func \(r \*Response\) IsPlainText\(\) \*Response](#Response.IsPlainText)
-    - [func \(r \*Response\) IsSVG\(\) \*Response](#Response.IsSVG)
-    - [func \(r \*Response\) IsWebP\(\) \*Response](#Response.IsWebP)
-    - [func \(r \*Response\) IsXHR\(\) \*Response](#Response.IsXHR)
-    - [func \(r \*Response\) IsXML\(\) \*Response](#Response.IsXML)
-    - [func \(r \*Response\) JSON\(\) \*Response](#Response.JSON)
-    - [func \(r \*Response\) JSONHasValues\(expected map\[string\]any\) \*Response](#Response.JSONHasValues)
-    - [func \(r \*Response\) JSONMatches\(expected map\[string\]any\) \*Response](#Response.JSONMatches)
-    - [func \(r \*Response\) MatchesRegex\(path, pattern string\) \*Response](#Response.MatchesRegex)
-    - [func \(r \*Response\) NoContent\(\) \*Response](#Response.NoContent)
-    - [func \(r \*Response\) NotContains\(substring string\) \*Response](#Response.NotContains)
-    - [func \(r \*Response\) NotFound\(\) \*Response](#Response.NotFound)
-    - [func \(r \*Response\) OK\(\) \*Response](#Response.OK)
-    - [func \(r \*Response\) ServerError\(\) \*Response](#Response.ServerError)
-    - [func \(r \*Response\) Status\(expected int\) \*Response](#Response.Status)
-    - [func \(r \*Response\) Unauthorized\(\) \*Response](#Response.Unauthorized)
-    - [func \(r \*Response\) Unprocessable\(\) \*Response](#Response.Unprocessable)
-- [type SuiteContext](#SuiteContext)
-    - [func \(ctx \*SuiteContext\) AfterEach\(fn func\(\*T\)\) \*SuiteContext](#SuiteContext.AfterEach)
-    - [func \(ctx \*SuiteContext\) BeforeEach\(fn func\(\*T\)\) \*SuiteContext](#SuiteContext.BeforeEach)
-    - [func \(ctx \*SuiteContext\) Describe\(name string, fn func\(ctx \*SuiteContext\)\)](#SuiteContext.Describe)
-    - [func \(ctx \*SuiteContext\) It\(name string, fn func\(\*T\)\)](#SuiteContext.It)
-- [type T](#T)
-    - [func New\(t \*testing.T\) \*T](#New)
-    - [func \(zt \*T\) Delete\(app \*fiber.App, path string\) \*Response](#T.Delete)
-    - [func \(zt \*T\) DeleteJSON\(app \*fiber.App, path string, data any\) \*Response](#T.DeleteJSON)
-    - [func \(zt \*T\) DeleteJSONWithConfig\(app \*fiber.App, path string, data any, cfg fiber.TestConfig\) \*Response](#T.DeleteJSONWithConfig)
-    - [func \(zt \*T\) DeleteWithConfig\(app \*fiber.App, path string, cfg fiber.TestConfig\) \*Response](#T.DeleteWithConfig)
-    - [func \(zt \*T\) Describe\(name string, fn func\(ctx \*SuiteContext\)\)](#T.Describe)
-    - [func \(zt \*T\) Get\(app \*fiber.App, path string\) \*Response](#T.Get)
-    - [func \(zt \*T\) GetWithConfig\(app \*fiber.App, path string, cfg fiber.TestConfig\) \*Response](#T.GetWithConfig)
-    - [func \(zt \*T\) Patch\(app \*fiber.App, path string, body \[\]byte\) \*Response](#T.Patch)
-    - [func \(zt \*T\) PatchJSON\(app \*fiber.App, path string, data any\) \*Response](#T.PatchJSON)
-    - [func \(zt \*T\) PatchJSONWithConfig\(app \*fiber.App, path string, data any, cfg fiber.TestConfig\) \*Response](#T.PatchJSONWithConfig)
-    - [func \(zt \*T\) PatchWithConfig\(app \*fiber.App, path string, body \[\]byte, cfg fiber.TestConfig\) \*Response](#T.PatchWithConfig)
-    - [func \(zt \*T\) Post\(app \*fiber.App, path string, body \[\]byte\) \*Response](#T.Post)
-    - [func \(zt \*T\) PostForm\(app \*fiber.App, path string, data map\[string\]string\) \*Response](#T.PostForm)
-    - [func \(zt \*T\) PostFormWithConfig\(app \*fiber.App, path string, data map\[string\]string, cfg fiber.TestConfig\) \*Response](#T.PostFormWithConfig)
-    - [func \(zt \*T\) PostJSON\(app \*fiber.App, path string, data any\) \*Response](#T.PostJSON)
-    - [func \(zt \*T\) PostJSONWithConfig\(app \*fiber.App, path string, data any, cfg fiber.TestConfig\) \*Response](#T.PostJSONWithConfig)
-    - [func \(zt \*T\) PostWithConfig\(app \*fiber.App, path string, body \[\]byte, cfg fiber.TestConfig\) \*Response](#T.PostWithConfig)
-    - [func \(zt \*T\) Put\(app \*fiber.App, path string, body \[\]byte\) \*Response](#T.Put)
-    - [func \(zt \*T\) PutJSON\(app \*fiber.App, path string, data any\) \*Response](#T.PutJSON)
-    - [func \(zt \*T\) PutJSONWithConfig\(app \*fiber.App, path string, data any, cfg fiber.TestConfig\) \*Response](#T.PutJSONWithConfig)
-    - [func \(zt \*T\) PutWithConfig\(app \*fiber.App, path string, body \[\]byte, cfg fiber.TestConfig\) \*Response](#T.PutWithConfig)
-    - [func \(zt \*T\) Use\(app \*fiber.App\) \*T](#T.Use)
+- [func SetHeader\(key, value string\) map\[string\]string](<#SetHeader>)
+- [type FileUpload](<#FileUpload>)
+- [type Jar](<#Jar>)
+  - [func NewJar\(t testing.TB, app \*fiber.App\) \*Jar](<#NewJar>)
+  - [func \(j \*Jar\) Cookie\(name string\) string](<#Jar.Cookie>)
+  - [func \(j \*Jar\) Get\(path string\) \*Response](<#Jar.Get>)
+  - [func \(j \*Jar\) PostForm\(path string, values url.Values\) \*Response](<#Jar.PostForm>)
+  - [func \(j \*Jar\) PostMultipart\(path string, fields map\[string\]string, files \[\]FileUpload\) \*Response](<#Jar.PostMultipart>)
+  - [func \(j \*Jar\) Send\(req \*http.Request\) \*Response](<#Jar.Send>)
+  - [func \(j \*Jar\) SetHeader\(key, value string\)](<#Jar.SetHeader>)
+  - [func \(j \*Jar\) WithBearer\(token string\)](<#Jar.WithBearer>)
+- [type Response](<#Response>)
+  - [func \(r \*Response\) Accepted\(\) \*Response](<#Response.Accepted>)
+  - [func \(r \*Response\) ArrayContains\(path string, expected any\) \*Response](<#Response.ArrayContains>)
+  - [func \(r \*Response\) ArrayEmpty\(path string\) \*Response](<#Response.ArrayEmpty>)
+  - [func \(r \*Response\) ArrayLength\(path string, expected int\) \*Response](<#Response.ArrayLength>)
+  - [func \(r \*Response\) BadRequest\(\) \*Response](<#Response.BadRequest>)
+  - [func \(r \*Response\) Bind\(target any\) \*Response](<#Response.Bind>)
+  - [func \(r \*Response\) Body\(\) \[\]byte](<#Response.Body>)
+  - [func \(r \*Response\) BodyMatches\(pattern string\) \*Response](<#Response.BodyMatches>)
+  - [func \(r \*Response\) BodyString\(\) string](<#Response.BodyString>)
+  - [func \(r \*Response\) Contains\(substring string\) \*Response](<#Response.Contains>)
+  - [func \(r \*Response\) Cookie\(name string\) \*http.Cookie](<#Response.Cookie>)
+  - [func \(r \*Response\) CookieHasValues\(expected map\[string\]string\) \*Response](<#Response.CookieHasValues>)
+  - [func \(r \*Response\) CookieNotPresent\(name string\) \*Response](<#Response.CookieNotPresent>)
+  - [func \(r \*Response\) Created\(\) \*Response](<#Response.Created>)
+  - [func \(r \*Response\) Debug\(\) \*Response](<#Response.Debug>)
+  - [func \(r \*Response\) Dump\(\) string](<#Response.Dump>)
+  - [func \(r \*Response\) Equals\(expected string\) \*Response](<#Response.Equals>)
+  - [func \(r \*Response\) Forbidden\(\) \*Response](<#Response.Forbidden>)
+  - [func \(r \*Response\) Has\(path string, expected any\) \*Response](<#Response.Has>)
+  - [func \(r \*Response\) HasBool\(path string, expected bool\) \*Response](<#Response.HasBool>)
+  - [func \(r \*Response\) HasContentType\(contentType string\) \*Response](<#Response.HasContentType>)
+  - [func \(r \*Response\) HasCookie\(name string\) \*Response](<#Response.HasCookie>)
+  - [func \(r \*Response\) HasFloat\(path string, expected float64\) \*Response](<#Response.HasFloat>)
+  - [func \(r \*Response\) HasHeader\(key, value string\) \*Response](<#Response.HasHeader>)
+  - [func \(r \*Response\) HasInt\(path string, expected int\) \*Response](<#Response.HasInt>)
+  - [func \(r \*Response\) HasKey\(path string\) \*Response](<#Response.HasKey>)
+  - [func \(r \*Response\) HasString\(path, expected string\) \*Response](<#Response.HasString>)
+  - [func \(r \*Response\) HeaderContains\(key, substring string\) \*Response](<#Response.HeaderContains>)
+  - [func \(r \*Response\) HeaderHasValues\(key string, values \[\]string\) \*Response](<#Response.HeaderHasValues>)
+  - [func \(r \*Response\) HeaderNotPresent\(key string\) \*Response](<#Response.HeaderNotPresent>)
+  - [func \(r \*Response\) HeaderPresent\(key string\) \*Response](<#Response.HeaderPresent>)
+  - [func \(r \*Response\) IsCSS\(\) \*Response](<#Response.IsCSS>)
+  - [func \(r \*Response\) IsClientError\(\) \*Response](<#Response.IsClientError>)
+  - [func \(r \*Response\) IsEmpty\(\) \*Response](<#Response.IsEmpty>)
+  - [func \(r \*Response\) IsGIF\(\) \*Response](<#Response.IsGIF>)
+  - [func \(r \*Response\) IsHTML\(\) \*Response](<#Response.IsHTML>)
+  - [func \(r \*Response\) IsImage\(\) \*Response](<#Response.IsImage>)
+  - [func \(r \*Response\) IsJPEG\(\) \*Response](<#Response.IsJPEG>)
+  - [func \(r \*Response\) IsJS\(\) \*Response](<#Response.IsJS>)
+  - [func \(r \*Response\) IsJSON\(\) \*Response](<#Response.IsJSON>)
+  - [func \(r \*Response\) IsNotNull\(path string\) \*Response](<#Response.IsNotNull>)
+  - [func \(r \*Response\) IsNull\(path string\) \*Response](<#Response.IsNull>)
+  - [func \(r \*Response\) IsPNG\(\) \*Response](<#Response.IsPNG>)
+  - [func \(r \*Response\) IsPlainText\(\) \*Response](<#Response.IsPlainText>)
+  - [func \(r \*Response\) IsRedirect\(\) \*Response](<#Response.IsRedirect>)
+  - [func \(r \*Response\) IsSVG\(\) \*Response](<#Response.IsSVG>)
+  - [func \(r \*Response\) IsServerError\(\) \*Response](<#Response.IsServerError>)
+  - [func \(r \*Response\) IsSuccess\(\) \*Response](<#Response.IsSuccess>)
+  - [func \(r \*Response\) IsWebP\(\) \*Response](<#Response.IsWebP>)
+  - [func \(r \*Response\) IsXHR\(\) \*Response](<#Response.IsXHR>)
+  - [func \(r \*Response\) IsXML\(\) \*Response](<#Response.IsXML>)
+  - [func \(r \*Response\) JSON\(\) \*Response](<#Response.JSON>)
+  - [func \(r \*Response\) JSONHasValues\(expected map\[string\]any\) \*Response](<#Response.JSONHasValues>)
+  - [func \(r \*Response\) JSONMatches\(expected map\[string\]any\) \*Response](<#Response.JSONMatches>)
+  - [func \(r \*Response\) MatchesRegex\(path, pattern string\) \*Response](<#Response.MatchesRegex>)
+  - [func \(r \*Response\) NoContent\(\) \*Response](<#Response.NoContent>)
+  - [func \(r \*Response\) NotContains\(substring string\) \*Response](<#Response.NotContains>)
+  - [func \(r \*Response\) NotFound\(\) \*Response](<#Response.NotFound>)
+  - [func \(r \*Response\) OK\(\) \*Response](<#Response.OK>)
+  - [func \(r \*Response\) RedirectsTo\(location string\) \*Response](<#Response.RedirectsTo>)
+  - [func \(r \*Response\) ServerError\(\) \*Response](<#Response.ServerError>)
+  - [func \(r \*Response\) Status\(expected int\) \*Response](<#Response.Status>)
+  - [func \(r \*Response\) StatusIn\(codes ...int\) \*Response](<#Response.StatusIn>)
+  - [func \(r \*Response\) Unauthorized\(\) \*Response](<#Response.Unauthorized>)
+  - [func \(r \*Response\) Unprocessable\(\) \*Response](<#Response.Unprocessable>)
+- [type SuiteContext](<#SuiteContext>)
+  - [func \(ctx \*SuiteContext\) AfterEach\(fn func\(\*T\)\) \*SuiteContext](<#SuiteContext.AfterEach>)
+  - [func \(ctx \*SuiteContext\) BeforeEach\(fn func\(\*T\)\) \*SuiteContext](<#SuiteContext.BeforeEach>)
+  - [func \(ctx \*SuiteContext\) Describe\(name string, fn func\(ctx \*SuiteContext\)\)](<#SuiteContext.Describe>)
+  - [func \(ctx \*SuiteContext\) It\(name string, fn func\(\*T\)\)](<#SuiteContext.It>)
+- [type T](<#T>)
+  - [func New\(t \*testing.T\) \*T](<#New>)
+  - [func \(zt \*T\) Delete\(app \*fiber.App, path string\) \*Response](<#T.Delete>)
+  - [func \(zt \*T\) DeleteJSON\(app \*fiber.App, path string, data any\) \*Response](<#T.DeleteJSON>)
+  - [func \(zt \*T\) DeleteJSONWithConfig\(app \*fiber.App, path string, data any, cfg fiber.TestConfig\) \*Response](<#T.DeleteJSONWithConfig>)
+  - [func \(zt \*T\) DeleteWithConfig\(app \*fiber.App, path string, cfg fiber.TestConfig\) \*Response](<#T.DeleteWithConfig>)
+  - [func \(zt \*T\) Describe\(name string, fn func\(ctx \*SuiteContext\)\)](<#T.Describe>)
+  - [func \(zt \*T\) Get\(app \*fiber.App, path string\) \*Response](<#T.Get>)
+  - [func \(zt \*T\) GetQuery\(app \*fiber.App, path string, query url.Values\) \*Response](<#T.GetQuery>)
+  - [func \(zt \*T\) GetWithConfig\(app \*fiber.App, path string, cfg fiber.TestConfig\) \*Response](<#T.GetWithConfig>)
+  - [func \(zt \*T\) Patch\(app \*fiber.App, path string, body \[\]byte\) \*Response](<#T.Patch>)
+  - [func \(zt \*T\) PatchJSON\(app \*fiber.App, path string, data any\) \*Response](<#T.PatchJSON>)
+  - [func \(zt \*T\) PatchJSONWithConfig\(app \*fiber.App, path string, data any, cfg fiber.TestConfig\) \*Response](<#T.PatchJSONWithConfig>)
+  - [func \(zt \*T\) PatchWithConfig\(app \*fiber.App, path string, body \[\]byte, cfg fiber.TestConfig\) \*Response](<#T.PatchWithConfig>)
+  - [func \(zt \*T\) Post\(app \*fiber.App, path string, body \[\]byte\) \*Response](<#T.Post>)
+  - [func \(zt \*T\) PostForm\(app \*fiber.App, path string, data map\[string\]string\) \*Response](<#T.PostForm>)
+  - [func \(zt \*T\) PostFormWithConfig\(app \*fiber.App, path string, data map\[string\]string, cfg fiber.TestConfig\) \*Response](<#T.PostFormWithConfig>)
+  - [func \(zt \*T\) PostJSON\(app \*fiber.App, path string, data any\) \*Response](<#T.PostJSON>)
+  - [func \(zt \*T\) PostJSONWithConfig\(app \*fiber.App, path string, data any, cfg fiber.TestConfig\) \*Response](<#T.PostJSONWithConfig>)
+  - [func \(zt \*T\) PostMultipart\(app \*fiber.App, path string, fields map\[string\]string, files \[\]FileUpload\) \*Response](<#T.PostMultipart>)
+  - [func \(zt \*T\) PostWithConfig\(app \*fiber.App, path string, body \[\]byte, cfg fiber.TestConfig\) \*Response](<#T.PostWithConfig>)
+  - [func \(zt \*T\) Put\(app \*fiber.App, path string, body \[\]byte\) \*Response](<#T.Put>)
+  - [func \(zt \*T\) PutJSON\(app \*fiber.App, path string, data any\) \*Response](<#T.PutJSON>)
+  - [func \(zt \*T\) PutJSONWithConfig\(app \*fiber.App, path string, data any, cfg fiber.TestConfig\) \*Response](<#T.PutJSONWithConfig>)
+  - [func \(zt \*T\) PutWithConfig\(app \*fiber.App, path string, body \[\]byte, cfg fiber.TestConfig\) \*Response](<#T.PutWithConfig>)
+  - [func \(zt \*T\) SetHeader\(key, value string\) \*T](<#T.SetHeader>)
+  - [func \(zt \*T\) Use\(app \*fiber.App\) \*T](<#T.Use>)
+  - [func \(zt \*T\) WithBearer\(token string\) \*T](<#T.WithBearer>)
+
 
 <a name="SetHeader"></a>
-
 ## func SetHeader
 
 ```go
 func SetHeader(key, value string) map[string]string
 ```
 
-SetHeader creates a header map with a single key\-value pair. This is a utility function to help
-construct header maps for custom headers when using raw body request methods.
+SetHeader creates a header map with a single key\-value pair. This is a utility function to help construct header maps for custom headers when using raw body request methods.
 
 Parameters:
 
@@ -131,23 +156,250 @@ headers := zentests.SetHeader("Authorization", "Bearer token123")
 // Use with a method that accepts headers parameter
 ```
 
-<a name="Response"></a>
+<a name="FileUpload"></a>
+## type FileUpload
 
+FileUpload describes one file in a PostMultipart request.
+
+```go
+type FileUpload struct {
+    // Name is the form field name. The same name may appear in several entries.
+    Name string
+    // Filename is the file name presented to the server.
+    Filename string
+    // Content is the file's bytes.
+    Content []byte
+}
+```
+
+<a name="Jar"></a>
+## type Jar
+
+Jar sends requests to one Fiber app and remembers every cookie the app sets, the way a browser does. It lets a test flow span several requests, such as login, CSRF checks and session tests. Each request returns a \*Response, so the usual assertions compose with jar requests.
+
+Not an RFC 6265 cookie jar. It is deliberately a flat map of name to value:
+
+- No Path or Domain matching. A cookie is sent with every request to the app.
+- No Secure or HttpOnly enforcement. Check those attributes with Response.Cookie.
+- No Expires\-based expiry. Only the MaxAge \< 0 or empty\-value deletion rule applies.
+- A cookie set to "" is indistinguishable from a deletion, so the empty\-value rule wins.
+
+Jar is not safe for concurrent use. Tests using it run on a single goroutine.
+
+Example:
+
+```
+jar := zentests.NewJar(t, app)
+csrf := jar.Get("/login").OK().BodyString()
+jar.PostForm("/login", url.Values{"csrf": {csrf}, "user": {"jane"}}).Status(302)
+jar.Get("/settings").OK().Contains("Welcome Jane")
+```
+
+```go
+type Jar struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewJar"></a>
+### func NewJar
+
+```go
+func NewJar(t testing.TB, app *fiber.App) *Jar
+```
+
+NewJar returns an empty Jar for app. It fails the test when app is nil.
+
+Parameters:
+
+- t: The [testing.TB](<https://pkg.go.dev/testing/#TB>) instance for assertions
+- app: The Fiber application to test against; must not be nil
+
+Returns:
+
+- \*Jar: A Jar holding no cookies
+
+Example:
+
+```
+jar := zentests.NewJar(t, app)
+```
+
+<a name="Jar.Cookie"></a>
+### func \(\*Jar\) Cookie
+
+```go
+func (j *Jar) Cookie(name string) string
+```
+
+Cookie returns the value the jar holds for name, or "" when there is none. It never fails the test, so it can check that a cookie is absent.
+
+Parameters:
+
+- name: The cookie name
+
+Returns:
+
+- string: The stored cookie value, or "" when absent
+
+Example:
+
+```
+if jar.Cookie("session") == "" { t.Fatal("no session") }
+```
+
+<a name="Jar.Get"></a>
+### func \(\*Jar\) Get
+
+```go
+func (j *Jar) Get(path string) *Response
+```
+
+Get sends a GET request to path with the stored cookies.
+
+Parameters:
+
+- path: The request path \(e.g., "/login"\)
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
+Example:
+
+```
+jar.Get("/settings").OK()
+```
+
+<a name="Jar.PostForm"></a>
+### func \(\*Jar\) PostForm
+
+```go
+func (j *Jar) PostForm(path string, values url.Values) *Response
+```
+
+PostForm sends a POST request to path with values encoded as application/x\-www\-form\-urlencoded, together with the stored cookies.
+
+Parameters:
+
+- path: The request path \(e.g., "/login"\)
+- values: The form fields; keys and values are escaped and multi\-value safe
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
+Example:
+
+```
+jar.PostForm("/login", url.Values{"user": {"jane"}}).Status(302)
+```
+
+<a name="Jar.PostMultipart"></a>
+### func \(\*Jar\) PostMultipart
+
+```go
+func (j *Jar) PostMultipart(path string, fields map[string]string, files []FileUpload) *Response
+```
+
+PostMultipart sends a POST request with multipart/form\-data and the stored cookies, typically for file uploads. See T.PostMultipart for the FileUpload fields.
+
+Parameters:
+
+- path: The request path \(e.g., "/upload"\)
+- fields: Plain form fields \(nil when there are none\)
+- files: The files to upload \(nil when there are none\)
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
+Example:
+
+```
+jar.PostMultipart("/upload", nil, []zentests.FileUpload{
+    {Name: "file", Filename: "a.txt", Content: []byte("hello")},
+}).OK()
+```
+
+<a name="Jar.Send"></a>
+### func \(\*Jar\) Send
+
+```go
+func (j *Jar) Send(req *http.Request) *Response
+```
+
+Send sends a caller\-built request with the stored cookies, then stores the cookies the response sets. Use it as an escape hatch when Get and PostForm do not fit.
+
+Parameters:
+
+- req: The request to send; its own cookies are kept and the stored ones are added
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
+Example:
+
+```
+req := httptest.NewRequest(http.MethodDelete, "/session", nil)
+jar.Send(req).NoContent()
+```
+
+<a name="Jar.SetHeader"></a>
+### func \(\*Jar\) SetHeader
+
+```go
+func (j *Jar) SetHeader(key, value string)
+```
+
+SetHeader sets a default header that is sent with every request made through the jar. A header already on the request, such as PostForm's Content\-Type, takes precedence over a default with the same name. Header names are canonicalized, so "x\-api\-key" and "X\-Api\-Key" configure the same default.
+
+Parameters:
+
+- key: The header name \(e.g., "Accept"\)
+- value: The header value
+
+Example:
+
+```
+jar := zentests.NewJar(t, app)
+jar.SetHeader("Accept", "application/json")
+```
+
+<a name="Jar.WithBearer"></a>
+### func \(\*Jar\) WithBearer
+
+```go
+func (j *Jar) WithBearer(token string)
+```
+
+WithBearer sets the default Authorization header to "Bearer \<token\>", which is sent with every request made through the jar.
+
+Parameters:
+
+- token: The bearer token
+
+Example:
+
+```
+jar := zentests.NewJar(t, app)
+jar.WithBearer(token)
+```
+
+<a name="Response"></a>
 ## type Response
 
-Response wraps an HTTP response with fluent assertion methods. It provides a chainable API for
-making assertions on HTTP responses including status codes, headers, body content, and JSON data.
-The response body is lazily loaded when first accessed to avoid unnecessary reads.
+Response wraps an HTTP response with fluent assertion methods. It provides a chainable API for making assertions on HTTP responses including status codes, headers, body content, and JSON data. The response body is lazily loaded when first accessed to avoid unnecessary reads.
 
-Response maintains internal state including the parsed JSON body and tracks whether the body has
-been read to prevent multiple reads from the response stream.
+Response maintains internal state including the parsed JSON body and tracks whether the body has been read to prevent multiple reads from the response stream.
 
 Fields:
 
-- t: The testing.TB instance for making assertions
+- t: The [testing.TB](<https://pkg.go.dev/testing/#TB>) instance for making assertions
 - StatusCode: The HTTP status code from the response
 - Header: The HTTP headers from the response
-- resp: The underlying http.Response
+- resp: The underlying \[http.Response\]
 - body: The cached response body bytes \(lazy loaded\)
 - bodyRead: Flag indicating if body has been read
 - parsed: Flag indicating if JSON parsing has been attempted
@@ -163,15 +415,13 @@ type Response struct {
 ```
 
 <a name="Response.Accepted"></a>
-
 ### func \(\*Response\) Accepted
 
 ```go
 func (r *Response) Accepted() *Response
 ```
 
-Accepted asserts that the HTTP status code is 202 \(Accepted\). Convenience method equivalent to
-Status\(202\). Indicates the request has been accepted for processing but not completed.
+Accepted asserts that the HTTP status code is 202 \(Accepted\). Convenience method equivalent to Status\(202\). Indicates the request has been accepted for processing but not completed.
 
 Returns:
 
@@ -183,8 +433,54 @@ Example:
 zt.PostJSON(app, "/jobs", jobData).Accepted()
 ```
 
-<a name="Response.ArrayLength"></a>
+<a name="Response.ArrayContains"></a>
+### func \(\*Response\) ArrayContains
 
+```go
+func (r *Response) ArrayContains(path string, expected any) *Response
+```
+
+ArrayContains asserts that the value at path is an array holding an element equal to the expected value. Numeric expectations follow Has: any Go numeric type matches a JSON number. Object and array expectations must be written in decoded form, with JSON numbers as float64; use Has on a "path.index" path to check a nested object.
+
+Parameters:
+
+- path: The JSON key path using dot notation
+- expected: The element the array must contain
+
+Returns:
+
+- \*Response: The receiver for method chaining
+
+Example:
+
+```
+zt.Get(app, "/api/users/1").ArrayContains("user.roles", "admin")
+```
+
+<a name="Response.ArrayEmpty"></a>
+### func \(\*Response\) ArrayEmpty
+
+```go
+func (r *Response) ArrayEmpty(path string) *Response
+```
+
+ArrayEmpty asserts that the value at path is an array with no elements. Fails when the path does not exist or is not an array.
+
+Parameters:
+
+- path: The JSON key path using dot notation
+
+Returns:
+
+- \*Response: The receiver for method chaining
+
+Example:
+
+```
+zt.Get(app, "/api/users/1").ArrayEmpty("user.roles")
+```
+
+<a name="Response.ArrayLength"></a>
 ### func \(\*Response\) ArrayLength
 
 ```go
@@ -209,15 +505,13 @@ zt.Get(app, "/api/users").ArrayLength("data.users", 10)
 ```
 
 <a name="Response.BadRequest"></a>
-
 ### func \(\*Response\) BadRequest
 
 ```go
 func (r *Response) BadRequest() *Response
 ```
 
-BadRequest asserts that the HTTP status code is 400 \(Bad Request\). Convenience method equivalent
-to Status\(400\). Indicates the server cannot process the request due to client error.
+BadRequest asserts that the HTTP status code is 400 \(Bad Request\). Convenience method equivalent to Status\(400\). Indicates the server cannot process the request due to client error.
 
 Returns:
 
@@ -229,16 +523,41 @@ Example:
 zt.PostJSON(app, "/users", invalidData).BadRequest()
 ```
 
-<a name="Response.Body"></a>
+<a name="Response.Bind"></a>
+### func \(\*Response\) Bind
 
+```go
+func (r *Response) Bind(target any) *Response
+```
+
+Bind decodes the response body into target with encoding/json, so a test can work with typed values instead of dot\-notation paths. It reads the raw body, not the JSON\(\) cache. Fails the test when the body is not valid JSON for the target, and still returns the receiver for chaining.
+
+Parameters:
+
+- target: The value to decode into; typically a pointer to a struct or map
+
+Returns:
+
+- \*Response: The receiver for method chaining
+
+Example:
+
+```
+var user struct {
+    ID   int    `json:"id"`
+    Name string `json:"name"`
+}
+zt.Get(app, "/api/users/1").OK().Bind(&user)
+```
+
+<a name="Response.Body"></a>
 ### func \(\*Response\) Body
 
 ```go
 func (r *Response) Body() []byte
 ```
 
-Body returns the response body as bytes. The body is lazily loaded on first call and cached for
-subsequent accesses. This prevents multiple reads from the response stream which would return empty.
+Body returns the response body as bytes. The body is lazily loaded on first call and cached for subsequent accesses. This prevents multiple reads from the response stream which would return empty.
 
 Returns:
 
@@ -252,15 +571,13 @@ fmt.Println(string(body))
 ```
 
 <a name="Response.BodyMatches"></a>
-
 ### func \(\*Response\) BodyMatches
 
 ```go
 func (r *Response) BodyMatches(pattern string) *Response
 ```
 
-BodyMatches asserts that the response body matches the regex pattern. Useful for validating dynamic
-content or complex text patterns.
+BodyMatches asserts that the response body matches the regex pattern. Useful for validating dynamic content or complex text patterns.
 
 Parameters:
 
@@ -277,15 +594,13 @@ zt.Get(app, "/users/1").BodyMatches(`User ID: \d+`)
 ```
 
 <a name="Response.BodyString"></a>
-
 ### func \(\*Response\) BodyString
 
 ```go
 func (r *Response) BodyString() string
 ```
 
-BodyString returns the response body as a string. Convenience method that converts Body\(\) bytes to
-string.
+BodyString returns the response body as a string. Convenience method that converts Body\(\) bytes to string.
 
 Returns:
 
@@ -299,15 +614,13 @@ assert.Contains(t, bodyStr, "success")
 ```
 
 <a name="Response.Contains"></a>
-
 ### func \(\*Response\) Contains
 
 ```go
 func (r *Response) Contains(substring string) *Response
 ```
 
-Contains asserts that the response body contains the specified substring. Case\-sensitive substring
-search in the response body.
+Contains asserts that the response body contains the specified substring. Case\-sensitive substring search in the response body.
 
 Parameters:
 
@@ -323,16 +636,38 @@ Example:
 zt.Get(app, "/page").Contains("Welcome")
 ```
 
-<a name="Response.CookieHasValues"></a>
+<a name="Response.Cookie"></a>
+### func \(\*Response\) Cookie
 
+```go
+func (r *Response) Cookie(name string) *http.Cookie
+```
+
+Cookie returns the named cookie from the response, failing the test when it was not set. Use it to check attributes the [Jar](<#Jar>) does not keep, such as HttpOnly, Path, Secure and SameSite.
+
+Parameters:
+
+- name: The cookie name
+
+Returns:
+
+- \*\[http.Cookie\]: The parsed Set\-Cookie entry with its attributes
+
+Example:
+
+```
+cookie := zt.Get(app, "/login").OK().Cookie("session")
+assert.True(t, cookie.HttpOnly)
+```
+
+<a name="Response.CookieHasValues"></a>
 ### func \(\*Response\) CookieHasValues
 
 ```go
 func (r *Response) CookieHasValues(expected map[string]string) *Response
 ```
 
-CookieHasValues asserts that response cookies match the expected values. Parses all Set\-Cookie
-headers and verifies each cookie name\-value pair.
+CookieHasValues asserts that response cookies match the expected values. Parses all Set\-Cookie headers and verifies each cookie name\-value pair.
 
 Parameters:
 
@@ -351,16 +686,37 @@ zt.Get(app, "/settings").CookieHasValues(map[string]string{
 })
 ```
 
-<a name="Response.Created"></a>
+<a name="Response.CookieNotPresent"></a>
+### func \(\*Response\) CookieNotPresent
 
+```go
+func (r *Response) CookieNotPresent(name string) *Response
+```
+
+CookieNotPresent asserts that the response did not set a cookie with the given name. A deletion cookie \(empty value or MaxAge \< 0\) does not fail this check; use the Jar to check that a cookie is gone.
+
+Parameters:
+
+- name: The cookie name
+
+Returns:
+
+- \*Response: The receiver for method chaining
+
+Example:
+
+```
+zt.Get(app, "/public").OK().CookieNotPresent("session")
+```
+
+<a name="Response.Created"></a>
 ### func \(\*Response\) Created
 
 ```go
 func (r *Response) Created() *Response
 ```
 
-Created asserts that the HTTP status code is 201 \(Created\). Convenience method equivalent to
-Status\(201\). Typically used after POST requests that create new resources.
+Created asserts that the HTTP status code is 201 \(Created\). Convenience method equivalent to Status\(201\). Typically used after POST requests that create new resources.
 
 Returns:
 
@@ -373,17 +729,13 @@ zt.PostJSON(app, "/users", data).Created()
 ```
 
 <a name="Response.Debug"></a>
-
 ### func \(\*Response\) Debug
 
 ```go
 func (r *Response) Debug() *Response
 ```
 
-Debug prints detailed response information to stdout for troubleshooting. Outputs status code,
-headers, body, and parsed JSON \(if available\). Sensitive headers such as Authorization and
-Set\-Cookie are redacted. This is useful during test development to inspect response details.
-Returns the receiver for method chaining.
+Debug prints detailed response information to stdout for troubleshooting. Outputs status code, headers, body, and parsed JSON \(if available\). Sensitive headers such as Authorization and Set\-Cookie are redacted. This is useful during test development to inspect response details. Returns the receiver for method chaining.
 
 Returns:
 
@@ -396,16 +748,13 @@ zt.Get(app, "/users").Debug().OK()
 ```
 
 <a name="Response.Dump"></a>
-
 ### func \(\*Response\) Dump
 
 ```go
 func (r *Response) Dump() string
 ```
 
-Dump returns raw response details as a formatted string. Useful for custom logging or including
-response details in test failure messages. Unlike Debug\(\), this returns a string instead of
-printing to stdout. Sensitive headers such as Authorization and Set\-Cookie are redacted.
+Dump returns raw response details as a formatted string. Useful for custom logging or including response details in test failure messages. Unlike Debug\(\), this returns a string instead of printing to stdout. Sensitive headers such as Authorization and Set\-Cookie are redacted.
 
 Returns:
 
@@ -419,15 +768,13 @@ t.Logf("Response details: %s", details)
 ```
 
 <a name="Response.Equals"></a>
-
 ### func \(\*Response\) Equals
 
 ```go
 func (r *Response) Equals(expected string) *Response
 ```
 
-Equals asserts that the response body equals the exact expected string. Performs an exact string
-comparison of the entire body.
+Equals asserts that the response body equals the exact expected string. Performs an exact string comparison of the entire body.
 
 Parameters:
 
@@ -444,15 +791,13 @@ zt.Get(app, "/ping").Equals("pong")
 ```
 
 <a name="Response.Forbidden"></a>
-
 ### func \(\*Response\) Forbidden
 
 ```go
 func (r *Response) Forbidden() *Response
 ```
 
-Forbidden asserts that the HTTP status code is 403 \(Forbidden\). Convenience method equivalent to
-Status\(403\). Indicates the server understood the request but refuses to authorize it.
+Forbidden asserts that the HTTP status code is 403 \(Forbidden\). Convenience method equivalent to Status\(403\). Indicates the server understood the request but refuses to authorize it.
 
 Returns:
 
@@ -460,22 +805,18 @@ Returns:
 
 Example:
 
-```go
+```
 zt.Get(app, "/admin").Forbidden()
 ```
 
 <a name="Response.Has"></a>
-
 ### func \(\*Response\) Has
 
 ```go
 func (r *Response) Has(path string, expected any) *Response
 ```
 
-Has asserts that the JSON key equals the expected value. Supports dot notation for nested keys.
-Fails if the key doesn't exist or if the value differs. Any Go numeric type \(int, float32, ...\) is
-accepted for numbers and compared as float64, because JSON numbers always decode to float64. Other
-types must match exactly.
+Has asserts that the JSON key equals the expected value. Supports dot notation for nested keys. Fails if the key doesn't exist or if the value differs. Any Go numeric type \(int, float32, ...\) is accepted for numbers and compared as float64, because JSON numbers always decode to float64. Other types must match exactly.
 
 Parameters:
 
@@ -494,7 +835,6 @@ zt.Get(app, "/api/count").Has("data.count", 42) // any numeric type works
 ```
 
 <a name="Response.HasBool"></a>
-
 ### func \(\*Response\) HasBool
 
 ```go
@@ -519,15 +859,13 @@ zt.Get(app, "/api/status").HasBool("data.active", true)
 ```
 
 <a name="Response.HasContentType"></a>
-
 ### func \(\*Response\) HasContentType
 
 ```go
 func (r *Response) HasContentType(contentType string) *Response
 ```
 
-HasContentType asserts that the Content\-Type header equals the expected value. Performs an exact
-match on the Content\-Type header.
+HasContentType asserts that the Content\-Type header equals the expected value. Performs an exact match on the Content\-Type header.
 
 Parameters:
 
@@ -543,16 +881,37 @@ Example:
 zt.Get(app, "/page").HasContentType("text/html; charset=utf-8")
 ```
 
-<a name="Response.HasFloat"></a>
+<a name="Response.HasCookie"></a>
+### func \(\*Response\) HasCookie
 
+```go
+func (r *Response) HasCookie(name string) *Response
+```
+
+HasCookie asserts that the response set a cookie with the given name, with any value. Use Cookie to read the cookie's attributes, or CookieHasValues to check its value. A deletion cookie \(empty value or MaxAge \< 0\) does not count as set; use the Jar to check that a stored cookie is gone.
+
+Parameters:
+
+- name: The cookie name
+
+Returns:
+
+- \*Response: The receiver for method chaining
+
+Example:
+
+```
+zt.Get(app, "/login").OK().HasCookie("session")
+```
+
+<a name="Response.HasFloat"></a>
 ### func \(\*Response\) HasFloat
 
 ```go
 func (r *Response) HasFloat(path string, expected float64) *Response
 ```
 
-HasFloat asserts that the JSON key equals the expected float64 value. Uses InDelta for comparison to
-handle floating point precision issues.
+HasFloat asserts that the JSON key equals the expected float64 value. Uses InDelta for comparison to handle floating point precision issues.
 
 Parameters:
 
@@ -570,15 +929,13 @@ zt.Get(app, "/api/score").HasFloat("data.score", 95.5)
 ```
 
 <a name="Response.HasHeader"></a>
-
 ### func \(\*Response\) HasHeader
 
 ```go
 func (r *Response) HasHeader(key, value string) *Response
 ```
 
-HasHeader asserts that a header exists and has the expected value. Performs an exact match
-comparison. Header names are case\-insensitive.
+HasHeader asserts that a header exists and has the expected value. Performs an exact match comparison. Header names are case\-insensitive.
 
 Parameters:
 
@@ -598,15 +955,13 @@ zt.Get(app, "/api/users").HasHeader("Content-Type", "application/css") // raises
 ```
 
 <a name="Response.HasInt"></a>
-
 ### func \(\*Response\) HasInt
 
 ```go
 func (r *Response) HasInt(path string, expected int) *Response
 ```
 
-HasInt asserts that the JSON key equals the expected integer value. Fails for non\-integer numbers,
-so 42.9 does not match 42.
+HasInt asserts that the JSON key equals the expected integer value. Fails for non\-integer numbers, so 42.9 does not match 42.
 
 Parameters:
 
@@ -624,15 +979,13 @@ zt.Get(app, "/api/count").HasInt("data.total", 42)
 ```
 
 <a name="Response.HasKey"></a>
-
 ### func \(\*Response\) HasKey
 
 ```go
 func (r *Response) HasKey(path string) *Response
 ```
 
-HasKey asserts that the JSON response contains the specified key path. Supports dot notation for
-nested keys and array indices \(e.g., "users.0.name"\).
+HasKey asserts that the JSON response contains the specified key path. Supports dot notation for nested keys and array indices \(e.g., "users.0.name"\).
 
 Parameters:
 
@@ -649,7 +1002,6 @@ zt.Get(app, "/api/users/1").HasKey("data.user.name")
 ```
 
 <a name="Response.HasString"></a>
-
 ### func \(\*Response\) HasString
 
 ```go
@@ -674,16 +1026,13 @@ zt.Get(app, "/api/users/1").HasString("data.user.email", "john@example.com")
 ```
 
 <a name="Response.HeaderContains"></a>
-
 ### func \(\*Response\) HeaderContains
 
 ```go
 func (r *Response) HeaderContains(key, substring string) *Response
 ```
 
-HeaderContains asserts that a header value contains the expected substring. Useful for flexible
-checks like verifying "application/json" is in Content\-Type without matching the entire header
-value including charset.
+HeaderContains asserts that a header value contains the expected substring. Useful for flexible checks like verifying "application/json" is in Content\-Type without matching the entire header value including charset.
 
 Parameters:
 
@@ -703,15 +1052,13 @@ zt.Get(app, "/api/users").HeaderContains("Content-Type", "image") // raises an e
 ```
 
 <a name="Response.HeaderHasValues"></a>
-
 ### func \(\*Response\) HeaderHasValues
 
 ```go
 func (r *Response) HeaderHasValues(key string, values []string) *Response
 ```
 
-HeaderHasValues asserts that a header has exactly the expected values. For headers that can have
-multiple values \(e.g., Set\-Cookie, X\-Features\). Order of values does not matter.
+HeaderHasValues asserts that a header has exactly the expected values. For headers that can have multiple values \(e.g., Set\-Cookie, X\-Features\). Order of values does not matter.
 
 Parameters:
 
@@ -729,15 +1076,13 @@ zt.Get(app, "/features").HeaderHasValues("X-Features", []string{"audio", "video"
 ```
 
 <a name="Response.HeaderNotPresent"></a>
-
 ### func \(\*Response\) HeaderNotPresent
 
 ```go
 func (r *Response) HeaderNotPresent(key string) *Response
 ```
 
-HeaderNotPresent asserts that a header is not present or is empty. Useful for security checks to
-ensure sensitive headers are not exposed.
+HeaderNotPresent asserts that a header is not present or is empty. Useful for security checks to ensure sensitive headers are not exposed.
 
 Parameters:
 
@@ -754,15 +1099,13 @@ zt.Get(app, "/public").HeaderNotPresent("Authorization")
 ```
 
 <a name="Response.HeaderPresent"></a>
-
 ### func \(\*Response\) HeaderPresent
 
 ```go
 func (r *Response) HeaderPresent(key string) *Response
 ```
 
-HeaderPresent asserts that a header is present and non\-empty. Checks for the existence of a header
-without validating its value.
+HeaderPresent asserts that a header is present and non\-empty. Checks for the existence of a header without validating its value.
 
 Parameters:
 
@@ -779,15 +1122,13 @@ zt.Get(app, "/secure").HeaderPresent("X-Auth-Token")
 ```
 
 <a name="Response.IsCSS"></a>
-
 ### func \(\*Response\) IsCSS
 
 ```go
 func (r *Response) IsCSS() *Response
 ```
 
-IsCSS asserts that the Content\-Type header contains "text/css". Quick check for CSS stylesheet
-responses.
+IsCSS asserts that the Content\-Type header contains "text/css". Quick check for CSS stylesheet responses.
 
 Returns:
 
@@ -799,8 +1140,26 @@ Example:
 zt.Get(app, "/style.css").OK().IsCSS()
 ```
 
-<a name="Response.IsEmpty"></a>
+<a name="Response.IsClientError"></a>
+### func \(\*Response\) IsClientError
 
+```go
+func (r *Response) IsClientError() *Response
+```
+
+IsClientError asserts that the HTTP status code is in the 4xx range. Use Status or its shortcuts when the exact code matters.
+
+Returns:
+
+- \*Response: The receiver for method chaining
+
+Example:
+
+```
+zt.Get(app, "/missing").IsClientError()
+```
+
+<a name="Response.IsEmpty"></a>
 ### func \(\*Response\) IsEmpty
 
 ```go
@@ -820,15 +1179,13 @@ zt.Delete(app, "/users/1").NoContent().IsEmpty()
 ```
 
 <a name="Response.IsGIF"></a>
-
 ### func \(\*Response\) IsGIF
 
 ```go
 func (r *Response) IsGIF() *Response
 ```
 
-IsGIF asserts that the Content\-Type header contains "image/gif". Quick check for GIF image
-responses.
+IsGIF asserts that the Content\-Type header contains "image/gif". Quick check for GIF image responses.
 
 Returns:
 
@@ -841,15 +1198,13 @@ zt.Get(app, "/animation.gif").OK().IsGIF()
 ```
 
 <a name="Response.IsHTML"></a>
-
 ### func \(\*Response\) IsHTML
 
 ```go
 func (r *Response) IsHTML() *Response
 ```
 
-IsHTML asserts that the Content\-Type header contains "text/html". Quick check for HTML page
-responses. Case\-sensitive substring match.
+IsHTML asserts that the Content\-Type header contains "text/html". Quick check for HTML page responses. Case\-sensitive substring match.
 
 Returns:
 
@@ -862,15 +1217,13 @@ zt.Get(app, "/").OK().IsHTML()
 ```
 
 <a name="Response.IsImage"></a>
-
 ### func \(\*Response\) IsImage
 
 ```go
 func (r *Response) IsImage() *Response
 ```
 
-IsImage asserts that the Content\-Type header contains "image/". General check for any image type
-responses.
+IsImage asserts that the Content\-Type header contains "image/". General check for any image type responses.
 
 Returns:
 
@@ -883,15 +1236,13 @@ zt.Get(app, "/photo.jpg").OK().IsImage()
 ```
 
 <a name="Response.IsJPEG"></a>
-
 ### func \(\*Response\) IsJPEG
 
 ```go
 func (r *Response) IsJPEG() *Response
 ```
 
-IsJPEG asserts that the Content\-Type header contains "image/jpeg". Quick check for JPEG image
-responses.
+IsJPEG asserts that the Content\-Type header contains "image/jpeg". Quick check for JPEG image responses.
 
 Returns:
 
@@ -904,15 +1255,13 @@ zt.Get(app, "/photo.jpg").OK().IsJPEG()
 ```
 
 <a name="Response.IsJS"></a>
-
 ### func \(\*Response\) IsJS
 
 ```go
 func (r *Response) IsJS() *Response
 ```
 
-IsJS asserts that the Content\-Type header contains "javascript". Matches both
-"application/javascript" and "text/javascript". Quick check for JavaScript responses.
+IsJS asserts that the Content\-Type header contains "javascript". Matches both "application/javascript" and "text/javascript". Quick check for JavaScript responses.
 
 Returns:
 
@@ -925,15 +1274,13 @@ zt.Get(app, "/app.js").OK().IsJS()
 ```
 
 <a name="Response.IsJSON"></a>
-
 ### func \(\*Response\) IsJSON
 
 ```go
 func (r *Response) IsJSON() *Response
 ```
 
-IsJSON asserts that the Content\-Type header contains "application/json". Quick check for JSON API
-responses. Case\-sensitive substring match.
+IsJSON asserts that the Content\-Type header contains "application/json". Quick check for JSON API responses. Case\-sensitive substring match.
 
 Returns:
 
@@ -946,7 +1293,6 @@ zt.Get(app, "/api/users").OK().IsJSON()
 ```
 
 <a name="Response.IsNotNull"></a>
-
 ### func \(\*Response\) IsNotNull
 
 ```go
@@ -970,7 +1316,6 @@ zt.Get(app, "/api/users/1").IsNotNull("data.user")
 ```
 
 <a name="Response.IsNull"></a>
-
 ### func \(\*Response\) IsNull
 
 ```go
@@ -994,15 +1339,13 @@ zt.Get(app, "/api/users/999").IsNull("data.user")
 ```
 
 <a name="Response.IsPNG"></a>
-
 ### func \(\*Response\) IsPNG
 
 ```go
 func (r *Response) IsPNG() *Response
 ```
 
-IsPNG asserts that the Content\-Type header contains "image/png". Quick check for PNG image
-responses.
+IsPNG asserts that the Content\-Type header contains "image/png". Quick check for PNG image responses.
 
 Returns:
 
@@ -1015,15 +1358,13 @@ zt.Get(app, "/logo.png").OK().IsPNG()
 ```
 
 <a name="Response.IsPlainText"></a>
-
 ### func \(\*Response\) IsPlainText
 
 ```go
 func (r *Response) IsPlainText() *Response
 ```
 
-IsPlainText asserts that the Content\-Type header contains "text/plain". Quick check for plain text
-responses. Case\-sensitive substring match.
+IsPlainText asserts that the Content\-Type header contains "text/plain". Quick check for plain text responses. Case\-sensitive substring match.
 
 Returns:
 
@@ -1035,16 +1376,33 @@ Example:
 zt.Get(app, "/health").OK().IsPlainText()
 ```
 
-<a name="Response.IsSVG"></a>
+<a name="Response.IsRedirect"></a>
+### func \(\*Response\) IsRedirect
 
+```go
+func (r *Response) IsRedirect() *Response
+```
+
+IsRedirect asserts that the HTTP status code is one of the redirects that carry a Location header: 301, 302, 303, 307 or 308. 304 \(Not Modified\) is not included. Use RedirectsTo to also check where the response points.
+
+Returns:
+
+- \*Response: The receiver for method chaining
+
+Example:
+
+```
+zt.Get(app, "/old-url").IsRedirect()
+```
+
+<a name="Response.IsSVG"></a>
 ### func \(\*Response\) IsSVG
 
 ```go
 func (r *Response) IsSVG() *Response
 ```
 
-IsSVG asserts that the Content\-Type header contains "image/svg\+xml". Quick check for SVG image
-responses.
+IsSVG asserts that the Content\-Type header contains "image/svg\+xml". Quick check for SVG image responses.
 
 Returns:
 
@@ -1056,16 +1414,52 @@ Example:
 zt.Get(app, "/icon.svg").OK().IsSVG()
 ```
 
-<a name="Response.IsWebP"></a>
+<a name="Response.IsServerError"></a>
+### func \(\*Response\) IsServerError
 
+```go
+func (r *Response) IsServerError() *Response
+```
+
+IsServerError asserts that the HTTP status code is in the 5xx range. Use Status or its shortcuts when the exact code matters.
+
+Returns:
+
+- \*Response: The receiver for method chaining
+
+Example:
+
+```
+zt.Get(app, "/broken").IsServerError()
+```
+
+<a name="Response.IsSuccess"></a>
+### func \(\*Response\) IsSuccess
+
+```go
+func (r *Response) IsSuccess() *Response
+```
+
+IsSuccess asserts that the HTTP status code is in the 2xx range. Use Status or its shortcuts when the exact code matters.
+
+Returns:
+
+- \*Response: The receiver for method chaining
+
+Example:
+
+```
+zt.Get(app, "/health").IsSuccess()
+```
+
+<a name="Response.IsWebP"></a>
 ### func \(\*Response\) IsWebP
 
 ```go
 func (r *Response) IsWebP() *Response
 ```
 
-IsWebP asserts that the Content\-Type header contains "image/webp". Quick check for WebP image
-responses.
+IsWebP asserts that the Content\-Type header contains "image/webp". Quick check for WebP image responses.
 
 Returns:
 
@@ -1078,15 +1472,13 @@ zt.Get(app, "/photo.webp").OK().IsWebP()
 ```
 
 <a name="Response.IsXHR"></a>
-
 ### func \(\*Response\) IsXHR
 
 ```go
 func (r *Response) IsXHR() *Response
 ```
 
-IsXHR asserts that the X\-Requested\-With header contains "XMLHttpRequest". Useful for detecting
-AJAX requests in responses.
+IsXHR asserts that the X\-Requested\-With header contains "XMLHttpRequest". Useful for detecting AJAX requests in responses.
 
 Returns:
 
@@ -1099,15 +1491,13 @@ zt.Get(app, "/api/users").OK().IsXHR()
 ```
 
 <a name="Response.IsXML"></a>
-
 ### func \(\*Response\) IsXML
 
 ```go
 func (r *Response) IsXML() *Response
 ```
 
-IsXML asserts that the Content\-Type header contains "xml". Matches both "application/xml" and
-"text/xml". Quick check for XML responses.
+IsXML asserts that the Content\-Type header contains "xml". Matches both "application/xml" and "text/xml". Quick check for XML responses.
 
 Returns:
 
@@ -1120,16 +1510,13 @@ zt.Get(app, "/api/data.xml").OK().IsXML()
 ```
 
 <a name="Response.JSON"></a>
-
 ### func \(\*Response\) JSON
 
 ```go
 func (r *Response) JSON() *Response
 ```
 
-JSON parses and caches the response body as JSON. Enables JSON\-specific assertions on the response.
-The body is parsed once; later calls reuse the result, even when parsing failed. Fails the test if
-JSON parsing fails.
+JSON parses and caches the response body as JSON. Enables JSON\-specific assertions on the response. The body is parsed once; later calls reuse the result, even when parsing failed. Fails the test if JSON parsing fails.
 
 Returns:
 
@@ -1142,16 +1529,13 @@ zt.Get(app, "/api/users").JSON().Has("data.0.name", "John")
 ```
 
 <a name="Response.JSONHasValues"></a>
-
 ### func \(\*Response\) JSONHasValues
 
 ```go
 func (r *Response) JSONHasValues(expected map[string]any) *Response
 ```
 
-JSONHasValues asserts that each listed key path holds its expected value. This is a subset check:
-keys that are not listed are ignored. Each entry is checked with Has, so the same type rules apply.
-Keys are checked in sorted order, so failures are reported in a stable order.
+JSONHasValues asserts that each listed key path holds its expected value. This is a subset check: keys that are not listed are ignored. Each entry is checked with Has, so the same type rules apply. Keys are checked in sorted order, so failures are reported in a stable order.
 
 Parameters:
 
@@ -1171,16 +1555,15 @@ zt.Get(app, "/api/users/1").JSONHasValues(map[string]any{
 ```
 
 <a name="Response.JSONMatches"></a>
-
 ### func \(\*Response\) JSONMatches
 
 ```go
 func (r *Response) JSONMatches(expected map[string]any) *Response
 ```
 
-JSONMatches is an alias for JSONHasValues. It is a subset check: it asserts that each listed key
-path holds its expected value, and ignores any other keys in the body. Prefer JSONHasValues in new
-code.
+JSONMatches is an alias for JSONHasValues. It is a subset check: it asserts that each listed key path holds its expected value, and ignores any other keys in the body.
+
+Deprecated: use JSONHasValues, which has the same behavior under a clearer name. JSONMatches is kept so existing tests keep compiling.
 
 Parameters:
 
@@ -1199,15 +1582,13 @@ zt.Get(app, "/api/users/1").JSONMatches(map[string]any{
 ```
 
 <a name="Response.MatchesRegex"></a>
-
 ### func \(\*Response\) MatchesRegex
 
 ```go
 func (r *Response) MatchesRegex(path, pattern string) *Response
 ```
 
-MatchesRegex asserts that the JSON key value matches the regex pattern. The value at the specified
-path must be a string.
+MatchesRegex asserts that the JSON key value matches the regex pattern. The value at the specified path must be a string.
 
 Parameters:
 
@@ -1225,15 +1606,13 @@ zt.Get(app, "/api/users/1").MatchesRegex("data.user.email", `^[\w.-]+@[\w.-]+\.\
 ```
 
 <a name="Response.NoContent"></a>
-
 ### func \(\*Response\) NoContent
 
 ```go
 func (r *Response) NoContent() *Response
 ```
 
-NoContent asserts that the HTTP status code is 204 \(No Content\). Convenience method equivalent to
-Status\(204\). Typically used for DELETE operations or successful operations with no response body.
+NoContent asserts that the HTTP status code is 204 \(No Content\). Convenience method equivalent to Status\(204\). Typically used for DELETE operations or successful operations with no response body.
 
 Returns:
 
@@ -1246,15 +1625,13 @@ zt.Delete(app, "/users/1").NoContent()
 ```
 
 <a name="Response.NotContains"></a>
-
 ### func \(\*Response\) NotContains
 
 ```go
 func (r *Response) NotContains(substring string) *Response
 ```
 
-NotContains asserts that the response body does not contain the specified substring. Useful for
-ensuring sensitive data is not present in responses.
+NotContains asserts that the response body does not contain the specified substring. Useful for ensuring sensitive data is not present in responses.
 
 Parameters:
 
@@ -1271,15 +1648,13 @@ zt.Get(app, "/public").NotContains("password")
 ```
 
 <a name="Response.NotFound"></a>
-
 ### func \(\*Response\) NotFound
 
 ```go
 func (r *Response) NotFound() *Response
 ```
 
-NotFound asserts that the HTTP status code is 404 \(Not Found\). Convenience method equivalent to
-Status\(404\). Indicates the requested resource was not found.
+NotFound asserts that the HTTP status code is 404 \(Not Found\). Convenience method equivalent to Status\(404\). Indicates the requested resource was not found.
 
 Returns:
 
@@ -1292,7 +1667,6 @@ zt.Get(app, "/users/999").NotFound()
 ```
 
 <a name="Response.OK"></a>
-
 ### func \(\*Response\) OK
 
 ```go
@@ -1311,17 +1685,37 @@ Example:
 zt.Get(app, "/users").OK()
 ```
 
-<a name="Response.ServerError"></a>
+<a name="Response.RedirectsTo"></a>
+### func \(\*Response\) RedirectsTo
 
+```go
+func (r *Response) RedirectsTo(location string) *Response
+```
+
+RedirectsTo asserts that the response is a redirect to the expected location. It checks IsRedirect and an exact match on the Location header.
+
+Parameters:
+
+- location: The expected Location header value
+
+Returns:
+
+- \*Response: The receiver for method chaining
+
+Example:
+
+```
+zt.PostForm(app, "/login", data).RedirectsTo("/dashboard")
+```
+
+<a name="Response.ServerError"></a>
 ### func \(\*Response\) ServerError
 
 ```go
 func (r *Response) ServerError() *Response
 ```
 
-ServerError asserts that the HTTP status code is 500 \(Internal Server Error\). Convenience method
-equivalent to Status\(500\). Indicates an unexpected condition prevented the server from fulfilling
-the request.
+ServerError asserts that the HTTP status code is 500 \(Internal Server Error\). Convenience method equivalent to Status\(500\). Indicates an unexpected condition prevented the server from fulfilling the request.
 
 Returns:
 
@@ -1334,15 +1728,13 @@ zt.Get(app, "/broken").ServerError()
 ```
 
 <a name="Response.Status"></a>
-
 ### func \(\*Response\) Status
 
 ```go
 func (r *Response) Status(expected int) *Response
 ```
 
-Status asserts that the HTTP status code equals the expected value. This is the base status
-assertion method used by all other status shortcuts.
+Status asserts that the HTTP status code equals the expected value. This is the base status assertion method used by all other status shortcuts.
 
 Parameters:
 
@@ -1359,16 +1751,37 @@ zt.Get(app, "/users").Status(200)
 zt.Get(app, "/notfound").Status(404)
 ```
 
-<a name="Response.Unauthorized"></a>
+<a name="Response.StatusIn"></a>
+### func \(\*Response\) StatusIn
 
+```go
+func (r *Response) StatusIn(codes ...int) *Response
+```
+
+StatusIn asserts that the HTTP status code is one of the expected values. Use it when a handler may answer with a small set of codes.
+
+Parameters:
+
+- codes: The acceptable HTTP status codes
+
+Returns:
+
+- \*Response: The receiver for method chaining
+
+Example:
+
+```
+zt.Delete(app, "/users/1").StatusIn(200, 202, 204)
+```
+
+<a name="Response.Unauthorized"></a>
 ### func \(\*Response\) Unauthorized
 
 ```go
 func (r *Response) Unauthorized() *Response
 ```
 
-Unauthorized asserts that the HTTP status code is 401 \(Unauthorized\). Convenience method
-equivalent to Status\(401\). Indicates authentication is required or has failed.
+Unauthorized asserts that the HTTP status code is 401 \(Unauthorized\). Convenience method equivalent to Status\(401\). Indicates authentication is required or has failed.
 
 Returns:
 
@@ -1381,15 +1794,13 @@ zt.Get(app, "/protected").Unauthorized()
 ```
 
 <a name="Response.Unprocessable"></a>
-
 ### func \(\*Response\) Unprocessable
 
 ```go
 func (r *Response) Unprocessable() *Response
 ```
 
-Unprocessable asserts that the HTTP status code is 422 \(Unprocessable Entity\). Convenience method
-equivalent to Status\(422\). Indicates the request was well\-formed but contains semantic errors.
+Unprocessable asserts that the HTTP status code is 422 \(Unprocessable Entity\). Convenience method equivalent to Status\(422\). Indicates the request was well\-formed but contains semantic errors.
 
 Returns:
 
@@ -1402,22 +1813,17 @@ zt.PostJSON(app, "/users", invalidUserData).Unprocessable()
 ```
 
 <a name="SuiteContext"></a>
-
 ## type SuiteContext
 
-SuiteContext holds hooks and state for a BDD\-style describe block. Provides lifecycle hooks
-\(BeforeEach, AfterEach\) for test setup and teardown. Each describe block gets its own SuiteContext
-to manage test isolation.
+SuiteContext holds hooks and state for a BDD\-style describe block. Provides lifecycle hooks \(BeforeEach, AfterEach\) for test setup and teardown. Each describe block gets its own SuiteContext to manage test isolation.
 
-Describe blocks can be nested. Hooks of enclosing blocks apply to tests in nested blocks: BeforeEach
-hooks run outermost first, and AfterEach hooks run innermost first.
+Describe blocks can be nested. Hooks of enclosing blocks apply to tests in nested blocks: BeforeEach hooks run outermost first, and AfterEach hooks run innermost first.
 
-Hooks are captured when It\(\) is called, so BeforeEach and AfterEach must be declared before the
-It\(\) calls they should apply to.
+Hooks are captured when It\(\) is called, so BeforeEach and AfterEach must be declared before the It\(\) calls they should apply to.
 
 Fields:
 
-- t: The testing.T instance for running subtests
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance for running subtests
 - parent: The enclosing SuiteContext, or nil for a top\-level block
 - beforeEach: Function to run before each test case in the suite
 - afterEach: Function to run after each test case in the suite
@@ -1429,16 +1835,13 @@ type SuiteContext struct {
 ```
 
 <a name="SuiteContext.AfterEach"></a>
-
 ### func \(\*SuiteContext\) AfterEach
 
 ```go
 func (ctx *SuiteContext) AfterEach(fn func(*T)) *SuiteContext
 ```
 
-AfterEach sets the teardown hook function to run after each test case. Use this for cleanup like
-closing database connections or shutting down apps. Must be called before the It\(\) calls it should
-apply to. Returns the SuiteContext for method chaining.
+AfterEach sets the teardown hook function to run after each test case. Use this for cleanup like closing database connections or shutting down apps. Must be called before the It\(\) calls it should apply to. Returns the SuiteContext for method chaining.
 
 Parameters:
 
@@ -1458,16 +1861,13 @@ ctx.AfterEach(func(zt *zentests.T) {
 ```
 
 <a name="SuiteContext.BeforeEach"></a>
-
 ### func \(\*SuiteContext\) BeforeEach
 
 ```go
 func (ctx *SuiteContext) BeforeEach(fn func(*T)) *SuiteContext
 ```
 
-BeforeEach sets the setup hook function to run before each test case. Use this for common setup like
-creating fresh app instances or test data. Must be called before the It\(\) calls it should apply
-to. Returns the SuiteContext for method chaining with AfterEach.
+BeforeEach sets the setup hook function to run before each test case. Use this for common setup like creating fresh app instances or test data. Must be called before the It\(\) calls it should apply to. Returns the SuiteContext for method chaining with AfterEach.
 
 Parameters:
 
@@ -1489,15 +1889,13 @@ ctx.BeforeEach(func(zt *zentests.T) {
 ```
 
 <a name="SuiteContext.Describe"></a>
-
 ### func \(\*SuiteContext\) Describe
 
 ```go
 func (ctx *SuiteContext) Describe(name string, fn func(ctx *SuiteContext))
 ```
 
-Describe creates a nested describe block inside this one. Hooks declared in the enclosing block
-apply to the tests in the nested block.
+Describe creates a nested describe block inside this one. Hooks declared in the enclosing block apply to the tests in the nested block.
 
 Parameters:
 
@@ -1519,17 +1917,13 @@ zt.Describe("Users", func(ctx *zentests.SuiteContext) {
 ```
 
 <a name="SuiteContext.It"></a>
-
 ### func \(\*SuiteContext\) It
 
 ```go
 func (ctx *SuiteContext) It(name string, fn func(*T))
 ```
 
-It runs a test case within a describe block. Runs the BeforeEach hooks of this block and its
-enclosing blocks, then fn, then the AfterEach hooks. AfterEach hooks are registered with t.Cleanup,
-so they still run when the test stops early \(for example through require\). Each It\(\) call
-creates a sub\-test that runs independently.
+It runs a test case within a describe block. Runs the BeforeEach hooks of this block and its enclosing blocks, then fn, then the AfterEach hooks. AfterEach hooks are registered with t.Cleanup, so they still run when the test stops early \(for example through require\). Each It\(\) call creates a sub\-test that runs independently.
 
 Parameters:
 
@@ -1545,26 +1939,24 @@ ctx.It("returns user list", func(zt *zentests.T) {
 ```
 
 <a name="T"></a>
-
 ## type T
 
-T wraps testing.T with additional context for testing Fiber applications. It provides a fluent API
-for making HTTP requests against a Fiber app in tests. T maintains a reference to the Fiber app and
-testing context to enable chainable assertions.
+T wraps [testing.T](<https://pkg.go.dev/testing/#T>) with additional context for testing Fiber applications. It provides a fluent API for making HTTP requests against a Fiber app in tests. T maintains a reference to the Fiber app and testing context to enable chainable assertions.
 
 Basic usage:
 
 ```
 func TestEndpoint(t *testing.T) {
     zt := zentests.New(t).Use(app)
-    zt.Get("/users").ExpectStatus(200)
+    zt.Get("/users").Status(200)
 }
 ```
 
 Fields:
 
-- T: The embedded testing.T instance for standard Go test functionality
+- T: The embedded [testing.T](<https://pkg.go.dev/testing/#T>) instance for standard Go test functionality
 - app: The Fiber application instance for making HTTP requests
+- headers: Default headers sent with every request \(see SetHeader\)
 
 ```go
 type T struct {
@@ -1574,20 +1966,17 @@ type T struct {
 ```
 
 <a name="New"></a>
-
 ### func New
 
 ```go
 func New(t *testing.T) *T
 ```
 
-New creates a new zentests context wrapping the provided testing.T. This is the main entry point for
-using zentests. The returned \*T has no app set initially \- call Use\(\) to set the Fiber
-application for method chaining, or pass the app directly to request methods like Get\(app, "/"\).
+New creates a new zentests context wrapping the provided [testing.T](<https://pkg.go.dev/testing/#T>). This is the main entry point for using zentests. The returned \*T has no app set initially \- call Use\(\) to set the Fiber application for method chaining, or pass the app directly to request methods like Get\(app, "/"\).
 
 Parameters:
 
-- t: The testing.T instance from your test function
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance from your test function
 
 Returns:
 
@@ -1613,15 +2002,13 @@ func TestExample(t *testing.T) {
 ```
 
 <a name="T.Delete"></a>
-
 ### func \(\*T\) Delete
 
 ```go
 func (zt *T) Delete(app *fiber.App, path string) *Response
 ```
 
-Delete performs a DELETE request. Returns a \*Response for chaining assertions. Use this for testing
-DELETE endpoints.
+Delete performs a DELETE request. Returns a \*Response for chaining assertions. Use this for testing DELETE endpoints.
 
 Parameters:
 
@@ -1639,16 +2026,13 @@ zt.Delete(app, "/users/1").NoContent()
 ```
 
 <a name="T.DeleteJSON"></a>
-
 ### func \(\*T\) DeleteJSON
 
 ```go
 func (zt *T) DeleteJSON(app *fiber.App, path string, data any) *Response
 ```
 
-DeleteJSON performs a DELETE request with a JSON body. Some APIs require a request body for DELETE
-operations \(e.g., bulk delete with IDs\). Automatically marshals the data to JSON and sets
-Content\-Type to application/json.
+DeleteJSON performs a DELETE request with a JSON body. Some APIs require a request body for DELETE operations \(e.g., bulk delete with IDs\). Automatically marshals the data to JSON and sets Content\-Type to application/json.
 
 Parameters:
 
@@ -1668,7 +2052,6 @@ zt.DeleteJSON(app, "/users/bulk", data).OK()
 ```
 
 <a name="T.DeleteJSONWithConfig"></a>
-
 ### func \(\*T\) DeleteJSONWithConfig
 
 ```go
@@ -1689,7 +2072,6 @@ Returns:
 - \*Response: A Response wrapper for making assertions
 
 <a name="T.DeleteWithConfig"></a>
-
 ### func \(\*T\) DeleteWithConfig
 
 ```go
@@ -1709,16 +2091,13 @@ Returns:
 - \*Response: A Response wrapper for making assertions
 
 <a name="T.Describe"></a>
-
 ### func \(\*T\) Describe
 
 ```go
 func (zt *T) Describe(name string, fn func(ctx *SuiteContext))
 ```
 
-Describe creates a BDD\-style test group with lifecycle hooks. Organizes related tests under a
-descriptive name with optional setup/teardown. Similar to describe/it blocks in testing frameworks
-like RSpec or Mocha.
+Describe creates a BDD\-style test group with lifecycle hooks. Organizes related tests under a descriptive name with optional setup/teardown. Similar to describe/it blocks in testing frameworks like RSpec or Mocha.
 
 Parameters:
 
@@ -1741,15 +2120,13 @@ zt.Describe("User API", func(ctx *zentests.SuiteContext) {
 ```
 
 <a name="T.Get"></a>
-
 ### func \(\*T\) Get
 
 ```go
 func (zt *T) Get(app *fiber.App, path string) *Response
 ```
 
-Get performs a GET request against the Fiber app. Returns a \*Response for chaining assertions. Use
-this for testing GET endpoints.
+Get performs a GET request against the Fiber app. Returns a \*Response for chaining assertions. Use this for testing GET endpoints.
 
 Parameters:
 
@@ -1762,26 +2139,45 @@ Returns:
 
 Example:
 
-\`\`\`go
-
 ```
 zt := zentests.New(t)
 resp := zt.Get(app, "/users")
 resp.OK().IsJSON().Has("data.users.0.name", "John")
 ```
 
-\`\`\`
+<a name="T.GetQuery"></a>
+### func \(\*T\) GetQuery
+
+```go
+func (zt *T) GetQuery(app *fiber.App, path string, query url.Values) *Response
+```
+
+GetQuery performs a GET request to path with query appended. The values are encoded with \[url.Values.Encode\], so characters such as "&", "=" and spaces reach the handler unchanged. When path already carries a query string, the values are appended after "&".
+
+Parameters:
+
+- app: The Fiber application to test against
+- path: The request path, with or without a query string
+- query: The query parameters \(nil or empty sends path unchanged plus "?"\)
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
+Example:
+
+```
+zt.GetQuery(app, "/search", url.Values{"q": {"go & rust"}, "page": {"2"}}).OK()
+```
 
 <a name="T.GetWithConfig"></a>
-
 ### func \(\*T\) GetWithConfig
 
 ```go
 func (zt *T) GetWithConfig(app *fiber.App, path string, cfg fiber.TestConfig) *Response
 ```
 
-GetWithConfig performs a GET request with custom TestConfig for timeout/behavior control. Use this
-when you need to customize test behavior beyond defaults.
+GetWithConfig performs a GET request with custom TestConfig for timeout/behavior control. Use this when you need to customize test behavior beyond defaults.
 
 Parameters:
 
@@ -1802,15 +2198,13 @@ zt.GetWithConfig(app, "/slow-endpoint", fiber.TestConfig{
 ```
 
 <a name="T.Patch"></a>
-
 ### func \(\*T\) Patch
 
 ```go
 func (zt *T) Patch(app *fiber.App, path string, body []byte) *Response
 ```
 
-Patch performs a PATCH request with a raw body. Use PatchJSON for JSON payloads. PATCH is typically
-used for partial resource updates.
+Patch performs a PATCH request with a raw body. Use PatchJSON for JSON payloads. PATCH is typically used for partial resource updates.
 
 Parameters:
 
@@ -1830,16 +2224,13 @@ zt.Patch(app, "/users/1", body).OK()
 ```
 
 <a name="T.PatchJSON"></a>
-
 ### func \(\*T\) PatchJSON
 
 ```go
 func (zt *T) PatchJSON(app *fiber.App, path string, data any) *Response
 ```
 
-PatchJSON performs a PATCH request with JSON\-encoded data. Automatically marshals the data to JSON
-and sets Content\-Type to application/json. Fails the test if JSON marshaling fails. PATCH is
-typically used for partial updates.
+PatchJSON performs a PATCH request with JSON\-encoded data. Automatically marshals the data to JSON and sets Content\-Type to application/json. Fails the test if JSON marshaling fails. PATCH is typically used for partial updates.
 
 Parameters:
 
@@ -1859,7 +2250,6 @@ zt.PatchJSON(app, "/users/1", data).OK()
 ```
 
 <a name="T.PatchJSONWithConfig"></a>
-
 ### func \(\*T\) PatchJSONWithConfig
 
 ```go
@@ -1880,7 +2270,6 @@ Returns:
 - \*Response: A Response wrapper for making assertions
 
 <a name="T.PatchWithConfig"></a>
-
 ### func \(\*T\) PatchWithConfig
 
 ```go
@@ -1901,16 +2290,13 @@ Returns:
 - \*Response: A Response wrapper for making assertions
 
 <a name="T.Post"></a>
-
 ### func \(\*T\) Post
 
 ```go
 func (zt *T) Post(app *fiber.App, path string, body []byte) *Response
 ```
 
-Post performs a POST request with a raw body. Use PostJSON for JSON payloads or PostForm for form
-data. This method is suitable for sending raw bytes when you need full control over the request
-body.
+Post performs a POST request with a raw body. Use PostJSON for JSON payloads or PostForm for form data. This method is suitable for sending raw bytes when you need full control over the request body.
 
 Parameters:
 
@@ -1930,16 +2316,13 @@ zt.Post(app, "/upload", body).OK()
 ```
 
 <a name="T.PostForm"></a>
-
 ### func \(\*T\) PostForm
 
 ```go
 func (zt *T) PostForm(app *fiber.App, path string, data map[string]string) *Response
 ```
 
-PostForm performs a POST request with form data. Automatically encodes the data as
-application/x\-www\-form\-urlencoded. Useful for testing HTML form submissions or traditional form
-endpoints.
+PostForm performs a POST request with form data. Automatically encodes the data as application/x\-www\-form\-urlencoded. Useful for testing HTML form submissions or traditional form endpoints.
 
 Parameters:
 
@@ -1959,7 +2342,6 @@ zt.PostForm(app, "/login", data).OK()
 ```
 
 <a name="T.PostFormWithConfig"></a>
-
 ### func \(\*T\) PostFormWithConfig
 
 ```go
@@ -1988,15 +2370,13 @@ zt.PostFormWithConfig(app, "/login", data, fiber.TestConfig{
 ```
 
 <a name="T.PostJSON"></a>
-
 ### func \(\*T\) PostJSON
 
 ```go
 func (zt *T) PostJSON(app *fiber.App, path string, data any) *Response
 ```
 
-PostJSON performs a POST request with JSON\-encoded data. Automatically marshals the data to JSON
-and sets Content\-Type to application/json. Fails the test if JSON marshaling fails.
+PostJSON performs a POST request with JSON\-encoded data. Automatically marshals the data to JSON and sets Content\-Type to application/json. Fails the test if JSON marshaling fails.
 
 Parameters:
 
@@ -2016,7 +2396,6 @@ zt.PostJSON(app, "/users", data).Created().Has("id", float64(1))
 ```
 
 <a name="T.PostJSONWithConfig"></a>
-
 ### func \(\*T\) PostJSONWithConfig
 
 ```go
@@ -2045,8 +2424,35 @@ zt.PostJSONWithConfig(app, "/users", data, fiber.TestConfig{
 }).Created()
 ```
 
-<a name="T.PostWithConfig"></a>
+<a name="T.PostMultipart"></a>
+### func \(\*T\) PostMultipart
 
+```go
+func (zt *T) PostMultipart(app *fiber.App, path string, fields map[string]string, files []FileUpload) *Response
+```
+
+PostMultipart performs a POST request with multipart/form\-data, typically for file uploads. The Content\-Type header carries the multipart boundary.
+
+Parameters:
+
+- app: The Fiber application to test against
+- path: The request path \(e.g., "/upload"\)
+- fields: Plain form fields \(nil when there are none\)
+- files: The files to upload \(nil when there are none\)
+
+Returns:
+
+- \*Response: A Response wrapper for making assertions
+
+Example:
+
+```
+zt.PostMultipart(app, "/upload", map[string]string{"note": "hi"}, []zentests.FileUpload{
+    {Name: "file", Filename: "a.txt", Content: []byte("hello")},
+}).OK()
+```
+
+<a name="T.PostWithConfig"></a>
 ### func \(\*T\) PostWithConfig
 
 ```go
@@ -2075,15 +2481,13 @@ zt.PostWithConfig(app, "/upload", body, fiber.TestConfig{
 ```
 
 <a name="T.Put"></a>
-
 ### func \(\*T\) Put
 
 ```go
 func (zt *T) Put(app *fiber.App, path string, body []byte) *Response
 ```
 
-Put performs a PUT request with a raw body. Use PutJSON for JSON payloads. PUT is typically used for
-full resource updates.
+Put performs a PUT request with a raw body. Use PutJSON for JSON payloads. PUT is typically used for full resource updates.
 
 Parameters:
 
@@ -2103,16 +2507,13 @@ zt.Put(app, "/users/1", body).OK()
 ```
 
 <a name="T.PutJSON"></a>
-
 ### func \(\*T\) PutJSON
 
 ```go
 func (zt *T) PutJSON(app *fiber.App, path string, data any) *Response
 ```
 
-PutJSON performs a PUT request with JSON\-encoded data. Automatically marshals the data to JSON and
-sets Content\-Type to application/json. Fails the test if JSON marshaling fails. PUT is typically
-used for full resource updates.
+PutJSON performs a PUT request with JSON\-encoded data. Automatically marshals the data to JSON and sets Content\-Type to application/json. Fails the test if JSON marshaling fails. PUT is typically used for full resource updates.
 
 Parameters:
 
@@ -2132,7 +2533,6 @@ zt.PutJSON(app, "/users/1", data).OK()
 ```
 
 <a name="T.PutJSONWithConfig"></a>
-
 ### func \(\*T\) PutJSONWithConfig
 
 ```go
@@ -2153,7 +2553,6 @@ Returns:
 - \*Response: A Response wrapper for making assertions
 
 <a name="T.PutWithConfig"></a>
-
 ### func \(\*T\) PutWithConfig
 
 ```go
@@ -2173,16 +2572,38 @@ Returns:
 
 - \*Response: A Response wrapper for making assertions
 
-<a name="T.Use"></a>
+<a name="T.SetHeader"></a>
+### func \(\*T\) SetHeader
 
+```go
+func (zt *T) SetHeader(key, value string) *T
+```
+
+SetHeader sets a default header that is sent with every request made through zt. A header set for a single request, such as PostJSON's Content\-Type, takes precedence over a default with the same name. Header names are canonicalized, so "x\-api\-key" and "X\-Api\-Key" configure the same default.
+
+Parameters:
+
+- key: The header name \(e.g., "Accept"\)
+- value: The header value
+
+Returns:
+
+- \*T: The receiver for method chaining
+
+Example:
+
+```
+zt := zentests.New(t).Use(app).SetHeader("Accept", "application/json")
+```
+
+<a name="T.Use"></a>
 ### func \(\*T\) Use
 
 ```go
 func (zt *T) Use(app *fiber.App) *T
 ```
 
-Use sets the Fiber app for making test requests and enables fluent method chaining. After calling
-Use\(\), subsequent request methods can be called without passing the app parameter.
+Use sets the Fiber app for making test requests and enables fluent method chaining. After calling Use\(\), subsequent request methods can be called without passing the app parameter.
 
 Parameters:
 
@@ -2199,4 +2620,27 @@ zt := zentests.New(t).Use(app)
 zt.Get("/users").OK()
 ```
 
-Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)
+<a name="T.WithBearer"></a>
+### func \(\*T\) WithBearer
+
+```go
+func (zt *T) WithBearer(token string) *T
+```
+
+WithBearer sets the default Authorization header to "Bearer \<token\>", which is sent with every request made through zt.
+
+Parameters:
+
+- token: The bearer token
+
+Returns:
+
+- \*T: The receiver for method chaining
+
+Example:
+
+```
+zt := zentests.New(t).Use(app).WithBearer(token)
+```
+
+Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
