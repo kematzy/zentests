@@ -356,8 +356,8 @@ func (s *HTTPRequestsSuite) Test_SetHeader_SentWithEveryRequest() {
 	zt.Get(s.app, "/hdr").Equals("application/json||")
 }
 
-// TestSetHeader_CanonicalisesName checks that two spellings of a name configure the same default.
-func (s *HTTPRequestsSuite) Test_SetHeader_CanonicalisesName() {
+// TestSetHeader_CanonicalizesName checks that two spellings of a name configure the same default.
+func (s *HTTPRequestsSuite) Test_SetHeader_CanonicalizesName() {
 	zt := New(s.T()).SetHeader("x-api-key", "first")
 
 	zt.Get(s.app, "/hdr").Equals("||first")

@@ -129,7 +129,7 @@ func (j *Jar) Send(req *http.Request) *Response {
 
 // SetHeader sets a default header that is sent with every request made through the jar.
 // A header already on the request, such as PostForm's Content-Type, takes precedence
-// over a default with the same name. Header names are canonicalised, so "x-api-key"
+// over a default with the same name. Header names are canonicalized, so "x-api-key"
 // and "X-Api-Key" configure the same default.
 //
 // Parameters:

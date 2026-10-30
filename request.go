@@ -594,7 +594,7 @@ func (zt *T) PostMultipart(app *fiber.App, path string, fields map[string]string
 
 // SetHeader sets a default header that is sent with every request made through zt.
 // A header set for a single request, such as PostJSON's Content-Type, takes precedence
-// over a default with the same name. Header names are canonicalised, so "x-api-key"
+// over a default with the same name. Header names are canonicalized, so "x-api-key"
 // and "X-Api-Key" configure the same default.
 //
 // Parameters:
@@ -662,7 +662,7 @@ func SetHeader(key, value string) map[string]string {
 }
 
 // setDefaultHeader stores key-value in headers, creating the map on first use.
-// Header names are canonicalised, so two spellings of a name cannot produce two
+// Header names are canonicalized, so two spellings of a name cannot produce two
 // defaults for the same header. Shared by T and Jar.
 func setDefaultHeader(headers map[string]string, key, value string) map[string]string {
 	if headers == nil {
