@@ -362,47 +362,9 @@ Contributions are welcome! Development setup, guidelines, the branch policy and 
 
 ## Credits
 
-**Authors**: 
 - [Kematzy](https://github.com/kematzy)
-- Kimi K2.5 model via [opencode Zen](https://opencode.ai/zen)
-- GLM 5 model via [opencode Go](https://opencode.ai/go)
-
-**Inspiration**:
-- [RSpec](https://rspec.info/) - Ruby testing framework that inspired the BDD syntax
-- [Pest](https://pestphp.com/) - PHP testing framework with elegant assertion syntax
-- [testify](https://github.com/stretchr/testify) - Go assertion library used internally
-
-**Built with**:
-- [Fiber](https://gofiber.io/) - Express inspired web framework for Go
-- [testify](https://github.com/stretchr/testify) - A toolkit with common assertions
-
-Special thanks to the Go and Fiber communities for their excellent tools and documentation.
-
-<br>
+- Various AI agents and models
 
 ## License
 
-This code is released under the MIT License.
-
-Copyright (c) 2025 [Kematzy](https://github.com/kematzy)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-
-<!-- spellchecker:ignore kimi opencode -->
+This project is released under the MIT License — see [LICENSE](LICENSE) for the full text.
