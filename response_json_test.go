@@ -252,7 +252,7 @@ func (s *ResponseJSONAssertionsSuite) Test_JSON_NotContains() {
 
 // Test_JSON_getNestedValue_NilInPath tests getNestedValue when traversing through a null value.
 // When path is "user.name" but user is null, it should return false.
-// This covers `response_json.go:304-337
+// This covers `response_json.go:304-337.
 func (s *ResponseJSONAssertionsSuite) Test_JSON_getNestedValue_NilInPath() {
 	data := map[string]any{"user": nil}
 
@@ -264,7 +264,7 @@ func (s *ResponseJSONAssertionsSuite) Test_JSON_getNestedValue_NilInPath() {
 
 // Test_JSON_getNestedValue_InvalidArrayIndex tests getNestedValue with non-numeric array index.
 // When path is "items.abc" (not a number), it should return false.
-// This covers `response_json.go:304-337
+// This covers `response_json.go:304-337.
 func (s *ResponseJSONAssertionsSuite) Test_JSON_getNestedValue_InvalidArrayIndex() {
 	data := map[string]any{"items": []any{"a", "b", "c"}}
 
@@ -276,7 +276,7 @@ func (s *ResponseJSONAssertionsSuite) Test_JSON_getNestedValue_InvalidArrayIndex
 
 // Test_JSON_getNestedValue_ArrayOutOfBounds tests getNestedValue with out-of-bounds array index.
 // When path is "items.999" but array only has 3 items, it should return false.
-// // This covers `response_json.go:304-337
+// // This covers `response_json.go:304-337.
 func (s *ResponseJSONAssertionsSuite) Test_JSON_getNestedValue_ArrayOutOfBounds() {
 	data := map[string]any{"items": []any{"a", "b", "c"}}
 
@@ -438,4 +438,105 @@ func TestMatchesRegex_InvalidPattern_ReportsOnce(t *testing.T) {
 	rec, resp := jsonRecorder(t, `{"s":"x"}`)
 	resp.MatchesRegex("s", "(")
 	assert.Len(t, rec.errors, 1)
+}
+
+// TestArrayContains_StringElement_Passes checks that a string element is found in the array.
+func TestArrayContains_StringElement_Passes(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"roles":["admin","editor"]}`)
+	resp.ArrayContains("roles", "editor")
+	assert.Empty(t, rec.errors)
+}
+
+// TestArrayContains_NumberElement_Passes checks that any Go numeric type matches a JSON number.
+func TestArrayContains_NumberElement_Passes(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"ids":[1,2,3]}`)
+	resp.ArrayContains("ids", 2)
+	assert.Empty(t, rec.errors)
+}
+
+// TestArrayContains_MissingElement_Fails checks that an absent element is reported once.
+func TestArrayContains_MissingElement_Fails(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"roles":["admin"]}`)
+	resp.ArrayContains("roles", "editor")
+	assert.Len(t, rec.errors, 1, "a missing element should be reported once")
+}
+
+// TestArrayContains_NotAnArray_Fails checks that a non-array value is reported once.
+func TestArrayContains_NotAnArray_Fails(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"roles":"admin"}`)
+	resp.ArrayContains("roles", "admin")
+	assert.Len(t, rec.errors, 1, "a non-array value should be reported once")
+}
+
+// TestArrayContains_MissingKey_Fails checks that a missing path is reported once.
+func TestArrayContains_MissingKey_Fails(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"roles":["admin"]}`)
+	resp.ArrayContains("tags", "admin")
+	assert.Len(t, rec.errors, 1, "a missing path should be reported once")
+}
+
+// TestArrayContains_ObjectElement_NeedsDecodedForm checks that object expectations must
+// be written in decoded form, with JSON numbers as float64.
+func TestArrayContains_ObjectElement_NeedsDecodedForm(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"items":[{"id":1}]}`)
+	resp.ArrayContains("items", map[string]any{"id": float64(1)})
+	assert.Empty(t, rec.errors, "a decoded-form expectation should match")
+
+	rec, resp = jsonRecorder(t, `{"items":[{"id":1}]}`)
+	resp.ArrayContains("items", map[string]any{"id": 1})
+	assert.NotEmpty(t, rec.errors, "a Go int inside an object expectation should not match")
+}
+
+// TestArrayEmpty_EmptyArray_Passes checks that an empty array passes the check.
+func TestArrayEmpty_EmptyArray_Passes(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"roles":[]}`)
+	resp.ArrayEmpty("roles")
+	assert.Empty(t, rec.errors)
+}
+
+// TestArrayEmpty_NonEmptyArray_Fails checks that a non-empty array is reported once.
+func TestArrayEmpty_NonEmptyArray_Fails(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"roles":["admin"]}`)
+	resp.ArrayEmpty("roles")
+	assert.Len(t, rec.errors, 1, "a non-empty array should be reported once")
+}
+
+// TestArrayEmpty_NotAnArray_Fails checks that a non-array value is reported once.
+func TestArrayEmpty_NotAnArray_Fails(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"roles":"admin"}`)
+	resp.ArrayEmpty("roles")
+	assert.Len(t, rec.errors, 1, "a non-array value should be reported once")
+}
+
+// TestBind_Struct_Passes checks that Bind decodes the body into a struct and allows chaining.
+func TestBind_Struct_Passes(t *testing.T) {
+	rec, resp := jsonRecorder(t, `{"id":1,"name":"John"}`)
+
+	var user struct {
+		Name string `json:"name"`
+		ID   int    `json:"id"`
+	}
+	resp.OK().Bind(&user).IsSuccess()
+
+	assert.Empty(t, rec.errors)
+	assert.Equal(t, 1, user.ID)
+	assert.Equal(t, "John", user.Name)
+}
+
+// TestBind_InvalidJSON_Fails checks that a body the target cannot decode stops the test.
+func TestBind_InvalidJSON_Fails(t *testing.T) {
+	app := fiber.New()
+	app.Get("/json", func(c fiber.Ctx) error {
+		return c.SendString("not json")
+	})
+
+	rec := runRecorded(t, func(tb testing.TB) {
+		var user struct {
+			ID int `json:"id"`
+		}
+		execute(tb, app, "GET", "/json", nil, nil, fiber.TestConfig{}).Bind(&user)
+	})
+
+	assert.True(t, rec.fatal, "Bind should stop the test on an undecodable body")
+	assert.Len(t, rec.errors, 1, "an undecodable body should be reported once")
 }

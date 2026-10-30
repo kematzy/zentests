@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // JSON parses and caches the response body as JSON.
@@ -30,6 +31,31 @@ func (r *Response) JSON() *Response {
 
 	err := json.Unmarshal(r.Body(), &r.parsedJSON)
 	assert.NoError(r.t, err, "JSON parsing failed")
+	return r
+}
+
+// Bind decodes the response body into target with encoding/json, so a test can work
+// with typed values instead of dot-notation paths. It reads the raw body, not the
+// JSON() cache. Fails the test when the body is not valid JSON for the target, and
+// still returns the receiver for chaining.
+//
+// Parameters:
+//   - target: The value to decode into; typically a pointer to a struct or map
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//	var user struct {
+//	    ID   int    `json:"id"`
+//	    Name string `json:"name"`
+//	}
+//	zt.Get(app, "/api/users/1").OK().Bind(&user)
+func (r *Response) Bind(target any) *Response {
+	r.t.Helper()
+	err := json.Unmarshal(r.Body(), target)
+	require.NoError(r.t, err, "failed to decode the response body into the target")
 	return r
 }
 
@@ -322,6 +348,71 @@ func (r *Response) ArrayLength(path string, expected int) *Response {
 		return r
 	}
 	assert.Equal(r.t, expected, len(arr), "array length mismatch for key %q", path)
+	return r
+}
+
+// ArrayContains asserts that the value at path is an array holding an element equal to
+// the expected value. Numeric expectations follow Has: any Go numeric type matches a
+// JSON number. Object and array expectations must be written in decoded form, with
+// JSON numbers as float64; use Has on a "path.index" path to check a nested object.
+//
+// Parameters:
+//   - path: The JSON key path using dot notation
+//   - expected: The element the array must contain
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//	zt.Get(app, "/api/users/1").ArrayContains("user.roles", "admin")
+func (r *Response) ArrayContains(path string, expected any) *Response {
+	r.t.Helper()
+	actual, exists := r.lookup(path)
+	if !exists {
+		return r
+	}
+
+	arr, isArray := actual.([]any)
+	if !assert.True(r.t, isArray, "expected array for key %q, got %T", path, actual) {
+		return r
+	}
+
+	expected = normalizeNumber(expected)
+	for _, element := range arr {
+		if assert.ObjectsAreEqual(expected, element) {
+			return r
+		}
+	}
+	assert.Fail(r.t, "array is missing the expected value",
+		"no element in %q (length %d) equals %v", path, len(arr), expected)
+	return r
+}
+
+// ArrayEmpty asserts that the value at path is an array with no elements.
+// Fails when the path does not exist or is not an array.
+//
+// Parameters:
+//   - path: The JSON key path using dot notation
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//	zt.Get(app, "/api/users/1").ArrayEmpty("user.roles")
+func (r *Response) ArrayEmpty(path string) *Response {
+	r.t.Helper()
+	actual, exists := r.lookup(path)
+	if !exists {
+		return r
+	}
+
+	arr, isArray := actual.([]any)
+	if !assert.True(r.t, isArray, "expected array for key %q, got %T", path, actual) {
+		return r
+	}
+	assert.Empty(r.t, arr, "expected an empty array at %q", path)
 	return r
 }
 

@@ -314,6 +314,9 @@ resp.JSONHasValues(map[string]any{     // Subset check: other keys are ignored
     "user.name": "John",
 })
 resp.ArrayLength("items", 3)           // Array length
+resp.ArrayContains("roles", "admin")   // Array holds the element
+resp.ArrayEmpty("roles")               // Array has no elements
+resp.Bind(&user)                       // Decode body into a struct
 
 // Bulk subset check
 resp.JSONHasValues(map[string]any{
