@@ -8,6 +8,12 @@ Readable Go tests without magic. Inspired by RSpec/Pest
 [![GoDoc](https://godoc.org/github.com/kematzy/zentests?status.svg)](https://godoc.org/github.com/kematzy/zentests)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## Contents
+
+[Why](#why-zentests) · [Installation](#installation) · [Quick Start](#quick-start) ·
+[Features](#features) · [Cookie Jar](#cookie-jar) · [testify/suite](#using-with-testifysuite) ·
+[API reference](docs/API.md) · [Examples](#examples) · [Contributing](CONTRIBUTING.md)
+
 ## Why `zentests`?
 
 - **No magic**: Standard Go testing, no reflection tricks
@@ -15,7 +21,7 @@ Readable Go tests without magic. Inspired by RSpec/Pest
 - **Fiber-native**: Built for Fiber, not adapted from net/http
 - **Chainable**: Readable, expressive test code
 - **Familiar**: RSpec/Pest-inspired syntax
-- **Well-tested**: 97.8% code coverage
+- **Well-tested**: coverage gated at 95% in CI
 
 ### Why only Fiber support?
 
@@ -76,69 +82,19 @@ func TestAPI(t *testing.T) {
 
 ## Code Quality & Coverage
 
-**Coverage: 97.8%** of statements
-
-All functions are fully documented with comprehensive examples. See our [test coverage report](./.code-status/coverage.html) for details.
+`make check` gates formatting, vet, lint, spelling and test coverage (minimum 95%) in one
+command. The [coverage report](code-coverage.html) is regenerated with `make test-coverage`,
+and every function is documented with examples in [docs/API.md](docs/API.md).
 
 <br>
 
 ## Examples
 
-The [`examples/`](./examples/) directory contains practical examples demonstrating different testing styles:
+Runnable examples live in [`examples/`](./examples/):
 
-### [flat_style.go](./examples/flat_style.go) - Simple Testing
-Demonstrates simple, flat-style testing without suites. Perfect for quick API tests.
-
-```go
-// Simple, no suite overhead
-zt.Get(app, "/api/health").OK().IsJSON().Has("status", "ok")
-
-zt.PostJSON(app, "/api/users", userData).
-    Created().
-    Has("id", float64(1)).
-    Has("name", "John Doe")
-```
-
-### [routes.go](./examples/routes.go) - JSON Testing
-Shows comprehensive JSON assertions with dot notation for nested objects and arrays.
-
-```go
-zt.Get(app, "/api/users").
-    OK().
-    IsJSON().
-    Has("success", true).
-    Has("data.count", 2).
-    ArrayLength("data.users", 2).
-    Has("data.users.0.name", "John") // dot notation
-```
-
-### [suite.go](./examples/suite.go) - BDD Style Testing
-Demonstrates BDD-style testing with `Describe`, `It`, and lifecycle hooks (`BeforeEach`, `AfterEach`).
-Describe blocks can be nested; hooks of enclosing blocks apply to inner tests. Declare hooks before the `It` calls they should apply to.
-
-```go
-zt.Describe("User API", func(ctx *zentests.SuiteContext) {
-    ctx.
-        BeforeEach(func(zt *zentests.T) {
-            // Fresh app for each test
-            app = fiber.New()
-            SetupRoutes(app)
-        }).
-        AfterEach(func(zt *zentests.T) {
-            // Cleanup
-            app.Shutdown()
-        })
-
-    ctx.It("returns user list", func(zt *zentests.T) {
-        zt.Get(app, "/api/users").
-            OK().
-            IsJSON().
-            ArrayLength("data.users", 2)
-    })
-})
-```
-
-<br>
+- [flat_style.go](./examples/flat_style.go) — simple, flat-style testing without suites
+- [routes.go](./examples/routes.go) — JSON assertions with dot notation for nested data
+- [suite.go](./examples/suite.go) — BDD style with `Describe`/`It` and lifecycle hooks
 
 ## Features
 
