@@ -406,3 +406,32 @@ func (s *HTTPRequestsSuite) Test_PostMultipart_SameFieldTwice() {
 		{Name: "file", Filename: "b.txt", Content: []byte("b")},
 	}).OK().Equals("files=2")
 }
+
+// TestDefaultTimeout_UnsetEnvIsOneSecond checks that the default timeout stays at one second.
+func TestDefaultTimeout_UnsetEnvIsOneSecond(t *testing.T) {
+	t.Setenv("ZENTESTS_TIMEOUT", "")
+
+	assert.Equal(t, time.Second, defaultTimeout())
+}
+
+// TestDefaultTimeout_SecondsEnvIsUsed checks that a ZENTESTS_TIMEOUT in seconds is used.
+func TestDefaultTimeout_SecondsEnvIsUsed(t *testing.T) {
+	t.Setenv("ZENTESTS_TIMEOUT", "3s")
+
+	assert.Equal(t, 3*time.Second, defaultTimeout())
+}
+
+// TestDefaultTimeout_MillisecondsEnvIsUsed checks that sub-second ZENTESTS_TIMEOUT values are used.
+func TestDefaultTimeout_MillisecondsEnvIsUsed(t *testing.T) {
+	t.Setenv("ZENTESTS_TIMEOUT", "250ms")
+
+	assert.Equal(t, 250*time.Millisecond, defaultTimeout())
+}
+
+// TestDefaultTimeout_InvalidEnvPanics checks that an invalid value panics instead of
+// being silently ignored.
+func TestDefaultTimeout_InvalidEnvPanics(t *testing.T) {
+	t.Setenv("ZENTESTS_TIMEOUT", "not-a-duration")
+
+	assert.Panics(t, func() { defaultTimeout() })
+}

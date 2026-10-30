@@ -227,6 +227,10 @@ func TestSlowEndpoint(t *testing.T) {
 
 A zero-value `fiber.TestConfig{}` uses the defaults above. The plain methods (`Get`, `PostJSON`, ...) use it.
 
+Set `ZENTESTS_TIMEOUT=5s` (any Go duration) to raise the default for a whole run, for
+example `ZENTESTS_TIMEOUT=5s make test`. An invalid value panics at startup instead of
+being silently ignored.
+
 
 ### Default Headers
 

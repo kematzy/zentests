@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -21,11 +22,28 @@ import (
 )
 
 // defaultTestConfig is used whenever a request is sent with a zero-value fiber.TestConfig.
-// It matches Fiber's own defaults: a one second timeout that fails the request on expiry.
-// Without it, a zero Timeout would make app.Test wait forever for a stuck handler.
+// It matches Fiber's own defaults: a timeout that fails the request on expiry. Without
+// FailOnTimeout, a zero Timeout would make app.Test wait forever for a stuck handler.
+// The timeout is one second, or ZENTESTS_TIMEOUT when set.
 var defaultTestConfig = fiber.TestConfig{
-	Timeout:       time.Second,
+	Timeout:       defaultTimeout(),
 	FailOnTimeout: true,
+}
+
+// defaultTimeout returns the request timeout, overridable for a whole run with the
+// ZENTESTS_TIMEOUT environment variable holding a Go duration such as 2s or 500ms.
+// It stays at one second when the variable is unset or empty. An invalid value panics,
+// because a silently ignored typo would leave CI running with the wrong timeout.
+func defaultTimeout() time.Duration {
+	raw := os.Getenv("ZENTESTS_TIMEOUT")
+	if raw == "" {
+		return time.Second
+	}
+	timeout, err := time.ParseDuration(raw)
+	if err != nil {
+		panic(fmt.Sprintf("zentests: invalid ZENTESTS_TIMEOUT %q: %v (want a Go duration such as 2s or 500ms)", raw, err))
+	}
+	return timeout
 }
 
 // testConfig returns cfg, or defaultTestConfig when cfg is the zero value.
