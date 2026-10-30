@@ -15,7 +15,7 @@ Readable Go tests without magic. Inspired by RSpec/Pest
 - **Fiber-native**: Built for Fiber, not adapted from net/http
 - **Chainable**: Readable, expressive test code
 - **Familiar**: RSpec/Pest-inspired syntax
-- **Well-tested**: 98.6% code coverage
+- **Well-tested**: 97.8% code coverage
 
 ### Why only Fiber support?
 
@@ -90,7 +90,7 @@ func TestAPI(t *testing.T) {
 
 ## Code Quality & Coverage
 
-**Coverage: 98.6%** of statements
+**Coverage: 97.8%** of statements
 
 All functions are fully documented with comprehensive examples. See our [test coverage report](./.code-status/coverage.html) for details.
 
