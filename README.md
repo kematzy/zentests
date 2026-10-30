@@ -156,6 +156,8 @@ zt.Describe("User API", func(ctx *zentests.SuiteContext) {
 
 ## Features
 
+Full reference for every method, with examples: [docs/API.md](docs/API.md).
+
 ### HTTP Methods
 
 All methods accept `*fiber.App` and `path`, return `*Response` for chaining:
@@ -177,47 +179,14 @@ All methods accept `*fiber.App` and `path`, return `*Response` for chaining:
 
 ### HTTP Methods with TestConfig (Fiber v3+)
 
-For custom timeout and behavior control, use the `*WithConfig` variants:
-
-| Method | Description |
-|--------|-------------|
-| `GetWithConfig(app, path, cfg)` | GET with custom TestConfig |
-| `PostWithConfig(app, path, body, cfg)` | POST with custom TestConfig |
-| `PostJSONWithConfig(app, path, data, cfg)` | POST JSON with custom TestConfig |
-| `PostFormWithConfig(app, path, data, cfg)` | POST form with custom TestConfig |
-| `PutWithConfig(app, path, body, cfg)` | PUT with custom TestConfig |
-| `PutJSONWithConfig(app, path, data, cfg)` | PUT JSON with custom TestConfig |
-| `PatchWithConfig(app, path, body, cfg)` | PATCH with custom TestConfig |
-| `PatchJSONWithConfig(app, path, data, cfg)` | PATCH JSON with custom TestConfig |
-| `DeleteWithConfig(app, path, cfg)` | DELETE with custom TestConfig |
-| `DeleteJSONWithConfig(app, path, data, cfg)` | DELETE JSON with custom TestConfig |
-
+Every request method has a `*WithConfig` twin (`GetWithConfig`, `PostJSONWithConfig`, ...)
+that takes a `fiber.TestConfig`:
 #### TestConfig Usage
 
 ```go
-import (
-    "time"
-    "github.com/gofiber/fiber/v3"
-    "github.com/kematzy/zentests"
-)
-
-func TestSlowEndpoint(t *testing.T) {
-    zt := zentests.New(t)
-    app := fiber.New()
-    
-    // Custom timeout for slow endpoints
-    resp := zt.GetWithConfig(app, "/slow-endpoint", fiber.TestConfig{
-        Timeout: 10 * time.Second,
-    })
-    resp.OK().IsJSON()
-    
-    // Custom timeout with FailOnTimeout behavior
-    resp2 := zt.PostJSONWithConfig(app, "/api/users", userData, fiber.TestConfig{
-        Timeout:       5 * time.Second,
-        FailOnTimeout: true, // Returns error instead of partial response
-    })
-    resp2.Created()
-}
+zt.GetWithConfig(app, "/slow-endpoint", fiber.TestConfig{
+    Timeout: 10 * time.Second,
+}).OK()
 ```
 
 #### TestConfig Options
@@ -277,7 +246,7 @@ resp.RedirectsTo("/dashboard") // Redirect + exact Location
 resp.HasHeader("X-Custom", "value")                                     // Exact match
 resp.HeaderContains("X-Rate", "limit")                                  // Substring match
 resp.HeaderPresent("X-Auth-Token")                                      // Header exists
-resp.HeaderNotPresent("X-Auth-Token")                                   // Header does not exists
+resp.HeaderNotPresent("X-Auth-Token")                                   // Header does not exist
 resp.HeaderHasValues("X-Features", []string{"audio", "video"})          // Header has multiple values
 resp.CookieHasValues(map[string]string{"lang": "en", "theme": "dark"})  // Set-Cookie header test
 resp.HasCookie("session")                                               // Response set the cookie
@@ -339,13 +308,6 @@ resp.ArrayContains("roles", "admin")   // Array holds the element
 resp.ArrayEmpty("roles")               // Array has no elements
 resp.Bind(&user)                       // Decode body into a struct
 
-// Bulk subset check
-resp.JSONHasValues(map[string]any{
-    "success": true,
-    "data.count": 5,
-    "data.user.name": "John",
-})
-
 ```
 
 ### Cookie Jar
@@ -377,37 +339,27 @@ A cookie is forgotten when a response sets it with `MaxAge < 0` or an empty valu
 ### BDD Style with Describe/It
 
 ```go
-func TestUserAPI(t *testing.T) {
-    zt := zentests.New(t)
-    
-    zt.Describe("User API", func(ctx *zentests.SuiteContext) {
-        var app *fiber.App
-        
-        ctx.BeforeEach(func(zt *zentests.T) {
-            app = fiber.New()
-            SetupRoutes(app)
-        }).AfterEach(func(zt *zentests.T) {
-            app.Shutdown()
-        })
-        
-        ctx.It("lists users", func(zt *zentests.T) {
-            zt.Get(app, "/users").
-                OK().
-                IsJSON().
-                ArrayLength("data", 2)
-        })
-        
-        ctx.It("creates user", func(zt *zentests.T) {
-            zt.PostJSON(app, "/users", map[string]any{
-                "name": "John",
-            }).
-                Created().
-                Has("data.name", "John")
-        })
-    })
-}
+zt := zentests.New(t)
 
+zt.Describe("User API", func(ctx *zentests.SuiteContext) {
+    var app *fiber.App
+
+    ctx.BeforeEach(func(zt *zentests.T) {
+        app = fiber.New()
+        SetupRoutes(app)
+    }).AfterEach(func(zt *zentests.T) {
+        app.Shutdown()
+    })
+
+    ctx.It("lists users", func(zt *zentests.T) {
+        zt.Get(app, "/users").OK().IsJSON().ArrayLength("data", 2)
+    })
+})
 ```
+
+Nested `Describe` blocks inherit the hooks of enclosing blocks; declare hooks before
+the `It` calls they should apply to. A working example lives in
+[examples/suite.go](./examples/suite.go).
 
 ### Type Safety
 
