@@ -353,6 +353,14 @@ func (s *ResponseHTTPTestSuite) Test_Assertion_HeaderHasValues() {
 	s.True(true, "no chain errors raised")
 }
 
+func (s *ResponseHTTPTestSuite) Test_Assertion_HasCookie() {
+	s.zt.Get(s.app, "/cookies").OK().HasCookie("lang").HasCookie("theme")
+}
+
+func (s *ResponseHTTPTestSuite) Test_Assertion_CookieNotPresent() {
+	s.zt.Get(s.app, "/text").OK().CookieNotPresent("session")
+}
+
 func (s *ResponseHTTPTestSuite) Test_Assertion_CookieHasValues() {
 	s.zt.Get(s.app, "/cookies").OK().CookieHasValues(map[string]string{
 		"lang":  "en",
@@ -527,4 +535,64 @@ func TestStatusIn_CodeOutsideSet_Fails(t *testing.T) {
 	})
 
 	assert.Len(t, errs, 1, "a status outside the set should be reported once")
+}
+
+// TestHasCookie_MissingCookie_Fails checks that a cookie the response did not set is reported.
+func TestHasCookie_MissingCookie_Fails(t *testing.T) {
+	errs := failuresOf(t, sendString("ok"), func(r *Response) {
+		r.HasCookie("session")
+	})
+
+	assert.Len(t, errs, 1, "a missing cookie should be reported once")
+}
+
+// TestCookieNotPresent_SetCookie_Fails checks that a set cookie is reported, with its value.
+func TestCookieNotPresent_SetCookie_Fails(t *testing.T) {
+	errs := failuresOf(t, func(c fiber.Ctx) error {
+		c.Cookie(&fiber.Cookie{Name: "session", Value: "secret"})
+		return c.SendString("ok")
+	}, func(r *Response) {
+		r.CookieNotPresent("session")
+	})
+
+	assert.Len(t, errs, 1, "a set cookie should be reported once")
+	assert.Contains(t, errs[0], "secret", "the failure should show the cookie value")
+}
+
+// TestCookieNotPresent_EmptyValueCookie_Passes checks that a deletion cookie with an
+// empty value does not fail the check.
+func TestCookieNotPresent_EmptyValueCookie_Passes(t *testing.T) {
+	errs := failuresOf(t, func(c fiber.Ctx) error {
+		c.Cookie(&fiber.Cookie{Name: "session", Value: ""})
+		return c.SendString("ok")
+	}, func(r *Response) {
+		r.CookieNotPresent("session")
+	})
+
+	assert.Empty(t, errs)
+}
+
+// TestCookieNotPresent_MaxAgeExpiredCookie_Passes checks that a deletion cookie with
+// MaxAge < 0 does not fail the check.
+func TestCookieNotPresent_MaxAgeExpiredCookie_Passes(t *testing.T) {
+	errs := failuresOf(t, func(c fiber.Ctx) error {
+		c.Cookie(&fiber.Cookie{Name: "session", Value: "s1", MaxAge: -1})
+		return c.SendString("ok")
+	}, func(r *Response) {
+		r.CookieNotPresent("session")
+	})
+
+	assert.Empty(t, errs)
+}
+
+// TestHasCookie_DeletionCookie_Fails checks that a deletion cookie does not satisfy HasCookie.
+func TestHasCookie_DeletionCookie_Fails(t *testing.T) {
+	errs := failuresOf(t, func(c fiber.Ctx) error {
+		c.Cookie(&fiber.Cookie{Name: "session", Value: "s1", MaxAge: -1})
+		return c.SendString("ok")
+	}, func(r *Response) {
+		r.HasCookie("session")
+	})
+
+	assert.Len(t, errs, 1, "a deletion cookie should be reported once")
 }

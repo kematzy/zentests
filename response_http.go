@@ -422,14 +422,77 @@ func (r *Response) CookieHasValues(expected map[string]string) *Response {
 //	assert.True(t, cookie.HttpOnly)
 func (r *Response) Cookie(name string) *http.Cookie {
 	r.t.Helper()
+	cookie, found := r.findCookie(name)
+	if !found {
+		r.t.Errorf("cookie %s was not set", name)
+		r.t.FailNow()
+	}
+	return cookie
+}
+
+// isDeletionCookie reports whether a Set-Cookie entry deletes the cookie on the client,
+// by Fiber's conventions: MaxAge < 0 or an empty value.
+func isDeletionCookie(cookie *http.Cookie) bool {
+	return cookie.MaxAge < 0 || cookie.Value == ""
+}
+
+// findCookie returns the named cookie from the response's Set-Cookie headers,
+// and whether the response set it.
+func (r *Response) findCookie(name string) (*http.Cookie, bool) {
 	for _, cookie := range r.resp.Cookies() {
 		if cookie.Name == name {
-			return cookie
+			return cookie, true
 		}
 	}
-	r.t.Errorf("cookie %s was not set", name)
-	r.t.FailNow()
-	return nil
+	return nil, false
+}
+
+// HasCookie asserts that the response set a cookie with the given name, with any value.
+// Use Cookie to read the cookie's attributes, or CookieHasValues to check its value.
+// A deletion cookie (empty value or MaxAge < 0) does not count as set; use the Jar
+// to check that a stored cookie is gone.
+//
+// Parameters:
+//   - name: The cookie name
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//	zt.Get(app, "/login").OK().HasCookie("session")
+func (r *Response) HasCookie(name string) *Response {
+	r.t.Helper()
+	cookie, found := r.findCookie(name)
+	if !found {
+		assert.Fail(r.t, "cookie was not set", "cookie %s was not set", name)
+		return r
+	}
+	assert.False(r.t, isDeletionCookie(cookie),
+		"cookie %s was set as a deletion (empty value or MaxAge < 0)", name)
+	return r
+}
+
+// CookieNotPresent asserts that the response did not set a cookie with the given name.
+// A deletion cookie (empty value or MaxAge < 0) does not fail this check; use the Jar
+// to check that a cookie is gone.
+//
+// Parameters:
+//   - name: The cookie name
+//
+// Returns:
+//   - *Response: The receiver for method chaining
+//
+// Example:
+//
+//	zt.Get(app, "/public").OK().CookieNotPresent("session")
+func (r *Response) CookieNotPresent(name string) *Response {
+	r.t.Helper()
+	cookie, found := r.findCookie(name)
+	if found && !isDeletionCookie(cookie) {
+		assert.Fail(r.t, "cookie should not be set", "cookie %s was set with value %q", name, cookie.Value)
+	}
+	return r
 }
 
 // ================================================================================================

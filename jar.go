@@ -134,14 +134,14 @@ func (j *Jar) Cookie(name string) string {
 	return j.cookies[name]
 }
 
-// store saves the cookies from a response. A cookie with MaxAge < 0 or an empty value
-// is deleted, because that is how Fiber's ClearCookie expires a cookie.
+// store saves the cookies from a response. Deletion cookies are removed from the jar,
+// because that is how Fiber's ClearCookie expires a cookie.
 //
 // Parameters:
 //   - cookies: The cookies parsed from the response's Set-Cookie headers
 func (j *Jar) store(cookies []*http.Cookie) {
 	for _, cookie := range cookies {
-		if cookie.MaxAge < 0 || cookie.Value == "" {
+		if isDeletionCookie(cookie) {
 			delete(j.cookies, cookie.Name)
 			continue
 		}

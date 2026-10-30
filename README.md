@@ -259,6 +259,9 @@ resp.HeaderPresent("X-Auth-Token")                                      // Heade
 resp.HeaderNotPresent("X-Auth-Token")                                   // Header does not exists
 resp.HeaderHasValues("X-Features", []string{"audio", "video"})          // Header has multiple values
 resp.CookieHasValues(map[string]string{"lang": "en", "theme": "dark"})  // Set-Cookie header test
+resp.HasCookie("session")                                               // Response set the cookie
+resp.CookieNotPresent("session")                                        // Response did not set it
+resp.Cookie("session")                                                  // *http.Cookie, for attributes
 
 // Content-Type Helpers
 resp.HasContentType("text/html; charset=utf-8")                         // Checks Content-Type value
