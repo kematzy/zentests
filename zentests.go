@@ -3,8 +3,8 @@
 // Basic usage:
 //
 //	func TestEndpoint(t *testing.T) {
-//	    zt := zentests.New(t).Use(app)
-//	    zt.Get("/users").Status(200)
+//	    zt := zentests.New(t)
+//	    zt.Get(app, "/users").Status(200)
 //	}
 package zentests
 
@@ -16,18 +16,18 @@ import (
 
 // T wraps [testing.T] with additional context for testing Fiber applications.
 // It provides a fluent API for making HTTP requests against a Fiber app in tests.
-// T maintains a reference to the Fiber app and testing context to enable chainable assertions.
+// Request methods take the Fiber app explicitly; T also carries default headers
+// and the testing context for chainable assertions.
 //
 // Basic usage:
 //
 //	func TestEndpoint(t *testing.T) {
-//	    zt := zentests.New(t).Use(app)
-//	    zt.Get("/users").Status(200)
+//	    zt := zentests.New(t)
+//	    zt.Get(app, "/users").Status(200)
 //	}
 //
 // Fields:
 //   - T: The embedded [testing.T] instance for standard Go test functionality
-//   - app: The Fiber application instance for making HTTP requests
 //   - headers: Default headers sent with every request (see SetHeader)
 type T struct {
 	*testing.T
@@ -36,9 +36,8 @@ type T struct {
 }
 
 // New creates a new zentests context wrapping the provided [testing.T].
-// This is the main entry point for using zentests. The returned *T has no app set initially
-// - call Use() to set the Fiber application for method chaining, or pass the app directly
-// to request methods like Get(app, "/").
+// This is the main entry point for using zentests. Pass the Fiber app explicitly to
+// request methods such as Get(app, "/").
 //
 // Parameters:
 //   - t: The [testing.T] instance from your test function
@@ -47,13 +46,6 @@ type T struct {
 //   - *T: A new zentests context with no Fiber app configured
 //
 // Example:
-//
-//	func TestExample(t *testing.T) {
-//		zt := zentests.New(t)
-//		app := fiber.New()
-//		// declare app routes
-//		zt.Use(app)
-//	}
 //
 //	func TestExample(t *testing.T) {
 //	    zt := zentests.New(t)
@@ -66,19 +58,16 @@ func New(t *testing.T) *T {
 	return &T{T: t}
 }
 
-// Use sets the Fiber app for making test requests and enables fluent method chaining.
-// After calling Use(), subsequent request methods can be called without passing the app parameter.
+// Use is retained for source compatibility and checks that app is not nil.
+// Request methods still require app to be passed explicitly.
+//
+// Deprecated: Use does not bind app to request methods. Pass app to each request method.
 //
 // Parameters:
-//   - app: The Fiber application instance to test against; must not be nil
+//   - app: The Fiber application instance; must not be nil
 //
 // Returns:
 //   - *T: The receiver for method chaining
-//
-// Example:
-//
-//	zt := zentests.New(t).Use(app)
-//	zt.Get("/users").OK()
 func (zt *T) Use(app *fiber.App) *T {
 	if app == nil {
 		zt.Fatal("zentests: Use called with a nil *fiber.App")

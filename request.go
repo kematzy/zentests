@@ -606,7 +606,8 @@ func (zt *T) PostMultipart(app *fiber.App, path string, fields map[string]string
 //
 // Example:
 //
-//	zt := zentests.New(t).Use(app).SetHeader("Accept", "application/json")
+//	zt := zentests.New(t).SetHeader("Accept", "application/json")
+//	zt.Get(app, "/users").OK()
 func (zt *T) SetHeader(key, value string) *T {
 	zt.Helper()
 	zt.headers = setDefaultHeader(zt.headers, key, value)
@@ -624,7 +625,8 @@ func (zt *T) SetHeader(key, value string) *T {
 //
 // Example:
 //
-//	zt := zentests.New(t).Use(app).WithBearer(token)
+//	zt := zentests.New(t).WithBearer(token)
+//	zt.Get(app, "/users").OK()
 func (zt *T) WithBearer(token string) *T {
 	return zt.SetHeader("Authorization", "Bearer "+token)
 }
