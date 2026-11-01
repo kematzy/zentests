@@ -59,6 +59,7 @@ linters:
                   - godoclint
                   - funlen
                   - goconst
+                  - revive
 
     settings:
         # Checks whether HTTP response body is closed successfully.

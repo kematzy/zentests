@@ -107,3 +107,21 @@ func TestSuiteNoHooks(t *testing.T) {
 
 	assert.True(t, ran)
 }
+
+func TestSuiteAfterEachRunsWhenBeforeEachSkips(t *testing.T) {
+	var afterEachRan bool
+
+	New(t).Describe("Setup skip", func(ctx *SuiteContext) {
+		ctx.BeforeEach(func(zt *T) {
+			zt.SkipNow()
+		}).AfterEach(func(zt *T) {
+			afterEachRan = true
+		})
+
+		ctx.It("skips during setup", func(zt *T) {
+			t.Fatal("test body must not run after setup skips")
+		})
+	})
+
+	assert.True(t, afterEachRan, "AfterEach should run when BeforeEach skips")
+}

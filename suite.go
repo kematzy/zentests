@@ -97,12 +97,13 @@ func (ctx *SuiteContext) It(name string, fn func(*T)) {
 	ctx.t.Run(name, func(t *testing.T) {
 		zt := &T{T: t}
 
-		for _, hook := range before {
-			hook(zt)
-		}
+		// Register cleanups before setup so they still run if a BeforeEach hook stops the test.
 		// Cleanups run last-in first-out, so registering outermost first runs innermost first.
 		for _, hook := range after {
 			t.Cleanup(func() { hook(zt) })
+		}
+		for _, hook := range before {
+			hook(zt)
 		}
 
 		fn(zt)
