@@ -34,9 +34,9 @@ endef
 .DEFAULT_GOAL := help
 
 # non-file targets (commands)
-.PHONY: help fmt fmt-check vet lint tidy check spellcheck
+.PHONY: help fmt fmt-check vet lint tidy modernize modernize-check check spellcheck
 .PHONY: test test-verbose test-dox test-watch coverage-profile test-coverage
-.PHONY: release changelog git-push gitea-push github-push docs docs-md modernize modernize-check
+.PHONY: release changelog git-push gitea-push github-push docs docs-md
 
 ## help: Show this help message
 help:
@@ -57,9 +57,14 @@ fmt:
 	@# -l	list files whose formatting differs from gofmt's
 	@# -w	write result to (source) file instead of stdout
 
-## fmt-check: (Dry-run) Check source code formatting
+## fmt-check: Check source code formatting without modifying files
 fmt-check:
-	@gofmt -l -d -e -s .
+	@files=$$(gofmt -l -d -e -s .); \
+	if [ -n "$$files" ]; then \
+		echo "The following files need formatting:"; \
+		printf '%s\n' "$$files"; \
+		exit 1; \
+	fi
 	@# -d	display diffs instead of rewriting files
 	@# -e	report all errors (not just the first 10 on different lines)
 	@# -l	list files whose formatting differs from gofmt's
@@ -86,15 +91,15 @@ modernize-check:
 	@go fix -diff ./... | delta
 
 ## check: Check everything before a commit or push
-check: check-test-coverage
-	@gofmt -l -w .
-	@echo -e "Checking code formatting:       󰄬 (passed)"
+check: check-test-coverage fmt-check
+	@echo -e "\nChecked test suite: 			󰄬 (passed)"
+	@echo -e "Checking code formatting:		󰄬 (passed)"
 	@go vet ./...
-	@echo -e "Checked for suspicious code:    󰄬 (passed)"
+	@echo -e "Checked for suspicious code:		󰄬 (passed)"
 	@golangci-lint run ./...
-	@echo -e "Checked code linting:           󰄬 (passed)\n"
+	@echo -e "Checked code linting:			󰄬 (passed)\n"
 	@cspell --unique --color --no-progress --quiet .
-	@echo -e "\nChecked spelling:             󰄬 (passed)"
+	@echo -e "\nChecked spelling:			󰄬 (passed)"
 
 	@echo -e "\n\033[32m 󰄬   All checks passed \033[0m"
 
@@ -131,7 +136,6 @@ coverage-profile:
 	@echo ""
 	@gotest -coverprofile=$(COVERAGE_PROFILE) ./...
 
-
 ## test-coverage: Run tests and generate coverage report
 test-coverage:
 	@mkdir -p .code-status
@@ -143,7 +147,6 @@ test-coverage:
 	@# depends upon: go install github.com/chmouel/go-better-html-coverage@latest
 
 
-
 #======================================================================================================================
 # RELEASE
 #======================================================================================================================
@@ -153,9 +156,9 @@ check-test-coverage: coverage-profile
 	@go tool cover -func=$(COVERAGE_PROFILE) | tail -1 | awk '{print $$3}' | \
 	  tr -d '%' | awk -v threshold=${COVERAGE_MIN} \
 	  '{ if ($$1 < threshold) \
-	       { print "FAIL: Coverage " $$1 "% is below threshold " threshold "%"; exit 1 } \
-	     else \
-	       { print "OK: Coverage " $$1 "%" } }'
+		   { print "FAIL: Coverage " $$1 "% is below threshold " threshold "%"; exit 1 } \
+		 else \
+		   { print "OK: Coverage " $$1 "%" } }'
 
 ## release: Release a new tagged version  (e.g. make release VERSION=v1.2.3)
 release: check changelog
@@ -175,6 +178,7 @@ release: check changelog
 	@echo "  https://pkg.go.dev/$(REPO)@${VERSION}"
 	@echo "  https://$(REPO)/releases/tag/${VERSION}"
 	@echo ""
+
 
 #======================================================================================================================
 # CHANGELOG
