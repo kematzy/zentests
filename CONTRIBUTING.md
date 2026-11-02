@@ -63,7 +63,6 @@ make release VERSION=v1.2.3 # Create specific version
 
 # Development
 make versions               # Show current and all versions
-make git-push               # Push code to both repositories
 
 # Documentation
 make changelog              # Generate changelog using git-cliff

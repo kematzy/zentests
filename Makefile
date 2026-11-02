@@ -38,7 +38,7 @@ endef
 # non-file targets (commands)
 .PHONY: help fmt fmt-check vet lint tidy modernize modernize-check check spellcheck
 .PHONY: test test-verbose test-dox test-watch coverage-profile test-coverage
-.PHONY: release changelog git-push gitea-push github-push docs docs-md
+.PHONY: release changelog docs docs-md
 
 ## help: Show this help message
 help:
@@ -197,23 +197,6 @@ versions:
 	@echo -e "Version: \033[32m${VERSION}\033[0m \033[02m- #\033[0m\033[32m${COMMIT_HASH}\033[0m"
 	@echo "Versions: "
 	@git tag -l --sort=version:refname | sed 's/^v/ v/'
-
-
-#======================================================================================================================
-# GIT
-#======================================================================================================================
-
-## git-push: Push code to both repositories
-git-push: github-push gitea-push
-	@echo "Successfully pushed both remotes."
-
-github-push:
-	@echo "Pushing to Github"
-	@git push github HEAD
-
-gitea-push:
-	@echo "Pushing to Gitea"
-	@git push gitea HEAD
 
 
 #======================================================================================================================
