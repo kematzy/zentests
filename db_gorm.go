@@ -49,6 +49,27 @@ func SetupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
+// applyConditions adds the optional where-clause from conditions to query.
+// conditions holds an optional where string followed by its args, as in
+// "email = ?", "user@example.com". A first element that is not a string fails the test.
+//
+// Parameters:
+//   - t: The [testing.T] instance for assertions
+//   - query: The GORM query to extend
+//   - conditions: The optional where string and args
+//
+// Returns:
+//   - *gorm.DB: The extended query
+func applyConditions(t *testing.T, query *gorm.DB, conditions []any) *gorm.DB {
+	t.Helper()
+	if len(conditions) == 0 {
+		return query
+	}
+	where, ok := conditions[0].(string)
+	require.True(t, ok, "the first condition must be a where string, got %T", conditions[0])
+	return query.Where(where, conditions[1:]...)
+}
+
 // SetupTestDBWithModels opens an in-memory SQLite database and runs AutoMigrate
 // for every provided model in a single call. This is the most common entry point
 // for database tests — it replaces the three-line open/migrate/check sequence with
@@ -359,10 +380,7 @@ func DBCount[T any](t *testing.T, db *gorm.DB, model *T, conditions ...any) int6
 	t.Helper()
 
 	var count int64
-	query := db.Model(model)
-	if len(conditions) > 0 {
-		query = query.Where(conditions[0].(string), conditions[1:]...)
-	}
+	query := applyConditions(t, db.Model(model), conditions)
 	err := query.Count(&count).Error
 	require.NoError(t, err, "DBCount: count failed")
 
@@ -389,10 +407,7 @@ func DBExists[T any](t *testing.T, db *gorm.DB, model *T, conditions ...any) boo
 	t.Helper()
 
 	var count int64
-	query := db.Model(model)
-	if len(conditions) > 0 {
-		query = query.Where(conditions[0].(string), conditions[1:]...)
-	}
+	query := applyConditions(t, db.Model(model), conditions)
 	err := query.Count(&count).Error
 	require.NoError(t, err, "DBExists: count failed")
 
@@ -422,10 +437,7 @@ func DBNotExists[T any](t *testing.T, db *gorm.DB, model *T, conditions ...any) 
 	t.Helper()
 
 	var count int64
-	query := db.Model(model)
-	if len(conditions) > 0 {
-		query = query.Where(conditions[0].(string), conditions[1:]...)
-	}
+	query := applyConditions(t, db.Model(model), conditions)
 	err := query.Count(&count).Error
 	require.NoError(t, err, "DBNotExists: count failed")
 
