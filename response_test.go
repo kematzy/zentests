@@ -470,6 +470,10 @@ func TestDump_CustomSecretHeaders_Redacted(t *testing.T) {
 	app.Get("/secret", func(c fiber.Ctx) error {
 		c.Set("X-Api-Key", "key-secret-123")
 		c.Set("X-Auth-Token", "token-secret-456")
+		c.Set("X-Access-Token", "access-secret-789")
+		c.Set("X-Refresh-Token", "refresh-secret-012")
+		c.Set("X-Session-Id", "session-secret-345")
+		c.Set("X-Csrf-Token", "csrf-secret-678")
 		return c.SendString("ok")
 	})
 
@@ -477,4 +481,8 @@ func TestDump_CustomSecretHeaders_Redacted(t *testing.T) {
 
 	assert.NotContains(t, dump, "key-secret-123")
 	assert.NotContains(t, dump, "token-secret-456")
+	assert.NotContains(t, dump, "access-secret-789")
+	assert.NotContains(t, dump, "refresh-secret-012")
+	assert.NotContains(t, dump, "session-secret-345")
+	assert.NotContains(t, dump, "csrf-secret-678")
 }
