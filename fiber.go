@@ -32,7 +32,7 @@ import (
 //	zt.HasRoute("POST", "/users", app).
 //	    HasRoute("DELETE", "/users/:id", app)
 func (zt *T) HasRoute(method, path string, app *fiber.App, msgAndArgs ...any) *T {
-	zt.T.Helper()
+	zt.Helper()
 
 	found := hasRoute(app, method, path)
 	assert.True(zt.T, found, buildRouteMsg(method, path, msgAndArgs...))
@@ -57,7 +57,7 @@ func (zt *T) HasRoute(method, path string, app *fiber.App, msgAndArgs ...any) *T
 //	zt.NotHasRoute("DELETE", "/users", app, "bulk delete must not be exposed").
 //	    NotHasRoute("PATCH", "/users", app)
 func (zt *T) NotHasRoute(method, path string, app *fiber.App, msgAndArgs ...any) *T {
-	zt.T.Helper()
+	zt.Helper()
 
 	found := hasRoute(app, method, path)
 	assert.False(zt.T, found, buildRouteMsg(method, path, msgAndArgs...))
@@ -69,12 +69,12 @@ func (zt *T) NotHasRoute(method, path string, app *fiber.App, msgAndArgs ...any)
 // via t.Cleanup, so the app is always stopped when the test finishes regardless of
 // pass or fail. The app is created fresh on each call — no shared state between tests.
 //
-// An optional [fiber.Config] can be passed to customise the app (views engine,
+// An optional [fiber.Config] can be passed to customize the app (views engine,
 // app name, middleware, error handler, etc.). When no config is supplied the app is
 // created with Fiber's defaults, identical to fiber.New().
 //
 // Parameters:
-//   - t: The testing.T instance; marks this as a test helper and registers cleanup.
+//   - t: The [testing.T] instance; marks this as a test helper and registers cleanup.
 //   - cfg: Optional Fiber configuration. Only the first value is used if multiple are passed.
 //
 // Returns:
@@ -138,7 +138,7 @@ func hasRoute(app *fiber.App, method, path string) bool {
 
 // buildRouteMsg constructs a human-readable failure message for route assertions.
 // When msgAndArgs is provided its first element is appended to the base label.
-// String values are used directly; any other type is formatted with fmt.Sprint.
+// String values are used directly; any other type is formatted with [fmt.Sprint].
 func buildRouteMsg(method, path string, msgAndArgs ...any) string {
 	base := strings.ToUpper(method) + " " + path
 

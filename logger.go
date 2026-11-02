@@ -38,7 +38,7 @@ type Logger interface {
 // library's log package. All output is written to stderr with level prefixes:
 // "DEBUG: ", "WARN: ", or "FATAL: ".
 //
-// Fatalf calls os.Exit(1) after logging. The exit behaviour can be overridden via the
+// Fatalf calls [os.Exit](1) after logging. The exit behaviour can be overridden via the
 // unexported exitFn field, which is only used in tests for the DefaultLogger itself.
 //
 // Example:
@@ -46,7 +46,7 @@ type Logger interface {
 //	var log zentests.Logger = zentests.DefaultLogger{}
 //	log.Warnf("retrying in %d seconds", 5)
 type DefaultLogger struct {
-	exitFn func(int) // injectable for testing; nil means use os.Exit
+	exitFn func(int) // injectable for testing; nil means use [os.Exit]
 }
 
 func (l DefaultLogger) exit(code int) {
@@ -68,7 +68,7 @@ func (l DefaultLogger) Warnf(format string, v ...any) {
 }
 
 // Fatalf logs a formatted fatal message prefixed with "FATAL: " then exits with code 1.
-// NOTE: uses Printf internally (not log.Fatalf) so the exit is handled by exitFn,
+// NOTE: uses Printf internally (not [log.Fatalf]) so the exit is handled by exitFn,
 // making it safe to test without actually terminating the process.
 func (l DefaultLogger) Fatalf(format string, v ...any) {
 	log.Printf("FATAL: "+format, v...)
@@ -90,7 +90,7 @@ func (l DefaultLogger) Fatalf(format string, v ...any) {
 //	}
 //
 // All three methods (Debugf, Warnf, Fatalf) set their respective *Called and *Msg fields.
-// Fatalf does NOT call os.Exit — safe to use in tests.
+// Fatalf does NOT call [os.Exit] — safe to use in tests.
 type MockLogger struct {
 	// DebugCalled is true if Debugf was called at least once.
 	DebugCalled bool
@@ -119,7 +119,7 @@ func (m *MockLogger) Warnf(format string, v ...any) {
 	m.WarnMsg = fmt.Sprintf(format, v...)
 }
 
-// Fatalf records the call and formatted message. Does NOT call os.Exit — safe in tests.
+// Fatalf records the call and formatted message. Does NOT call [os.Exit] — safe in tests.
 func (m *MockLogger) Fatalf(format string, v ...any) {
 	m.FatalCalled = true
 	m.FatalMsg = fmt.Sprintf(format, v...)

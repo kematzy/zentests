@@ -19,7 +19,7 @@ import (
 // you need to close the connection before the test ends (e.g. to test reconnect behavior).
 //
 // Parameters:
-//   - t: The testing.T instance; marks this as a test helper and registers cleanup.
+//   - t: The [testing.T] instance; marks this as a test helper and registers cleanup.
 //
 // Returns:
 //   - *gorm.DB: A connected, empty database. No tables are created — use
@@ -76,7 +76,7 @@ func applyConditions(t *testing.T, query *gorm.DB, conditions []any) *gorm.DB {
 // one line.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - models: One or more pointers to GORM model structs (e.g. &User{}, &Post{}).
 //
 // Returns:
@@ -105,7 +105,7 @@ func SetupTestDBWithModels(t *testing.T, models ...any) *gorm.DB {
 // without recreating the connection.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB connection.
 //   - models: One or more pointers to GORM model structs.
 //
@@ -129,7 +129,7 @@ func DBMigrate(t *testing.T, db *gorm.DB, models ...any) {
 // any GORM-supported driver.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB connection.
 //
 // Example:
@@ -161,7 +161,7 @@ func DBReset(t *testing.T, db *gorm.DB) {
 // — for example, to verify reconnect behavior or to release a file-based SQLite lock mid-test.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB connection.
 //
 // Example:
@@ -183,7 +183,7 @@ func CloseTestDB(t *testing.T, db *gorm.DB) {
 // Type parameter T must be a GORM model struct; pass a pointer to an initialized value.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB with the model's table already migrated.
 //   - record: Pointer to the record to insert.
 //
@@ -218,7 +218,7 @@ func DBCreate[T any](t *testing.T, db *gorm.DB, record *T) *T {
 // DBCreateN handles taking their address internally).
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB with the model's table already migrated.
 //   - count: Number of records to create (must be > 0).
 //   - factory: Function called with i = 1..count; returns an initialized T value.
@@ -256,7 +256,7 @@ func DBCreateN[T any](t *testing.T, db *gorm.DB, count int, factory func(i int) 
 // This is the idiomatic way to fetch a record by primary key in tests.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB with the model's table migrated.
 //   - record: Pointer to model struct to populate (must be allocated).
 //   - id: The primary key value to find.
@@ -283,7 +283,7 @@ func DBFind[T any](t *testing.T, db *gorm.DB, record *T, id any) *T {
 // Use this for non-ID lookups (e.g., by email, unique constraint).
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB with the model's table migrated.
 //   - record: Pointer to model struct to populate.
 //   - where: Where clause (e.g., "email = ?" or "name LIKE ?").
@@ -311,7 +311,7 @@ func DBFindBy[T any](t *testing.T, db *gorm.DB, record *T, where string, args ..
 // Use this when you need the oldest/first record by natural order.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB with the model's table migrated.
 //   - record: Pointer to model struct to populate.
 //
@@ -337,7 +337,7 @@ func DBFirst[T any](t *testing.T, db *gorm.DB, record *T) *T {
 // Use this when you need the most recent record.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB with the model's table migrated.
 //   - record: Pointer to model struct to populate.
 //
@@ -362,7 +362,7 @@ func DBLast[T any](t *testing.T, db *gorm.DB, record *T) *T {
 // Fails the test on database error.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB with the model's table migrated.
 //   - model: Pointer to model struct (used only for type, can be &Model{}).
 //   - conditions: Optional - pass a where string, then args. e.g., "status = ?", "active"
@@ -391,7 +391,7 @@ func DBCount[T any](t *testing.T, db *gorm.DB, model *T, conditions ...any) int6
 // Fails the test if no records are found.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB with the model's table migrated.
 //   - model: Pointer to model struct (type used for table).
 //   - conditions: Optional - pass a where string, then args. e.g., "status = ?", "active"
@@ -420,10 +420,11 @@ func DBExists[T any](t *testing.T, db *gorm.DB, model *T, conditions ...any) boo
 // Fails the test if any records are found.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB with the model's table migrated.
 //   - model: Pointer to model struct (type used for table).
-//   - conditions: Optional - pass a where string, then args. e.g., "email = ?", "deleted@example.com"
+//   - conditions: Optional - pass a where string, then args, e.g.
+//     "email = ?", "deleted@example.com"
 //
 // Returns:
 //
@@ -454,7 +455,7 @@ func DBNotExists[T any](t *testing.T, db *gorm.DB, model *T, conditions ...any) 
 // Use this for simple field updates without loading the record first.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB with the model's table migrated.
 //   - model: Pointer to model struct (used for table, must have ID if using byID).
 //   - byID: Primary key value to identify record; use nil for where clause.
@@ -478,7 +479,7 @@ func DBUpdate[T any](t *testing.T, db *gorm.DB, model *T, byID any, updates map[
 // Use this when you need to update records matching a non-ID condition.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB with the model's table migrated.
 //   - model: Pointer to model struct.
 //   - where: Where clause (e.g., "status = ?" or "id > ?").
@@ -498,7 +499,7 @@ func DBUpdateBy[T any](t *testing.T, db *gorm.DB, model *T, where string, args [
 // DBDelete deletes a record by ID and fails the test on error.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB with the model's table migrated.
 //   - record: Pointer to model struct with ID set.
 //
@@ -516,7 +517,7 @@ func DBDelete[T any](t *testing.T, db *gorm.DB, record *T) {
 // DBDeleteBy deletes records matching a where clause and fails the test on error.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB with the model's table migrated.
 //   - model: Pointer to model struct (type used for table).
 //   - where: Where clause.
@@ -548,7 +549,7 @@ func DBDeleteBy[T any](t *testing.T, db *gorm.DB, model *T, where string, args .
 // This is useful for testing multiple operations that should succeed or fail together.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB connection.
 //   - fn: Function that executes operations on a transacted *gorm.DB.
 //
@@ -593,7 +594,7 @@ func DBTx(t *testing.T, db *gorm.DB, fn func(tx *gorm.DB) error) error {
 // pointers to already-populated model instances.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB.
 //   - data: Map of model pointers to slices of populated records.
 //
@@ -620,7 +621,7 @@ func DBSeed[T any](t *testing.T, db *gorm.DB, records []*T) {
 // This is a convenience wrapper around DBSeed for single-table seeding.
 //
 // Parameters:
-//   - t: The testing.T instance.
+//   - t: The [testing.T] instance.
 //   - db: An open *gorm.DB.
 //   - records: Slice of pointers to already-populated model instances.
 //
