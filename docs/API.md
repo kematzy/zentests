@@ -19,7 +19,33 @@ func TestEndpoint(t *testing.T) {
 
 ## Index
 
+- [func CloseTestDB\(t \*testing.T, db \*gorm.DB\)](<#CloseTestDB>)
+- [func DBCount\[T any\]\(t \*testing.T, db \*gorm.DB, model \*T, conditions ...any\) int64](<#DBCount>)
+- [func DBCreate\[T any\]\(t \*testing.T, db \*gorm.DB, record \*T\) \*T](<#DBCreate>)
+- [func DBCreateN\[T any\]\(t \*testing.T, db \*gorm.DB, count int, factory func\(i int\) T\) \[\]\*T](<#DBCreateN>)
+- [func DBDelete\[T any\]\(t \*testing.T, db \*gorm.DB, record \*T\)](<#DBDelete>)
+- [func DBDeleteBy\[T any\]\(t \*testing.T, db \*gorm.DB, model \*T, where string, args ...any\) int64](<#DBDeleteBy>)
+- [func DBExists\[T any\]\(t \*testing.T, db \*gorm.DB, model \*T, conditions ...any\) bool](<#DBExists>)
+- [func DBFind\[T any\]\(t \*testing.T, db \*gorm.DB, record \*T, id any\) \*T](<#DBFind>)
+- [func DBFindBy\[T any\]\(t \*testing.T, db \*gorm.DB, record \*T, where string, args ...any\) \*T](<#DBFindBy>)
+- [func DBFirst\[T any\]\(t \*testing.T, db \*gorm.DB, record \*T\) \*T](<#DBFirst>)
+- [func DBLast\[T any\]\(t \*testing.T, db \*gorm.DB, record \*T\) \*T](<#DBLast>)
+- [func DBMigrate\(t \*testing.T, db \*gorm.DB, models ...any\)](<#DBMigrate>)
+- [func DBNotExists\[T any\]\(t \*testing.T, db \*gorm.DB, model \*T, conditions ...any\) bool](<#DBNotExists>)
+- [func DBReset\(t \*testing.T, db \*gorm.DB\)](<#DBReset>)
+- [func DBSeed\[T any\]\(t \*testing.T, db \*gorm.DB, records \[\]\*T\)](<#DBSeed>)
+- [func DBSeedSlice\[T any\]\(t \*testing.T, db \*gorm.DB, records \[\]T\)](<#DBSeedSlice>)
+- [func DBTx\(t \*testing.T, db \*gorm.DB, fn func\(tx \*gorm.DB\) error\) error](<#DBTx>)
+- [func DBUpdate\[T any\]\(t \*testing.T, db \*gorm.DB, model \*T, byID any, updates map\[string\]any\)](<#DBUpdate>)
+- [func DBUpdateBy\[T any\]\(t \*testing.T, db \*gorm.DB, model \*T, where string, args \[\]any, updates map\[string\]any\)](<#DBUpdateBy>)
+- [func NewApp\(t \*testing.T, cfg ...fiber.Config\) \*fiber.App](<#NewApp>)
 - [func SetHeader\(key, value string\) map\[string\]string](<#SetHeader>)
+- [func SetupTestDB\(t \*testing.T\) \*gorm.DB](<#SetupTestDB>)
+- [func SetupTestDBWithModels\(t \*testing.T, models ...any\) \*gorm.DB](<#SetupTestDBWithModels>)
+- [type DefaultLogger](<#DefaultLogger>)
+  - [func \(l DefaultLogger\) Debugf\(format string, v ...any\)](<#DefaultLogger.Debugf>)
+  - [func \(l DefaultLogger\) Fatalf\(format string, v ...any\)](<#DefaultLogger.Fatalf>)
+  - [func \(l DefaultLogger\) Warnf\(format string, v ...any\)](<#DefaultLogger.Warnf>)
 - [type FileUpload](<#FileUpload>)
 - [type Jar](<#Jar>)
   - [func NewJar\(t testing.TB, app \*fiber.App\) \*Jar](<#NewJar>)
@@ -30,6 +56,11 @@ func TestEndpoint(t *testing.T) {
   - [func \(j \*Jar\) Send\(req \*http.Request\) \*Response](<#Jar.Send>)
   - [func \(j \*Jar\) SetHeader\(key, value string\)](<#Jar.SetHeader>)
   - [func \(j \*Jar\) WithBearer\(token string\)](<#Jar.WithBearer>)
+- [type Logger](<#Logger>)
+- [type MockLogger](<#MockLogger>)
+  - [func \(m \*MockLogger\) Debugf\(format string, v ...any\)](<#MockLogger.Debugf>)
+  - [func \(m \*MockLogger\) Fatalf\(format string, v ...any\)](<#MockLogger.Fatalf>)
+  - [func \(m \*MockLogger\) Warnf\(format string, v ...any\)](<#MockLogger.Warnf>)
 - [type Response](<#Response>)
   - [func \(r \*Response\) Accepted\(\) \*Response](<#Response.Accepted>)
   - [func \(r \*Response\) ArrayContains\(path string, expected any\) \*Response](<#Response.ArrayContains>)
@@ -111,6 +142,8 @@ func TestEndpoint(t *testing.T) {
   - [func \(zt \*T\) Get\(app \*fiber.App, path string\) \*Response](<#T.Get>)
   - [func \(zt \*T\) GetQuery\(app \*fiber.App, path string, query url.Values\) \*Response](<#T.GetQuery>)
   - [func \(zt \*T\) GetWithConfig\(app \*fiber.App, path string, cfg fiber.TestConfig\) \*Response](<#T.GetWithConfig>)
+  - [func \(zt \*T\) HasRoute\(method, path string, app \*fiber.App, msgAndArgs ...any\) \*T](<#T.HasRoute>)
+  - [func \(zt \*T\) NotHasRoute\(method, path string, app \*fiber.App, msgAndArgs ...any\) \*T](<#T.NotHasRoute>)
   - [func \(zt \*T\) Patch\(app \*fiber.App, path string, body \[\]byte\) \*Response](<#T.Patch>)
   - [func \(zt \*T\) PatchJSON\(app \*fiber.App, path string, data any\) \*Response](<#T.PatchJSON>)
   - [func \(zt \*T\) PatchJSONWithConfig\(app \*fiber.App, path string, data any, cfg fiber.TestConfig\) \*Response](<#T.PatchJSONWithConfig>)
@@ -130,6 +163,563 @@ func TestEndpoint(t *testing.T) {
   - [func \(zt \*T\) Use\(app \*fiber.App\) \*T](<#T.Use>)
   - [func \(zt \*T\) WithBearer\(token string\) \*T](<#T.WithBearer>)
 
+
+<a name="CloseTestDB"></a>
+## func CloseTestDB
+
+```go
+func CloseTestDB(t *testing.T, db *gorm.DB)
+```
+
+CloseTestDB explicitly closes the underlying database connection. In most tests this is not needed because [SetupTestDB](<#SetupTestDB>) registers an automatic close via [testing.T.Cleanup](<https://pkg.go.dev/testing/#T.Cleanup>). Use this only when you need to close the connection before the test ends — for example, to verify reconnect behavior or to release a file\-based SQLite lock mid\-test.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB connection.
+
+Example:
+
+```
+db := zentests.SetupTestDB(t)
+// ... tests ...
+zentests.CloseTestDB(t, db) // close early; t.Cleanup will be a no-op
+```
+
+<a name="DBCount"></a>
+## func DBCount
+
+```go
+func DBCount[T any](t *testing.T, db *gorm.DB, model *T, conditions ...any) int64
+```
+
+DBCount counts records matching the given conditions. Fails the test on database error.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB with the model's table migrated.
+- model: Pointer to model struct \(used only for type, can be &Model\{\}\).
+- conditions: Optional \- pass a where string, then args. e.g., "status = ?", "active"
+
+Returns:
+
+- int64: The count of matching records.
+
+Example:
+
+```
+count := zentests.DBCount(t, db, &User{})
+s.Equal(int64(5), count)
+
+count := zentests.DBCount(t, db, &User{}, "status = ?", "active")
+```
+
+<a name="DBCreate"></a>
+## func DBCreate
+
+```go
+func DBCreate[T any](t *testing.T, db *gorm.DB, record *T) *T
+```
+
+DBCreate saves a single record to the database and returns it with any auto\-populated fields \(ID, CreatedAt, etc.\) filled in. The test is failed immediately if the insert fails.
+
+Type parameter T must be a GORM model struct; pass a pointer to an initialized value.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB with the model's table already migrated.
+- record: Pointer to the record to insert.
+
+Returns:
+
+- \*T: The same pointer, with auto\-generated fields populated by GORM.
+
+Example:
+
+```
+user := zentests.DBCreate(t, db, &User{Name: "Alice", Email: "alice@example.com"})
+
+s.NotZero(user.ID)      // ID populated after save
+s.NotZero(user.CreatedAt)
+```
+
+<a name="DBCreateN"></a>
+## func DBCreateN
+
+```go
+func DBCreateN[T any](t *testing.T, db *gorm.DB, count int, factory func(i int) T) []*T
+```
+
+DBCreateN creates count records by calling factory once per record with a 1\-based index \(1, 2, … count\). Each record is inserted and returned with auto\-populated fields. The test is failed immediately if any insert fails.
+
+The 1\-based index means you can use i directly in format strings without the i\+1 offset:
+
+```
+zentests.DBCreateN(t, db, 5, func(i int) User {
+    return User{Email: fmt.Sprintf("user%d@example.com", i)} // user1, user2, ...
+})
+```
+
+Type parameter T must be a GORM model struct \(not a pointer — the factory returns values; DBCreateN handles taking their address internally\).
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB with the model's table already migrated.
+- count: Number of records to create \(must be \> 0\).
+- factory: Function called with i = 1..count; returns an initialized T value.
+
+Returns:
+
+- \[\]\*T: Slice of inserted record pointers, each with auto\-generated fields.
+
+Example:
+
+```
+posts := zentests.DBCreateN(t, db, 3, func(i int) Post {
+    return Post{Title: fmt.Sprintf("Post %d", i), Body: "content"}
+})
+
+s.Len(posts, 3)
+s.Equal("Post 1", posts[0].Title)
+```
+
+<a name="DBDelete"></a>
+## func DBDelete
+
+```go
+func DBDelete[T any](t *testing.T, db *gorm.DB, record *T)
+```
+
+DBDelete deletes a record by ID and fails the test on error.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB with the model's table migrated.
+- record: Pointer to model struct with ID set.
+
+Example:
+
+```
+user := &User{ID: 1}
+zentests.DBDelete(t, db, user)
+```
+
+<a name="DBDeleteBy"></a>
+## func DBDeleteBy
+
+```go
+func DBDeleteBy[T any](t *testing.T, db *gorm.DB, model *T, where string, args ...any) int64
+```
+
+DBDeleteBy deletes records matching a where clause and fails the test on error.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB with the model's table migrated.
+- model: Pointer to model struct \(type used for table\).
+- where: Where clause.
+- args: Arguments for where clause.
+
+Returns:
+
+- int64: Number of records deleted.
+
+Example:
+
+```
+deleted := zentests.DBDeleteBy(t, db, &User{}, "status = ?", "deleted")
+```
+
+<a name="DBExists"></a>
+## func DBExists
+
+```go
+func DBExists[T any](t *testing.T, db *gorm.DB, model *T, conditions ...any) bool
+```
+
+DBExists asserts that at least one record matches the given conditions. Fails the test if no records are found.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB with the model's table migrated.
+- model: Pointer to model struct \(type used for table\).
+- conditions: Optional \- pass a where string, then args. e.g., "status = ?", "active"
+
+Returns:
+
+- bool: Always true if check passes.
+
+Example:
+
+```
+s.True(zentests.DBExists(t, db, &User{}))
+s.True(zentests.DBExists(t, db, &User{}, "status = ?", "active"))
+```
+
+<a name="DBFind"></a>
+## func DBFind
+
+```go
+func DBFind[T any](t *testing.T, db *gorm.DB, record *T, id any) *T
+```
+
+DBFind finds a record by ID and populates the result into the provided pointer. Fails the test if the record is not found or on database error. This is the idiomatic way to fetch a record by primary key in tests.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB with the model's table migrated.
+- record: Pointer to model struct to populate \(must be allocated\).
+- id: The primary key value to find.
+
+Returns:
+
+- \*T: The same pointer, populated with the found record.
+
+Example:
+
+```
+user := &User{}
+zentests.DBFind(t, db, user, 1)
+s.Equal("alice", user.Name)
+```
+
+<a name="DBFindBy"></a>
+## func DBFindBy
+
+```go
+func DBFindBy[T any](t *testing.T, db *gorm.DB, record *T, where string, args ...any) *T
+```
+
+DBFindBy finds a record by a specific field condition. Fails the test if exactly one record is not found or on error. Use this for non\-ID lookups \(e.g., by email, unique constraint\).
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB with the model's table migrated.
+- record: Pointer to model struct to populate.
+- where: Where clause \(e.g., "email = ?" or "name LIKE ?"\).
+- args: Arguments matching the where clause placeholders.
+
+Returns:
+
+- \*T: The same pointer, populated with the found record.
+
+Example:
+
+```
+user := &User{}
+zentests.DBFindBy(t, db, user, "email = ?", "alice@example.com")
+s.Equal("Alice", user.Name)
+```
+
+<a name="DBFirst"></a>
+## func DBFirst
+
+```go
+func DBFirst[T any](t *testing.T, db *gorm.DB, record *T) *T
+```
+
+DBFirst retrieves the first record ordered by primary key. Fails the test if no records exist or on error. Use this when you need the oldest/first record by natural order.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB with the model's table migrated.
+- record: Pointer to model struct to populate.
+
+Returns:
+
+- \*T: The same pointer, populated with the first record.
+
+Example:
+
+```
+user := &User{}
+zentests.DBFirst(t, db, user)
+s.Equal("Alice", user.Name) // first created user
+```
+
+<a name="DBLast"></a>
+## func DBLast
+
+```go
+func DBLast[T any](t *testing.T, db *gorm.DB, record *T) *T
+```
+
+DBLast retrieves the last record ordered by primary key \(descending\). Fails the test if no records exist or on error. Use this when you need the most recent record.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB with the model's table migrated.
+- record: Pointer to model struct to populate.
+
+Returns:
+
+- \*T: The same pointer, populated with the last record.
+
+Example:
+
+```
+user := &User{}
+zentests.DBLast(t, db, user)
+s.Equal("Zoe", user.Name) // most recently created
+```
+
+<a name="DBMigrate"></a>
+## func DBMigrate
+
+```go
+func DBMigrate(t *testing.T, db *gorm.DB, models ...any)
+```
+
+DBMigrate runs GORM AutoMigrate for the provided models on an existing database. Use this when you have a DB from [SetupTestDB](<#SetupTestDB>) and want to add or update tables without recreating the connection.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB connection.
+- models: One or more pointers to GORM model structs.
+
+Example:
+
+```
+db := zentests.SetupTestDB(t)
+zentests.DBMigrate(t, db, &User{}, &Post{})
+```
+
+<a name="DBNotExists"></a>
+## func DBNotExists
+
+```go
+func DBNotExists[T any](t *testing.T, db *gorm.DB, model *T, conditions ...any) bool
+```
+
+DBNotExists asserts that no records match the given conditions. Fails the test if any records are found.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB with the model's table migrated.
+- model: Pointer to model struct \(type used for table\).
+- conditions: Optional \- pass a where string, then args, e.g. "email = ?", "deleted@example.com"
+
+Returns:
+
+```
+bool: Always true if check passes.
+```
+
+Example:
+
+```
+s.True(zentests.DBNotExists(t, db, &User{}))
+s.True(zentests.DBNotExists(t, db, &User{}, "email = ?", "deleted@example.com"))
+```
+
+<a name="DBReset"></a>
+## func DBReset
+
+```go
+func DBReset(t *testing.T, db *gorm.DB)
+```
+
+DBReset deletes all rows from every table in the database and resets SQLite auto\-increment sequences, leaving the schema intact. This is faster than recreating the database and is the right tool for [testing.T.SetupTest](<https://pkg.go.dev/testing/#T.SetupTest>) hooks in suites that share a single database connection across tests.
+
+NOTE: This function is SQLite\-specific. The sequence reset step \(sqlite\_sequence\) is a no\-op on other databases but the DELETE statements will still clear data correctly on any GORM\-supported driver.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB connection.
+
+Example:
+
+```
+func (s *MySuite) SetupTest() {
+    zentests.DBReset(s.T(), s.db)
+}
+```
+
+<a name="DBSeed"></a>
+## func DBSeed
+
+```go
+func DBSeed[T any](t *testing.T, db *gorm.DB, records []*T)
+```
+
+DBSeed loads test data from a map of slices \(table \-\> records\). This is useful for populating a database with test fixtures defined inline. Each key in data should be a pointer to a model struct; the value should be a slice of pointers to already\-populated model instances.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB.
+- data: Map of model pointers to slices of populated records.
+
+Example:
+
+```
+users := []*User{
+    {Name: "Alice", Email: "alice@example.com"},
+    {Name: "Bob", Email: "bob@example.com"},
+}
+posts := []*Post{
+    {Title: "First Post", Body: "Hello world"},
+}
+zentests.DBSeed(t, db, users, posts)
+```
+
+<a name="DBSeedSlice"></a>
+## func DBSeedSlice
+
+```go
+func DBSeedSlice[T any](t *testing.T, db *gorm.DB, records []T)
+```
+
+DBSeedSlice loads test data from a slice of records. This is a convenience wrapper around DBSeed for single\-table seeding.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB.
+- records: Slice of pointers to already\-populated model instances.
+
+Example:
+
+```
+users := []*User{
+    {Name: "Alice", Email: "alice@example.com"},
+    {Name: "Bob", Email: "bob@example.com"},
+}
+zentests.DBSeedSlice(t, db, users)
+```
+
+<a name="DBTx"></a>
+## func DBTx
+
+```go
+func DBTx(t *testing.T, db *gorm.DB, fn func(tx *gorm.DB) error) error
+```
+
+DBTx executes a function within a transaction. The transaction is automatically rolled back if the function returns an error, otherwise it is committed when the function completes successfully. This is useful for testing multiple operations that should succeed or fail together.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB connection.
+- fn: Function that executes operations on a transacted \*gorm.DB.
+
+Returns:
+
+- error: Any error returned by fn, which causes rollback.
+
+Example:
+
+```
+err := zentests.DBTx(t, db, func(tx *gorm.DB) error {
+    if err := tx.Create(&user).Error; err != nil {
+        return err
+    }
+    return tx.Create(&balance).Error
+})
+s.NoError(err)
+```
+
+<a name="DBUpdate"></a>
+## func DBUpdate
+
+```go
+func DBUpdate[T any](t *testing.T, db *gorm.DB, model *T, byID any, updates map[string]any)
+```
+
+DBUpdate performs an update query and fails the test on error. Use this for simple field updates without loading the record first.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB with the model's table migrated.
+- model: Pointer to model struct \(used for table, must have ID if using byID\).
+- byID: Primary key value to identify record; use nil for where clause.
+- updates: Map of column to new value \(e.g., map\[string\]any\{"status": "inactive"\}\).
+
+Example:
+
+```
+zentests.DBUpdate(t, db, &User{}, 1, map[string]any{"status": "inactive"})
+```
+
+<a name="DBUpdateBy"></a>
+## func DBUpdateBy
+
+```go
+func DBUpdateBy[T any](t *testing.T, db *gorm.DB, model *T, where string, args []any, updates map[string]any)
+```
+
+DBUpdateBy performs an update using a where clause. Use this when you need to update records matching a non\-ID condition.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- db: An open \*gorm.DB with the model's table migrated.
+- model: Pointer to model struct.
+- where: Where clause \(e.g., "status = ?" or "id \> ?"\).
+- args: Arguments for where clause placeholders.
+- updates: Map of column to new value.
+
+Example:
+
+```
+zentests.DBUpdateBy(t, db, &User{}, "status = ?", "pending", map[string]any{"processed": true})
+```
+
+<a name="NewApp"></a>
+## func NewApp
+
+```go
+func NewApp(t *testing.T, cfg ...fiber.Config) *fiber.App
+```
+
+NewApp creates a Fiber application for testing with automatic shutdown registered via t.Cleanup, so the app is always stopped when the test finishes regardless of pass or fail. The app is created fresh on each call — no shared state between tests.
+
+An optional \[fiber.Config\] can be passed to customize the app \(views engine, app name, middleware, error handler, etc.\). When no config is supplied the app is created with Fiber's defaults, identical to fiber.New\(\).
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance; marks this as a test helper and registers cleanup.
+- cfg: Optional Fiber configuration. Only the first value is used if multiple are passed.
+
+Returns:
+
+- \*fiber.App: A fresh Fiber app ready for route registration.
+
+Example — zero config:
+
+```
+func (s *MySuite) SetupTest() {
+    s.app = zentests.NewApp(s.T())
+    s.app.Get("/ping", handler)
+}
+```
+
+Example — with views engine:
+
+```
+engine := html.New("./views", ".html")
+ // register view helpers
+
+	app := zentests.NewApp(t, fiber.Config{
+	    Views:             engine,
+	    AppName:           "MyApp",
+	    PassLocalsToViews: true,
+	})
+```
 
 <a name="SetHeader"></a>
 ## func SetHeader
@@ -155,6 +745,110 @@ Example:
 headers := zentests.SetHeader("Authorization", "Bearer token123")
 // Use with a method that accepts headers parameter
 ```
+
+<a name="SetupTestDB"></a>
+## func SetupTestDB
+
+```go
+func SetupTestDB(t *testing.T) *gorm.DB
+```
+
+SetupTestDB opens a fresh in\-memory SQLite database configured for testing. The database uses silent logging to suppress GORM output during tests, and local time for all timestamp operations.
+
+The connection is automatically closed when the test finishes via [testing.T.Cleanup](<https://pkg.go.dev/testing/#T.Cleanup>), so no explicit teardown is required in the common case. Use [CloseTestDB](<#CloseTestDB>) only when you need to close the connection before the test ends \(e.g. to test reconnect behavior\).
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance; marks this as a test helper and registers cleanup.
+
+Returns:
+
+- \*gorm.DB: A connected, empty database. No tables are created — use [SetupTestDBWithModels](<#SetupTestDBWithModels>) or [DBMigrate](<#DBMigrate>) to add schema.
+
+Example:
+
+```
+db := zentests.SetupTestDB(t)
+// db is connected; no tables yet
+zentests.DBMigrate(t, db, &Post{})
+```
+
+<a name="SetupTestDBWithModels"></a>
+## func SetupTestDBWithModels
+
+```go
+func SetupTestDBWithModels(t *testing.T, models ...any) *gorm.DB
+```
+
+SetupTestDBWithModels opens an in\-memory SQLite database and runs AutoMigrate for every provided model in a single call. This is the most common entry point for database tests — it replaces the three\-line open/migrate/check sequence with one line.
+
+Parameters:
+
+- t: The [testing.T](<https://pkg.go.dev/testing/#T>) instance.
+- models: One or more pointers to GORM model structs \(e.g. &User\{\}, &Post\{\}\).
+
+Returns:
+
+- \*gorm.DB: A connected database with the requested tables created.
+
+Example — suite\-level setup, data reset between tests:
+
+```
+func (s *MySuite) SetupSuite() {
+    s.db = zentests.SetupTestDBWithModels(s.T(), &User{}, &Post{})
+}
+
+func (s *MySuite) SetupTest() {
+    zentests.DBReset(s.T(), s.db)
+}
+```
+
+<a name="DefaultLogger"></a>
+## type DefaultLogger
+
+DefaultLogger is a production\-ready [Logger](<#Logger>) implementation backed by the standard library's log package. All output is written to stderr with level prefixes: "DEBUG: ", "WARN: ", or "FATAL: ".
+
+Fatalf calls [os.Exit](<https://pkg.go.dev/os/#Exit>)\(1\) after logging. The exit behaviour can be overridden via the unexported exitFn field, which is only used in tests for the DefaultLogger itself.
+
+Example:
+
+```
+var log zentests.Logger = zentests.DefaultLogger{}
+log.Warnf("retrying in %d seconds", 5)
+```
+
+```go
+type DefaultLogger struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="DefaultLogger.Debugf"></a>
+### func \(DefaultLogger\) Debugf
+
+```go
+func (l DefaultLogger) Debugf(format string, v ...any)
+```
+
+Debugf logs a formatted debug message prefixed with "DEBUG: ".
+
+<a name="DefaultLogger.Fatalf"></a>
+### func \(DefaultLogger\) Fatalf
+
+```go
+func (l DefaultLogger) Fatalf(format string, v ...any)
+```
+
+Fatalf logs a formatted fatal message prefixed with "FATAL: " then exits with code 1. NOTE: uses Printf internally \(not [log.Fatalf](<https://pkg.go.dev/log/#Fatalf>)\) so the exit is handled by exitFn, making it safe to test without actually terminating the process.
+
+<a name="DefaultLogger.Warnf"></a>
+### func \(DefaultLogger\) Warnf
+
+```go
+func (l DefaultLogger) Warnf(format string, v ...any)
+```
+
+Warnf logs a formatted warning message prefixed with "WARN: ".
 
 <a name="FileUpload"></a>
 ## type FileUpload
@@ -386,6 +1080,105 @@ Example:
 jar := zentests.NewJar(t, app)
 jar.WithBearer(token)
 ```
+
+<a name="Logger"></a>
+## type Logger
+
+Logger defines the minimal logging interface for use with zentests\-compatible packages. It allows the host application to inject a logger for debug messages, warnings, and fatal errors. Implement this interface in your own code, then inject a [MockLogger](<#MockLogger>) in tests to capture and assert on log output without any side effects.
+
+Example — production code:
+
+```
+type MyService struct {
+    log zentests.Logger
+}
+```
+
+Example — test code:
+
+```
+ml := &zentests.MockLogger{}
+svc := MyService{log: ml}
+svc.DoSomething()
+s.True(ml.WarnCalled)
+```
+
+```go
+type Logger interface {
+    // Debugf logs a formatted debug message.
+    Debugf(format string, v ...any)
+
+    // Warnf logs a formatted warning message (non-fatal).
+    Warnf(format string, v ...any)
+
+    // Fatalf logs a formatted fatal error message and terminates the process.
+    Fatalf(format string, v ...any)
+}
+```
+
+<a name="MockLogger"></a>
+## type MockLogger
+
+MockLogger is an exported test double that implements [Logger](<#Logger>) by capturing all log calls without any side effects. Inject \*MockLogger into code\-under\-test, then inspect the exported fields in assertions.
+
+Example:
+
+```
+func (s *MySuite) Test_Warns_On_Missing_Config() {
+    ml := &zentests.MockLogger{}
+    svc := NewMyService(ml)
+    svc.Start() // triggers Warnf internally
+    s.True(ml.WarnCalled)
+    s.Equal("config not found", ml.WarnMsg)
+}
+```
+
+All three methods \(Debugf, Warnf, Fatalf\) set their respective \*Called and \*Msg fields. Fatalf does NOT call [os.Exit](<https://pkg.go.dev/os/#Exit>) — safe to use in tests.
+
+```go
+type MockLogger struct {
+    // DebugCalled is true if Debugf was called at least once.
+    DebugCalled bool
+    // WarnCalled is true if Warnf was called at least once.
+    WarnCalled bool
+    // FatalCalled is true if Fatalf was called at least once.
+    FatalCalled bool
+
+    // DebugMsg holds the last formatted message passed to Debugf.
+    DebugMsg string
+    // WarnMsg holds the last formatted message passed to Warnf.
+    WarnMsg string
+    // FatalMsg holds the last formatted message passed to Fatalf.
+    FatalMsg string
+}
+```
+
+<a name="MockLogger.Debugf"></a>
+### func \(\*MockLogger\) Debugf
+
+```go
+func (m *MockLogger) Debugf(format string, v ...any)
+```
+
+Debugf records the call and formatted message. Does not produce any output.
+
+<a name="MockLogger.Fatalf"></a>
+### func \(\*MockLogger\) Fatalf
+
+```go
+func (m *MockLogger) Fatalf(format string, v ...any)
+```
+
+Fatalf records the call and formatted message. Does NOT call [os.Exit](<https://pkg.go.dev/os/#Exit>) — safe in tests.
+
+<a name="MockLogger.Warnf"></a>
+### func \(\*MockLogger\) Warnf
+
+```go
+func (m *MockLogger) Warnf(format string, v ...any)
+```
+
+Warnf records the call and formatted message. Does not produce any output.
 
 <a name="Response"></a>
 ## type Response
@@ -2187,6 +2980,64 @@ Example:
 zt.GetWithConfig(app, "/slow-endpoint", fiber.TestConfig{
     Timeout: 5 * time.Second,
 }).OK()
+```
+
+<a name="T.HasRoute"></a>
+### func \(\*T\) HasRoute
+
+```go
+func (zt *T) HasRoute(method, path string, app *fiber.App, msgAndArgs ...any) *T
+```
+
+HasRoute asserts that a route with the given HTTP method and path is registered in the Fiber app. The method is case\-insensitive. Returns the receiver for chaining.
+
+This is useful in tests that verify route registration without making an actual HTTP request — for example, when testing that a router setup function wires up all expected endpoints.
+
+Parameters:
+
+- method: HTTP method to check \(e.g. "GET", "POST"\); case\-insensitive
+- path: The exact route path as registered \(e.g. "/users/:id"\)
+- app: The Fiber application to inspect
+- msgAndArgs: Optional failure message and format arguments \(testify\-style\)
+
+Returns:
+
+- \*T: The receiver for method chaining
+
+Example:
+
+```
+zt := zentests.New(t)
+zt.HasRoute("GET", "/users", app, "user list route must be registered")
+zt.HasRoute("POST", "/users", app).
+    HasRoute("DELETE", "/users/:id", app)
+```
+
+<a name="T.NotHasRoute"></a>
+### func \(\*T\) NotHasRoute
+
+```go
+func (zt *T) NotHasRoute(method, path string, app *fiber.App, msgAndArgs ...any) *T
+```
+
+NotHasRoute asserts that no route with the given HTTP method and path is registered in the Fiber app. The complement of HasRoute. Returns the receiver for chaining.
+
+Parameters:
+
+- method: HTTP method to check; case\-insensitive
+- path: The route path to verify is absent
+- app: The Fiber application to inspect
+- msgAndArgs: Optional failure message and format arguments
+
+Returns:
+
+- \*T: The receiver for method chaining
+
+Example:
+
+```
+zt.NotHasRoute("DELETE", "/users", app, "bulk delete must not be exposed").
+    NotHasRoute("PATCH", "/users", app)
 ```
 
 <a name="T.Patch"></a>
