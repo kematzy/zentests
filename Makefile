@@ -10,6 +10,8 @@ VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
 COVERAGE_MIN ?= 95
 # Coverage profile written by coverage-profile and read by the coverage targets
 COVERAGE_PROFILE := .code-status/coverage.out
+# HTML coverage report written by test-coverage (kept out of the repo, see .gitignore)
+COVERAGE_REPORT := .code-status/coverage.html
 # Get the current commit hash
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 # Set the date for
@@ -137,12 +139,9 @@ coverage-profile:
 	@gotest -coverprofile=$(COVERAGE_PROFILE) ./...
 
 ## test-coverage: Run tests and generate coverage report
-test-coverage:
-	@mkdir -p .code-status
-	@echo ""
-	@gotest -coverprofile=$(COVERAGE_PROFILE) ./...
-	@go-better-html-coverage -profile $(COVERAGE_PROFILE) -o code-coverage.html
-	@echo -e "\n\033[32mCoverage report generated: code-coverage.html \033[0m\n"
+test-coverage: coverage-profile
+	@go-better-html-coverage -profile $(COVERAGE_PROFILE) -o $(COVERAGE_REPORT)
+	@echo -e "\n\033[32mCoverage report generated: $(COVERAGE_REPORT) \033[0m\n"
 	@#
 	@# depends upon: go install github.com/chmouel/go-better-html-coverage@latest
 
@@ -249,5 +248,5 @@ docs-md:
 ## clean: Clean build artifacts
 clean:
 	@echo -e "\033[2mCleaning... \033[0m"
-	@rm -f coverage.out $(COVERAGE_PROFILE)
+	@rm -f $(COVERAGE_PROFILE) $(COVERAGE_REPORT)
 	@echo -e "\033[32mDone! \033[0m"
