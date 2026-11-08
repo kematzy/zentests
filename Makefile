@@ -165,10 +165,17 @@ release: check changelog
 	@echo ""
 	@echo -e "Starting release: \033[32m${VERSION}\033[0m"
 	@echo ""
+	# Commit the generated CHANGELOG before tagging, but only when it changed,
+	# so the tag contains the changelog for its own version.
+	@git add CHANGELOG.md
+	@git diff --cached --quiet || git commit -m "docs(changelog): update CHANGELOG for ${VERSION}"
+	# Create annotated tag
 	@git tag -a ${VERSION} -m "Release ${VERSION}"
+	# Push tags first (triggers the release CI), then the commits
 	@git remote | xargs -I% git push % ${VERSION}
+	@git remote | xargs -I% git push %
 	@echo ""
-	@echo -e "\033[32mTag - ${VERSION} - pushed to remote(s) & published.\033[0m"
+	@echo -e "\033[32mRelease ${VERSION} committed and pushed.\033[0m"
 	@echo ""
 	@echo "To install:"
 	@echo "  go get $(REPO)@${VERSION}"
