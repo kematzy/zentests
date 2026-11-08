@@ -1,365 +1,523 @@
 # zentests
 
-Readable Go tests without magic. Inspired by RSpec/Pest
+Readable Go tests without magic. Inspired by Pest and RSpec.
 
-`zentests` provides fluent, chainable HTTP testing for [Fiber](https://gofiber.io/) applications with RSpec-style syntax.
+`zentests` provides chainable HTTP assertions and GORM database test helpers for
+[Fiber](https://gofiber.io/) v3.x apps.
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/kematzy/zentests.svg)](https://pkg.go.dev/github.com/kematzy/zentests)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kematzy/zentests)](https://goreportcard.com/report/github.com/kematzy/zentests)
-[![GoDoc](https://godoc.org/github.com/kematzy/zentests?status.svg)](https://godoc.org/github.com/kematzy/zentests)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Contents
-
-[Why](#why-zentests) · [Installation](#installation) · [Quick Start](#quick-start) ·
-[Features](#features) · [Cookie Jar](#cookie-jar) · [testify/suite](#using-with-testifysuite) ·
-[API reference](docs/API.md) · [Examples](#examples) · [Contributing](CONTRIBUTING.md)
+> **Status:** v0.3.x — API may still change.
 
 ## Why `zentests`?
 
-- **No magic**: Standard Go testing, no reflection tricks
-- **Type safe**: Strict assertions catch bugs early
-- **Fiber-native**: Built for Fiber, not adapted from net/http
-- **Chainable**: Readable, expressive test code
-- **Familiar**: RSpec/Pest-inspired syntax
-- **Well-tested**: coverage gated at 95% in CI
+- **No magic**: standard Go testing, no reflection tricks, no DSL or code generation
+- **Chainable**: test assertions read easily — `zt.Get(app, "/api/v1/users").OK().IsJSON()`
+- **Type safe**: strict assertions catch mistakes early instead of passing quietly
+- **Fiber-native**: requests run through the real router and middleware — no listener, no port
+- **GORM-focused**: built-in in-memory database setup, seeding and record helpers
+- **Well-tested**: coverage gated at 95% in CI on every push
 
-### Why only Fiber support?
+### How it compares
 
-Simple. I'm using Fiber for my projects and created these tests to make working on my projects faster.
+Code speaks louder than words. Below is the same test — status, content type and one JSON field —
+for a Fiber app with a `GET /api/v1/healthz` route that returns `{"status": "it works"}`.
 
-You are welcome to create a version with support for your preferred routing package.
+**Testing with `net/http` & `encoding/json`**
 
-<br>
+```go
+req := httptest.NewRequest(http.MethodGet, "/api/v1/healthz", nil)
+resp, err := app.Test(req)
+if err != nil {
+	t.Fatalf("request failed: %v", err)
+}
+defer resp.Body.Close()
+
+if resp.StatusCode != http.StatusOK {
+	t.Fatalf("status: got %d, want %d", resp.StatusCode, http.StatusOK)
+}
+
+if ct := resp.Header.Get("Content-Type"); !strings.Contains(ct, "application/json") {
+	t.Fatalf("content-type: got %q, want application/json", ct)
+}
+
+// NOTE! 13 lines abbreviated - see `docs/comparison` link below for full version.
+```
+
+**Testing with `testify` & `httptest`**
+
+```go
+req := httptest.NewRequest(http.MethodGet, "/api/v1/healthz", nil)
+resp, err := app.Test(req)
+require.NoError(t, err)
+defer resp.Body.Close()
+
+assert.Equal(t, http.StatusOK, resp.StatusCode)
+assert.Contains(t, resp.Header.Get("Content-Type"), "application/json")
+
+var payload map[string]any
+require.NoError(t, json.NewDecoder(resp.Body).Decode(&payload))
+assert.Equal(t, "it works", payload["status"])
+```
+
+**Testing with `zentests`**
+
+```go
+zt := zentests.New(t) // t *testing.T
+
+zt.Get(app, "/api/v1/healthz").OK().IsJSON().Has("status", "it works")
+```
+
+Yes, just two efficient lines of code. **That's the essence of the `zentests` way!**
+
+More: [docs/comparison](docs/comparison.md)
+
+### Why only Fiber & GORM?
+
+I created these test assertions and helpers for my projects where I use Fiber and GORM.
+
+---
+
+<details open>
+  <summary><h2>Contents</h2></summary>
+
+1. [Installation](#installation)
+2. [Quick Start](#quick-start)
+3. [Features](#features)
+    - [Request Helper Methods](#request-helper-methods)
+    - [Status Assertions](#status-assertions)
+    - [Headers Assertions](#headers-assertions)
+    - [HTML Body Assertions](#html-body-assertions)
+    - [JSON Body Assertions](#json-body-assertions)
+    - [GORM Database Assertions](#gorm-database-assertions)
+    - [Request Cookie Jars](#request-cookie-jars)
+    - [Cookie Assertions](#cookie-assertions)
+    - [App & Logger Helpers](#app-and-logger-helpers)
+4. [Testing Styles](#testing-styles)
+5. [Examples, Contributing & Credits](#examples)
+
+</details>
+
+---
 
 ## Installation
+
+`zentests` is a test-only dependency: import it from `*_test.go` files and nothing is linked into
+your compiled binary.
 
 ```bash
 go get github.com/kematzy/zentests
 ```
 
-**Requirements:**
-- Go 1.25 or higher
-- [Fiber](https://github.com/gofiber/fiber) v3.x
+**Dependencies**: Fiber, `testify`, GORM and their own transitive modules — nothing else.
 
+While the API is still `v0.x`, it is suggested to pin the version explicitly:
 
-<br>
+```bash
+go get github.com/kematzy/zentests@v0.3.0
+```
+
+### Requirements
+
+- Go `1.25.5` or newer — the `go` directive in `go.mod`; older toolchains refuse the module.
+- Fiber `v3.1` or newer — `github.com/gofiber/fiber/v3`.
+- GORM `v1.31+`
+    - a `C` compiler and `CGO_ENABLED=1` — only for the database helpers.
+    - `gorm.io/driver/sqlite` links `mattn/go-sqlite3`, so the DB helpers need `gcc` (or
+      `MSYS2/mingw` on Windows).
+    - The HTTP assertions build fine with `CGO_ENABLED=0`.
+
+More: [docs/database](docs/database/README.md)
+
+### Compatibility
+
+- Tested on Go `v1.25`, `v1.26` and `v1.27` (the CI matrix) against Fiber `v3.1+`; master tracks
+  Fiber v3.
+- Every push runs an equivalent gate in CI: `gofmt`, `go vet`, `goimports`, `golangci-lint`, the
+  suite with `-race`, and a **95% coverage gate**. `make check` runs the same locally, plus the
+  spell checker.
+- Releases are tagged and summarized in `CHANGELOG.md`.
+
+<br />
+
+---
 
 ## Quick Start
 
+Getting started with `zentests` is a matter of deciding your overall preferred testing style,
+[flat](examples/example-01.md), [BDD](examples/example-02.md) or
+[`testify/suite`](examples/example-03.md).
+
+Either way, you need to import `zentests` with `import "github.com/kematzy/zentests"` and then
+instantiate it:
+
+### Flat style
+
 ```go
-package myapp_test
+import "github.com/kematzy/zentests"
 
-import (
-    "testing"
-    "github.com/gofiber/fiber/v3"
-    "github.com/kematzy/zentests"
-)
+func Test_APIv1_Route_Get_Healthz(t *testing.T) {
+	// declared in each test method
+	app := fiber.New()            // load your actual Fiber app
+	zt := zentests.New(t)
 
-func TestAPI(t *testing.T) {
-    zt := zentests.New(t)
-    app := fiber.New()
-    
-    // Your routes here...
-    // Note: Fiber v3 uses fiber.Ctx (interface), not *fiber.Ctx (pointer)
-    app.Get("/api/health", func(c fiber.Ctx) error {
-        return c.JSON(fiber.Map{"status": "ok"})
-    })
-    
-    // Fluent, chainable assertions
-    zt.Get(app, "/api/health").
-        OK().
-        IsJSON().
-        Has("status", "ok")
+	// perform the tests
+	zt.Get(app, "/api/v1/healthz").OK()
 }
-
 ```
 
-## Code Quality & Coverage
+Working code: [examples/01-flat-style](examples/example-01.md) <br />More:
+[docs/testing/flat](docs/testing/flat.md)
 
-`make check` gates formatting, vet, lint, spelling and test coverage (minimum 95%) in one
-command. The [coverage report](code-coverage.html) is regenerated with `make test-coverage`,
-and every function is documented with examples in [docs/API.md](docs/API.md).
+### `testify/suite` style
 
-<br>
+```go
+// create suite struct
+type HealthSuite struct {
+	suite.Suite
+	app *fiber.App
+	zt  *zentests.T
+}
 
-## Examples
+// SetupSuite - runs once before the suite.
+func (s *HealthSuite) SetupSuite() {
+	s.app = fiber.New()           // load your actual Fiber app
+	s.zt = zentests.New(s.T())
+}
 
-Runnable examples live in [`examples/`](./examples/):
+// TestAPIv1RouteGetHealthz - tests the route.
+func (s *HealthSuite) TestAPIv1RouteGetHealthz() {
+	s.zt.Get(s.app, "/api/v1/healthz").OK()
+}
 
-- [flat_style.go](./examples/flat_style.go) — simple, flat-style testing without suites
-- [routes.go](./examples/routes.go) — JSON assertions with dot notation for nested data
-- [suite.go](./examples/suite.go) — BDD style with `Describe`/`It` and lifecycle hooks
+// TestHealthSuite - runs the test suite.
+func TestHealthSuite(t *testing.T) { suite.Run(t, new(HealthSuite)) }
+```
+
+Working code: [examples/03-testify-suite](examples/example-03.md) <br />More:
+[docs/testing/testify-suite](docs/testing/testify-suite.md)
+
+<br />
+<br />
+
+---
 
 ## Features
 
-Full reference for every method, with examples: [docs/API.md](docs/API.md).
+`zentests` provides a wide variety of useful test assertions, application and database helpers to
+test most common scenarios.
 
-### HTTP Methods
+Each area below provides a brief overview with a link to further detailed information.
 
-All methods accept `*fiber.App` and `path`, return `*Response` for chaining:
+### Request Helper Methods
 
-| Method | Description |
-|--------|-------------|
-| `Get(app, path)` | GET request  |
-| `Post(app, path, body)` | POST with raw body  |
-| `PostJSON(app, path, data)` | POST with JSON body  |
-| `PostForm(app, path, data)` | POST with form data  |
-| `Put(app, path, body)` | PUT request  |
-| `PutJSON(app, path, data)` | PUT with JSON  |
-| `Patch(app, path, body)` | PATCH request  |
-| `PatchJSON(app, path, data)` | PATCH with JSON  |
-| `Delete(app, path)` | DELETE request  |
-| `DeleteJSON(app, path, data)` | DELETE with JSON body  |
-| `PostMultipart(app, path, fields, files)` | POST with multipart form data and files  |
-| `GetQuery(app, path, url.Values)` | GET with encoded query parameters  |
+Checking your app's routes should be obvious and as simple as `Get(app, "/")`, or
+`PostJSON(app, "/login", data)`, or as flexible as `PutJSONWithConfig(app, path, data, cfg)` when a
+route requires special configs.
 
-### HTTP Methods with TestConfig (Fiber v3+)
-
-Every request method has a `*WithConfig` twin (`GetWithConfig`, `PostJSONWithConfig`, ...)
-that takes a `fiber.TestConfig`:
-#### TestConfig Usage
+One call and one chain — no request builder, no `httptest`, no body to read or close:
 
 ```go
-zt.GetWithConfig(app, "/slow-endpoint", fiber.TestConfig{
-    Timeout: 10 * time.Second,
-}).OK()
+// testing that a GET route returns status 200 and JSON
+zt.Get(app, "/api/v1/users").OK().IsJSON()
+
+// testing that a POST route successfully returns an expected token
+data := map[string]any{"email": "joe@example.com", "password": "secret"}
+zt.PostJSON(app, "/api/v1/login", data).OK().HasKey("token")
+
+// testing that a POST route returns status 200 after submitting a form
+zt.PostForm(app, "/api/v1/contact", map[string]string{"subject": "Hi"}).OK()
+
+// testing that a GET route with a query string returns status 200
+zt.GetQuery(app, "/api/v1/search", url.Values{"q": {"fiber"}}).OK()
 ```
 
-#### TestConfig Options
+`GetQuery` and `PostMultipart` cover query strings and uploads, and every verb method has a
+`*WithConfig` twin.
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `Timeout` | `time.Duration` | `1s` | Request timeout duration |
-| `FailOnTimeout` | `bool` | `true` | Return error on timeout (true) or partial response (false) |
+More: [docs/requests](docs/requests/README.md)
 
-A zero-value `fiber.TestConfig{}` uses the defaults above. The plain methods (`Get`, `PostJSON`, ...) use it.
-
-Set `ZENTESTS_TIMEOUT=5s` (any Go duration) to raise the default for a whole run, for
-example `ZENTESTS_TIMEOUT=5s make test`. An invalid value panics at startup instead of
-being silently ignored.
-
-
-### Default Headers
-
-Headers set on `T` (or on a `Jar`) are sent with every request. A header belonging to a
-single request, such as `PostJSON`'s `Content-Type`, wins over a default with the same name.
-
-```go
-zt := zentests.New(t).SetHeader("Accept", "application/json")
-zt.Get(app, "/users").OK()            // sends Accept: application/json
-zt.WithBearer(token)                   // sends Authorization: Bearer <token>
-zt.Get(app, "/account").OK()          // sends Authorization: Bearer <token>
-
-jar := zentests.NewJar(t, app)
-jar.SetHeader("X-Api-Key", "key")      // same behavior on the jar
-```
-
+---
 
 ### Status Assertions
 
+Use simple status names, like `OK()`, `NotFound()` instead of `Status(404)`, or just
+`IsServerError()` when the range is more important. `zentests` provides assertions for all common
+status codes.
+
 ```go
-resp.OK()              // 200
-resp.Created()         // 201
-resp.Accepted()        // 202
-resp.NoContent()       // 204
-resp.BadRequest()      // 400
-resp.Unauthorized()    // 401
-resp.Forbidden()       // 403
-resp.NotFound()        // 404
-resp.Unprocessable()   // 422
-resp.ServerError()     // 500
-resp.Status(code)      // Custom status
-resp.StatusIn(200, 204) // One of several statuses
-resp.IsSuccess()       // Any 2xx
-resp.IsClientError()   // Any 4xx
-resp.IsServerError()   // Any 5xx
-resp.IsRedirect()      // 301, 302, 303, 307 or 308
-resp.RedirectsTo("/dashboard") // Redirect + exact Location
+// named statuses read as assertions
+zt.Get(app, "/").OK()                             // == Status(200)
+zt.Get(app, "/does/not/exist").NotFound()         // == Status(404)
+zt.Get(app, "/admin/dashboard").Forbidden()       // == Status(403)
+zt.PostJSON(app, "/api/v1/users", data).Created() // == Status(201)
+
+// classes, when the exact code is not the point
+zt.Get(app, "/api/v1/search").IsSuccess()         // 2xx range
+zt.Get(app, "/api/v1/report").IsServerError()     // 5xx range
+zt.Get(app, "/api/v1/users/1").StatusIn(200, 204)
 ```
 
-### Header Assertions
+More: [docs/assertions/status](docs/assertions/status.md)
+
+---
+
+### Headers Assertions
+
+Save time and improve clarity with assertions like `IsJSON()` instead of
+`HeaderContains("Content-Type", "application/json")`, or easily handle complex headers with
+`HeaderHasValues("X-Custom", values)`.
 
 ```go
-resp.HasHeader("X-Custom", "value")                                     // Exact match
-resp.HeaderContains("X-Rate", "limit")                                  // Substring match
-resp.HeaderPresent("X-Auth-Token")                                      // Header exists
-resp.HeaderNotPresent("X-Auth-Token")                                   // Header does not exist
-resp.HeaderHasValues("X-Features", []string{"audio", "video"})          // Header has multiple values
-resp.CookieHasValues(map[string]string{"lang": "en", "theme": "dark"})  // Set-Cookie header test
-resp.HasCookie("session")                                               // Response set the cookie
-resp.CookieNotPresent("session")                                        // Response did not set it
-resp.Cookie("session")                                                  // *http.Cookie, for attributes
-
-// Content-Type Helpers
-resp.HasContentType("text/html; charset=utf-8")                         // Checks Content-Type value
-
-// Content-Type Shortcuts
-resp.IsJSON()                                                           // Content-Type: application/json
-resp.IsHTML()                                                           // Content-Type: text/html
-resp.IsPlainText()                                                      // Content-Type: text/plain
-resp.IsCSS()                                                            // Content-Type: text/css
-resp.IsJS()                                                             // Content-Type: (application|text)/javascript
-resp.IsXML()                                                            // Content-Type: (application|text)/xml
-resp.IsImage()                                                          // Content-Type: image/*
-resp.IsPNG()                                                            // Content-Type: image/png
-resp.IsJPEG()                                                           // Content-Type: image/jpeg
-resp.IsGIF()                                                            // Content-Type: image/gif
-resp.IsSVG()                                                            // Content-Type: image/svg+xml
-resp.IsWebP()                                                           // Content-Type: image/webp
-
-// AJAX Detection:
-resp.IsXHR()  // checks for "XMLHttpRequest" in X-Requested-With header
+// check for the exact header value
+zt.Get(app, "/").HasHeader("X-Served-By", "api-1")
+// check for presence
+zt.Get(app, "/api/v1/users").HeaderPresent("X-Request-Id")
+// ensure absent: a one-line security check
+zt.Get(app, "/api/v1/users").HeaderNotPresent("X-Powered-By")
+// check header for multiple values
+zt.Get(app, "/api/v1/users").HeaderHasValues("X-Features", []string{"audio", "video"})
 ```
 
-### Body Assertions
+Content-type shortcuts: [docs/assertions/content-types](docs/assertions/content-types.md)
+<br />More: [docs/assertions/headers](docs/assertions/headers.md)
+
+---
+
+### HTML Body Assertions
+
+Easily assert returned HTML `Contains("some words")` or `NotContains("other words")`, you can even
+use regexp with `BodyMatches(regexp)` to assert that content is present.
+
+You can even process the response yourself with the `Body()` or `BodyString()` methods.
 
 ```go
-resp.Contains("substring")             // Body contains text
-resp.NotContains("substring")          // Body excludes text
-resp.BodyMatches(`regex\d+`)           // Regex match
-resp.Equals("exact body")              // Exact match
-resp.IsEmpty()                         // Body is empty
-
+zt.Get(app, "/").OK().Contains("Welcome back")
+zt.Get(app, "/checkout").OK().NotContains("Your cart is empty")
+// use regexp, when the contents might change
+zt.Get(app, "/contact").OK().BodyMatches(`Email: \S+@\S+`)
+zt.Get(app, "/robots.txt").OK().Equals("User-agent: *")
+zt.Get(app, "/blank").OK().IsEmpty()
 ```
 
-### JSON Assertions
+More: [docs/assertions/body-html](docs/assertions/body-html.md)
 
-Dot notation for nested keys: `user.profile.name`
+---
+
+### JSON Body Assertions
+
+Asserting JSON APIs made easy with `HasKey("user.name")`, or find exact matches with
+`Has("user.name", "John")` or match just a subset of values with
+`JSONHasValues(map[string]any{"user.name": "John"})`.
+
+Dot-notation path support makes testing deep keys easy without structs.
 
 ```go
-resp.JSON()                            // Parse & cache JSON
-resp.HasKey("user.name")               // Key exists
-resp.Has("user.name", "John")          // Exact match (any numeric type matches a JSON number)
-resp.HasString("user.name", "John")    // String value
-resp.HasInt("user.age", 30)            // Integer value (handles JSON float64)
-resp.HasFloat("user.score", 9.5)       // Float value
-resp.HasBool("user.active", true)      // Boolean value
-resp.MatchesRegex("user.email", `[\w\.]+@`) // Regex match
-resp.IsNull("user.deleted_at")         // Null check
-resp.IsNotNull("user.id")              // Not null check
-resp.JSONHasValues(map[string]any{     // Subset check: other keys are ignored
-    "user.name": "John",
+zt.Get(app, "/api/v1/users/1").JSON(). // parse once, cached on the response
+	HasKey("user.name").                 // key exists
+	HasString("user.name", "John").      // and holds a string
+	HasInt("user.age", 42).              // typed: no float64 surprise
+	ArrayContains("user.roles", "admin")
+
+// nested objects and arrays, addressed by path
+zt.Get(app, "/api/v1/users").Has("users.0.address.city", "Berlin")
+
+// subset check: only the keys you name are compared
+zt.Get(app, "/api/v1/users/1").JSONHasValues(map[string]any{
+	"user.name":   "John",
+	"user.active": true,
 })
-resp.ArrayLength("items", 3)           // Array length
-resp.ArrayContains("roles", "admin")   // Array holds the element
-resp.ArrayEmpty("roles")               // Array has no elements
-resp.Bind(&user)                       // Decode body into a struct
 
+// or bypass paths entirely and decode into your own type
+var user User
+zt.Get(app, "/api/v1/users/1").OK().Bind(&user)
 ```
 
-### Cookie Jar
+More: [docs/assertions/json](docs/assertions/body-json.md)
 
-`NewJar` sends requests to one app and keeps the cookies it sets, the way a browser does.
-Use it for flows that span several requests, such as login, CSRF and session tests. Every
-request returns a `*Response`, so the usual assertions compose with jar requests.
+---
+
+### GORM Database Assertions
+
+Conveniently `SetupTestDB()`, `DBMigrate()`, `DBSeed()` and `DBReset()` test databases and assert
+you can create `DBCreate()`, read `DBFind()`, update `DBUpdate()` or delete `DBDelete()` records.
+
+A real test database, gone when the test ends: one line opens in-memory SQLite, migrates your models
+and closes itself. No fixture files, no cleanup, nothing leaking into the next test.
+
+```go
+db := zentests.SetupTestDBWithModels(t, &User{}, &Post{}) // :memory:, AutoMigrate, auto-close
+
+user := zentests.DBCreate(t, db, &User{Name: "Jane", Email: "jane@example.com"})
+zentests.DBExists(t, db, &User{}, "email = ?", "jane@example.com")
+
+found := zentests.DBFind(t, db, &User{}, user.ID)
+zentests.DBUpdate(t, db, found, found.ID, map[string]any{"name": "Janet"})
+zentests.DBCount(t, db, &User{}) // 1
+```
+
+Note, uses GORM's SQLite driver so it requires CGO and a C compiler.
+
+More: [docs/database](docs/database/README.md)
+
+---
+
+### Request Cookie Jars
+
+Easily test session flows with `NewJar(t, app)`: cookies set by one response are sent with the next,
+and forgotten the moment the app deletes them.
 
 ```go
 jar := zentests.NewJar(t, app)
-csrf := jar.Get("/login").OK().BodyString()          // app sets session cookie here
-jar.PostForm("/login", url.Values{"csrf": {csrf}, "user": {"jane"}}).Status(302)
-jar.PostMultipart("/upload", nil, []zentests.FileUpload{
-    {Name: "file", Filename: "a.txt", Content: []byte("hello")},
-}).OK()
-if jar.Cookie("session") == "" { t.Fatal("no session") }
-jar.Get("/settings").OK().Contains("Welcome Jane")
+
+// log in once: the session cookie is stored
+jar.PostForm("/login", url.Values{"email": {"jane@example.com"}, "password": {"secret"}}).
+	OK().
+	HasCookie("session")
+
+// later requests are authenticated without ever mentioning the cookie
+jar.Get("/api/v1/me").OK().HasString("user.name", "Jane")
+
+// log out, and the same request is refused
+jar.Get("/logout").OK()
+jar.Get("/api/v1/me").Unauthorized()
 ```
 
-- `jar.Get(path)`, `jar.PostForm(path, url.Values)` and `jar.Send(req)` for a caller-built request
-- `jar.Cookie(name)` returns the stored value, or `""` when absent
-- `resp.Cookie(name)` returns the `*http.Cookie` the response set, so you can check `HttpOnly`,
-  `Path`, `Secure` and `SameSite`. It fails the test when the cookie is absent
+The jar is deliberately flat: no path, domain or expiry matching, so every stored cookie is sent to
+every request. `jar.Cookie("session")` returns the raw value when you need it.
 
-A cookie is forgotten when a response sets it with `MaxAge < 0` or an empty value. Fiber's
-`c.ClearCookie` sends an empty value. The jar is deliberately flat, with no `Path`, `Domain` or
-`Expires` matching: every stored cookie is sent to every request on the app.
+More: [docs/requests/cookie-jars](docs/requests/cookie-jars.md)
 
-### BDD Style with Describe/It
+---
+
+### Cookie Assertions
+
+Assert that your cookies are present with `HasCookie("session")`, or removed with
+`CookieNotPresent("old_session")` and even if they contain multiple values with
+`CookieHasValues(values)`.
 
 ```go
-zt := zentests.New(t)
+// one response, several cookie checks
+zt.PostJSON(app, "/api/v1/login", data).OK().
+	HasCookie("session").
+	CookieNotPresent("old_session")
 
-zt.Describe("User API", func(ctx *zentests.SuiteContext) {
-    var app *fiber.App
-
-    ctx.BeforeEach(func(zt *zentests.T) {
-        app = fiber.New()
-        SetupRoutes(app)
-    }).AfterEach(func(zt *zentests.T) {
-        app.Shutdown()
-    })
-
-    ctx.It("lists users", func(zt *zentests.T) {
-        zt.Get(app, "/users").OK().IsJSON().ArrayLength("data", 2)
-    })
+zt.Get(app, "/settings").OK().CookieHasValues(map[string]string{
+	"lang":  "en",
+	"theme": "dark",
 })
+
+// test the cookie attributes
+session := zt.PostJSON(app, "/api/v1/login", data).OK().Cookie("session")
+assert.True(t, session.HttpOnly)
+assert.True(t, session.Secure)
 ```
 
-Nested `Describe` blocks inherit the hooks of enclosing blocks; declare hooks before
-the `It` calls they should apply to. A working example lives in
-[examples/suite.go](./examples/suite.go).
+Cookies that clear themselves — empty value or `MaxAge < 0` — count as not set for `HasCookie`,
+which keeps logout tests honest.
 
-### Type Safety
+More: [docs/assertions/cookies](docs/assertions/cookies.md)
 
-`zentests` enforces strict type checking:
+---
+
+### App and Logger Helpers
+
+Create custom config test apps easily with `NewApp()`, confirm routes are registered with
+`HasRoute()`, or even test your `DefaultLogger` on fatal paths with the built-in `MockLogger`
+helper.
 
 ```go
-// JSON numbers are float64 by default
-resp.Has("count", 42)           // FAIL: 42 is int, JSON has float64
-resp.HasInt("count", 42)        // PASS: handles conversion
-resp.Has("count", float64(42))  // PASS: exact type match
-resp.Has("count", 42.0)         // PASS: exact type match
+// declare a custom Fiber app with a custom configs
+app := zentests.NewApp(t, fiber.Config{
+	Views:             html.New("./views", ".html"), // requires `github.com/gofiber/template/html/v3`
+	AppName:           "MyApp",
+	PassLocalsToViews: true,
+})
 
+// checking route registration without a request
+zt.HasRoute("GET", "/api/v1/users", app).NotHasRoute("DELETE", "/api/v1/users", app)
+
+ml := &zentests.MockLogger{} // inject, then assert what was logged
+svc := NewService(ml)
+svc.Start()
+assert.True(ml.WarnCalled) // true
+assert.Equal("config not found", ml.WarnMsg) // "config not found"
 ```
 
-<br>
+More: [docs/helpers](docs/helpers/README.md)
 
-## Using with testify/suite
+<br />
 
-For complex test scenarios, `zentests` works with `testify/suite`: create the `*T` in
-`SetupSuite` and use it in your tests.
+---
 
-```go
-type UserAPISuite struct {
-    suite.Suite
-    app *fiber.App
-    zt  *zentests.T
-}
+### And more
 
-func (s *UserAPISuite) SetupSuite() {
-    s.app = fiber.New()
-    s.zt = zentests.New(s.T())
-    // declare routes here
-}
+The above are just some of the many features `zentests` provides. You can find all the information
+in the [docs](docs/README.md) section.
 
-func TestUserAPISuite(t *testing.T) {
-    suite.Run(t, new(UserAPISuite))
-}
-```
+Don't miss:
 
-See [docs/SUITE.md](docs/SUITE.md) for lifecycle hooks order, database integration,
-shared base suites and TestConfig usage.
+- [Default headers](docs/requests/headers.md) &mdash; `SetHeader`, `WithBearer`, precedence
+- [TestConfig & Timeouts](docs/requests/testconfigs.md) &mdash; `*WithConfig`, `ZENTESTS_TIMEOUT`,
+  `FailOnTimeout`
+- [Debugging](docs/assertions/debugging.md) &mdash; `Dump`, `Debug`, header redaction
+- [Multipart](docs/requests/multipart.md) &mdash; `PostMultipart`, `FileUpload`
 
-### Choosing Between zentests.Describe and testify/suite
+<br />
 
-| Feature | `zentests.Describe` | `testify/suite` |
-|---------|---------------------|-----------------|
-| Setup | `BeforeEach` | `SetupTest` |
-| Teardown | `AfterEach` | `TearDownTest` |
-| Suite setup | Manual | `SetupSuite` |
-| Suite teardown | Manual | `TearDownSuite` |
-| Parallel tests | Limited | Supported |
-| Subtests | `It()` | `s.Run()` |
-| Assertions | `zentests.T` | `s.T()` + `s.zt` |
-| Best for | Quick BDD tests | Complex test setups |
+---
 
-<br>
+## Testing Styles
+
+`zentests` works with three styles of Go test.
+
+- [Flat](docs/testing/flat.md) &mdash; best for independent tests, small files, or parallel
+  `t.Parallel()` tests.
+- [BDD](docs/testing/bdd.md) &mdash; best for tests grouped by behaviour and readable sub-test
+  trees.
+- [testify/suite](docs/testing/testify-suite.md) &mdash; best for tests with one app and/or database
+  shared by many tests.
+
+Choose your preference. Try the flat style first, then the BDD style, or go straight to the
+`testify/suite` style. It really doesn't matter, because the usage is almost identical in all of
+them, just instantiate `zt := zentests.New(t)` and begin testing.
+
+More: [docs/testing](docs/testing/README.md)
+
+<br />
+
+---
+
+## Examples
+
+A collection of runnable code examples, with at least one per testing style. Each example contains
+the instructions and complete `*_test.go` code so you can test them yourself.
+
+**Available Examples:**
+
+- [Example 1](examples/example-01.md) &mdash; plain `func Test` style tests of status, headers, JSON
+  paths and array indices, `PostJSON`, and a 404 response
+
+- [Example 2](examples/example-02.md) &mdash; BDD styled tests with nested blocks, `BeforeEach`
+  scope and dotted paths.
+
+- [Example 3](examples/example-03.md) &mdash; uses `testify/suite` styled tests with a shared
+  in-memory database, `DBReset` per test and seeding with `DBCreateN`.
+
+These examples are intended to be runnable, while the code in the [docs](docs/README.md) pages is
+generally illustrative.
+
+---
 
 ## Contributing
 
-Contributions are welcome! Development setup, guidelines, the branch policy and the full
-`make` command reference live in [CONTRIBUTING.md](CONTRIBUTING.md).
+**Contributions are welcome!**
 
-<br>
+Development setup, guidelines and more available in [docs/contributing](docs/contributing.md).
+
+<br />
 
 ## Credits
 
@@ -368,4 +526,4 @@ Contributions are welcome! Development setup, guidelines, the branch policy and 
 
 ## License
 
-This project is released under the MIT License — see [LICENSE](LICENSE) for the full text.
+Copyright 2026 Kematzy &mdash; Released under the [MIT License](LICENSE).
