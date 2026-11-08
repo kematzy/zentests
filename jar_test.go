@@ -11,15 +11,19 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// JarSuite is the test suite struct.
 type JarSuite struct {
 	suite.Suite
 	app *fiber.App
+	jar *Jar
 }
 
+// TestJarSuite runs the test suite.
 func TestJarSuite(t *testing.T) {
 	suite.Run(t, new(JarSuite))
 }
 
+// SetupTest is called before each test.
 func (s *JarSuite) SetupTest() {
 	s.app = fiber.New()
 
@@ -103,113 +107,92 @@ func (s *JarSuite) SetupTest() {
 		c.Cookie(&fiber.Cookie{Name: "b", Value: "2"})
 		return c.SendString("pair")
 	})
+
+	s.jar = NewJar(s.T(), s.app)
 }
 
 // Test_Jar_StoresCookieAndSendsItOnNextRequest checks that a cookie set by one response is sent on the next.
 func (s *JarSuite) Test_Jar_StoresCookieAndSendsItOnNextRequest() {
-	jar := NewJar(s.T(), s.app)
-
-	jar.Get("/set?sid=abc").OK()
-	jar.Get("/echo").OK().Equals("sid=abc")
+	s.jar.Get("/set?sid=abc").OK()
+	s.jar.Get("/echo").OK().Equals("sid=abc")
 }
 
 // Test_Jar_MaxAgeExpiredCookieIsForgotten checks that a cookie set with MaxAge -1 is removed from the jar.
 func (s *JarSuite) Test_Jar_MaxAgeExpiredCookieIsForgotten() {
-	jar := NewJar(s.T(), s.app)
+	s.jar.Get("/login").OK()
+	s.Equal("s1", s.jar.Cookie("session"))
 
-	jar.Get("/login").OK()
-	s.Equal("s1", jar.Cookie("session"))
-
-	jar.Get("/expire").OK()
-	s.Empty(jar.Cookie("session"))
-	jar.Get("/echo").OK().Equals("")
+	s.jar.Get("/expire").OK()
+	s.Empty(s.jar.Cookie("session"))
+	s.jar.Get("/echo").OK().Equals("")
 }
 
 // Test_Jar_ClearCookieIsForgotten checks that Fiber's ClearCookie removes the cookie from the jar.
 // ClearCookie sends an empty value rather than MaxAge -1, so this exercises the empty-value rule.
 func (s *JarSuite) Test_Jar_ClearCookieIsForgotten() {
-	jar := NewJar(s.T(), s.app)
-
-	jar.Get("/login").OK()
-	jar.Get("/logout").OK()
-	s.Empty(jar.Cookie("session"))
-	jar.Get("/echo").OK().Equals("")
+	s.jar.Get("/login").OK()
+	s.jar.Get("/logout").OK()
+	s.Empty(s.jar.Cookie("session"))
+	s.jar.Get("/echo").OK().Equals("")
 }
 
 // Test_Jar_EmptyValueCookieIsForgotten checks that a Set-Cookie with an empty value removes the cookie.
 func (s *JarSuite) Test_Jar_EmptyValueCookieIsForgotten() {
-	jar := NewJar(s.T(), s.app)
+	s.jar.Get("/set?sid=abc").OK()
+	s.jar.Get("/blank").OK()
 
-	jar.Get("/set?sid=abc").OK()
-	jar.Get("/blank").OK()
-
-	s.Empty(jar.Cookie("sid"))
-	jar.Get("/echo").OK().Equals("")
+	s.Empty(s.jar.Cookie("sid"))
+	s.jar.Get("/echo").OK().Equals("")
 }
 
 // Test_Jar_Cookie_MissingNameIsEmpty checks that an unknown cookie reads as "" without failing the test.
 func (s *JarSuite) Test_Jar_Cookie_MissingNameIsEmpty() {
-	jar := NewJar(s.T(), s.app)
-
-	s.Empty(jar.Cookie("missing"))
+	s.Empty(s.jar.Cookie("missing"))
 }
 
 // Test_Jar_Get_ReturnsResponseUsableForAssertions checks that Get returns a Response that chains assertions.
 func (s *JarSuite) Test_Jar_Get_ReturnsResponseUsableForAssertions() {
-	jar := NewJar(s.T(), s.app)
-
-	jar.Get("/login").OK().IsPlainText().Contains("logged in")
+	s.jar.Get("/login").OK().IsPlainText().Contains("logged in")
 }
 
 // Test_Jar_PostForm_SendsUrlencodedBody checks that PostForm sends an escaped form body the handler can read.
 func (s *JarSuite) Test_Jar_PostForm_SendsUrlencodedBody() {
-	jar := NewJar(s.T(), s.app)
-
-	jar.PostForm("/form", url.Values{"name": {"Jane & Co = 1+1"}}).OK().Equals("name=Jane & Co = 1+1")
+	s.jar.PostForm("/form", url.Values{"name": {"Jane & Co = 1+1"}}).OK().Equals("name=Jane & Co = 1+1")
 }
 
 // Test_Jar_Send_CarriesStoredCookies checks that a caller-built request is sent with the stored cookies.
 func (s *JarSuite) Test_Jar_Send_CarriesStoredCookies() {
-	jar := NewJar(s.T(), s.app)
-	jar.Get("/set?sid=xyz").OK()
+	s.jar.Get("/set?sid=xyz").OK()
 
 	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/echo", http.NoBody)
-	jar.Send(req).OK().Equals("sid=xyz")
+	s.jar.Send(req).OK().Equals("sid=xyz")
 }
 
 // Test_Jar_Send_KeepsCallerCookies checks that Send keeps a cookie the caller set on the request.
 func (s *JarSuite) Test_Jar_Send_KeepsCallerCookies() {
-	jar := NewJar(s.T(), s.app)
-
 	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/echo", http.NoBody)
 	req.AddCookie(&http.Cookie{Name: "sid", Value: "caller"})
-	jar.Send(req).OK().Equals("sid=caller")
+	s.jar.Send(req).OK().Equals("sid=caller")
 }
 
 // Test_Jar_TwoCookiesAreSentIndependently checks that two cookies set together are both sent back.
 func (s *JarSuite) Test_Jar_TwoCookiesAreSentIndependently() {
-	jar := NewJar(s.T(), s.app)
-
-	jar.Get("/set-pair").OK()
-	jar.Get("/pair").OK().Equals("a=1,b=2")
+	s.jar.Get("/set-pair").OK()
+	s.jar.Get("/pair").OK().Equals("a=1,b=2")
 }
 
 // Test_Jar_ResetCookieOverwritesStoredValue checks that a later Set-Cookie replaces the stored value.
 func (s *JarSuite) Test_Jar_ResetCookieOverwritesStoredValue() {
-	jar := NewJar(s.T(), s.app)
+	s.jar.Get("/set?sid=first").OK()
+	s.jar.Get("/set?sid=second").OK()
 
-	jar.Get("/set?sid=first").OK()
-	jar.Get("/set?sid=second").OK()
-
-	s.Equal("second", jar.Cookie("sid"))
-	jar.Get("/echo").OK().Equals("sid=second")
+	s.Equal("second", s.jar.Cookie("sid"))
+	s.jar.Get("/echo").OK().Equals("sid=second")
 }
 
 // Test_Response_Cookie_ReturnsAttributes checks that Response.Cookie exposes HttpOnly and Path.
 func (s *JarSuite) Test_Response_Cookie_ReturnsAttributes() {
-	jar := NewJar(s.T(), s.app)
-
-	cookie := jar.Get("/login").OK().Cookie("session")
+	cookie := s.jar.Get("/login").OK().Cookie("session")
 	s.Equal("s1", cookie.Value)
 	s.True(cookie.HttpOnly)
 	s.Equal("/account", cookie.Path)
@@ -239,39 +222,35 @@ func (s *JarSuite) Test_NewJar_NilAppFailsTest() {
 // Test_Jar_SetHeader_SentWithEveryRequest checks that a default header reaches every jar
 // request, alongside the stored cookies.
 func (s *JarSuite) Test_Jar_SetHeader_SentWithEveryRequest() {
-	jar := NewJar(s.T(), s.app)
-	jar.Get("/set?sid=abc").OK()
-	jar.SetHeader("X-Test", "1")
+	s.jar.Get("/set?sid=abc").OK()
+	s.jar.SetHeader("X-Test", "1")
 
-	jar.Get("/hdr").OK().Equals("1,abc")
-	jar.Get("/hdr").OK().Equals("1,abc")
+	s.jar.Get("/hdr").OK().Equals("1,abc")
+	s.jar.Get("/hdr").OK().Equals("1,abc")
 }
 
 // Test_Jar_WithBearer_SendsAuthorizationHeader checks that WithBearer sets the
 // Authorization header on jar requests.
 func (s *JarSuite) Test_Jar_WithBearer_SendsAuthorizationHeader() {
-	jar := NewJar(s.T(), s.app)
-	jar.WithBearer("tok-1")
+	s.jar.WithBearer("tok-1")
 
-	jar.Get("/auth").OK().Equals("Bearer tok-1")
+	s.jar.Get("/auth").OK().Equals("Bearer tok-1")
 }
 
 // Test_Jar_SetHeader_PerCallHeaderWins checks that a request's own Content-Type is not
 // replaced by a default with the same name.
 func (s *JarSuite) Test_Jar_SetHeader_PerCallHeaderWins() {
-	jar := NewJar(s.T(), s.app)
-	jar.SetHeader("Content-Type", "text/plain")
+	s.jar.SetHeader("Content-Type", "text/plain")
 
-	jar.PostForm("/ctype", url.Values{"name": {"Jane"}}).OK().Equals("application/x-www-form-urlencoded")
+	s.jar.PostForm("/ctype", url.Values{"name": {"Jane"}}).OK().Equals("application/x-www-form-urlencoded")
 }
 
 // Test_Jar_PostMultipart_SendsCookiesAndFile checks that the jar sends its stored
 // cookies along with a multipart upload.
 func (s *JarSuite) Test_Jar_PostMultipart_SendsCookiesAndFile() {
-	jar := NewJar(s.T(), s.app)
-	jar.Get("/set?sid=abc").OK()
+	s.jar.Get("/set?sid=abc").OK()
 
-	jar.PostMultipart("/upload", nil, []FileUpload{
+	s.jar.PostMultipart("/upload", nil, []FileUpload{
 		{Name: "file", Filename: "a.txt", Content: []byte("hello")},
 	}).OK().Equals("abc|a.txt|hello")
 }
