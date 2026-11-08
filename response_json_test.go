@@ -8,12 +8,14 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// ResponseJSONAssertionsSuite is the test suite struct.
 type ResponseJSONAssertionsSuite struct {
 	suite.Suite
 	app *fiber.App
 	zt  *T
 }
 
+// SetupTest is called before each test.
 func (s *ResponseJSONAssertionsSuite) SetupTest() {
 	s.app = fiber.New()
 	s.zt = New(s.T())
@@ -75,6 +77,7 @@ func (s *ResponseJSONAssertionsSuite) SetupTest() {
 	})
 }
 
+// TearDownTest is called after each test.
 func (s *ResponseJSONAssertionsSuite) TearDownTest() {
 	if s.app != nil {
 		_ = s.app.Shutdown()

@@ -8,12 +8,14 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// ResponseBodyAssertionsSuite is the test suite struct.
 type ResponseBodyAssertionsSuite struct {
 	suite.Suite
 	app *fiber.App
 	zt  *T
 }
 
+// SetupTest is called before each test.
 func (s *ResponseBodyAssertionsSuite) SetupTest() {
 	s.app = fiber.New()
 	s.zt = New(s.T())
@@ -29,6 +31,7 @@ func (s *ResponseBodyAssertionsSuite) SetupTest() {
 	})
 }
 
+// TearDownTest is called after each test.
 func (s *ResponseBodyAssertionsSuite) TearDownTest() {
 	if s.app != nil {
 		_ = s.app.Shutdown()
@@ -63,6 +66,7 @@ func (s *ResponseBodyAssertionsSuite) Test_BodyAssertions_Contains_Chaining() {
 	resp.Contains("Title").Contains("Paragraph")
 }
 
+// TestResponseBodyAssertionsSuite runs the test suite.
 func TestResponseBodyAssertionsSuite(t *testing.T) {
 	suite.Run(t, new(ResponseBodyAssertionsSuite))
 }

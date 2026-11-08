@@ -13,11 +13,13 @@ func noop(c fiber.Ctx) error { return nil }
 
 // --- hasRoute (internal helper) ----------------------------------------------------------------
 
+// HasRouteInternalSuite is the test suite struct.
 type HasRouteInternalSuite struct {
 	suite.Suite
 	app *fiber.App
 }
 
+// SetupTest initializes the test suite for each test.
 func (s *HasRouteInternalSuite) SetupTest() {
 	s.app = fiber.New()
 	s.app.Get("/users", noop)
@@ -27,6 +29,7 @@ func (s *HasRouteInternalSuite) SetupTest() {
 	s.app.Delete("/users/:id", noop)
 }
 
+// TearDownTest cleans up the test suite.
 func (s *HasRouteInternalSuite) TearDownTest() {
 	if s.app != nil {
 		_ = s.app.Shutdown()
@@ -86,18 +89,21 @@ func (s *HasRouteInternalSuite) Test_hasRoute_Root_Path() {
 	s.True(hasRoute(s.app, "GET", "/"))
 }
 
+// TestHasRouteInternalSuite runs the test suite.
 func TestHasRouteInternalSuite(t *testing.T) {
 	suite.Run(t, new(HasRouteInternalSuite))
 }
 
 // --- HasRoute / NotHasRoute (exported methods on *T) ------------------------------------------
 
+// HasRouteAssertionSuite is the test suite struct for HasRoute and NotHasRoute.
 type HasRouteAssertionSuite struct {
 	suite.Suite
 	app *fiber.App
 	zt  *T
 }
 
+// SetupTest is called before each test.
 func (s *HasRouteAssertionSuite) SetupTest() {
 	s.app = fiber.New()
 	s.zt = New(s.T())
@@ -107,6 +113,7 @@ func (s *HasRouteAssertionSuite) SetupTest() {
 	s.app.Delete("/items/:id", noop)
 }
 
+// TearDownTest is called after each test.
 func (s *HasRouteAssertionSuite) TearDownTest() {
 	if s.app != nil {
 		_ = s.app.Shutdown()
@@ -166,12 +173,14 @@ func (s *HasRouteAssertionSuite) Test_NotHasRoute_Accepts_Optional_Message() {
 	s.zt.NotHasRoute("DELETE", "/ping", s.app, "DELETE /ping must not be exposed")
 }
 
+// TestHasRouteAssertionSuite runs the test suite for HasRouteAssertionSuite.
 func TestHasRouteAssertionSuite(t *testing.T) {
 	suite.Run(t, new(HasRouteAssertionSuite))
 }
 
 // --- NewApp ------------------------------------------------------------------------------------
 
+// NewAppSuite is the test suite struct for NewApp.
 type NewAppSuite struct {
 	suite.Suite
 }
@@ -244,12 +253,14 @@ func (s *NewAppSuite) Test_NewApp_WithConfig_OnlyFirstConfigUsed() {
 	s.Equal("First", app.Config().AppName)
 }
 
+// TestNewAppSuite runs the test suite for NewApp.
 func TestNewAppSuite(t *testing.T) {
 	suite.Run(t, new(NewAppSuite))
 }
 
 // --- buildRouteMsg (internal helper) -----------------------------------------------------------
 
+// BuildRouteMsgSuite is the test suite struct for buildRouteMsg.
 type BuildRouteMsgSuite struct {
 	suite.Suite
 }
@@ -284,6 +295,7 @@ func (s *BuildRouteMsgSuite) Test_WithNonStringArg_FormatsWithSprint() {
 	s.Equal("GET /count - 42", msg)
 }
 
+// TestBuildRouteMsgSuite runs the test suite for buildRouteMsg.
 func TestBuildRouteMsgSuite(t *testing.T) {
 	suite.Run(t, new(BuildRouteMsgSuite))
 }

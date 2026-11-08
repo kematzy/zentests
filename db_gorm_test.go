@@ -25,6 +25,7 @@ type dbPostModel struct {
 
 // --- SetupTestDB ------------------------------------------------------------------------------
 
+// SetupTestDBSuite is the test suite struct for SetupTestDB.
 type SetupTestDBSuite struct {
 	suite.Suite
 }
@@ -70,12 +71,14 @@ func (s *SetupTestDBSuite) Test_Cleanup_Closes_Connection() {
 	s.Error(sqlDB.Ping(), "expected connection to be closed after sub-test finished")
 }
 
+// SetupTestDBSuite is the test suite struct for SetupTestDB.
 func TestSetupTestDBSuite(t *testing.T) {
 	suite.Run(t, new(SetupTestDBSuite))
 }
 
 // --- SetupTestDBWithModels --------------------------------------------------------------------
 
+// SetupTestDBWithModelsSuite is the test suite struct for SetupTestDBWithModels.
 type SetupTestDBWithModelsSuite struct {
 	suite.Suite
 }
@@ -98,17 +101,20 @@ func (s *SetupTestDBWithModelsSuite) Test_Returns_Usable_DB() {
 	s.NotZero(record.ID)
 }
 
+// SetupTestDBWithModelsSuite is the test suite struct for SetupTestDBWithModels.
 func TestSetupTestDBWithModelsSuite(t *testing.T) {
 	suite.Run(t, new(SetupTestDBWithModelsSuite))
 }
 
 // --- DBMigrate --------------------------------------------------------------------------------
 
+// DBMigrateSuite is the test suite struct for DBMigrate.
 type DBMigrateSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBMigrateSuite) SetupTest() {
 	s.db = SetupTestDB(s.T())
 }
@@ -141,22 +147,26 @@ func (s *DBMigrateSuite) Test_Existing_Data_Survives_Remigration() {
 	s.Equal(int64(1), count)
 }
 
+// DBResetSuite is the test suite struct for DBReset.
 func TestDBMigrateSuite(t *testing.T) {
 	suite.Run(t, new(DBMigrateSuite))
 }
 
 // --- DBReset ----------------------------------------------------------------------------------
 
+// DBResetSuite is the test suite struct for DBReset.
 type DBResetSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupSuite is called once before all tests in this suite.
 func (s *DBResetSuite) SetupSuite() {
 	// Migrate once; reset between tests.
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{}, &dbPostModel{})
 }
 
+// SetupTest is called before each test.
 func (s *DBResetSuite) SetupTest() {
 	DBReset(s.T(), s.db)
 }
@@ -210,12 +220,14 @@ func (s *DBResetSuite) Test_AutoIncrement_Resets() {
 	s.Equal(firstID, r2.ID, "auto-increment should restart after DBReset")
 }
 
+// TestDBResetSuite runs the test suite.
 func TestDBResetSuite(t *testing.T) {
 	suite.Run(t, new(DBResetSuite))
 }
 
 // --- CloseTestDB ------------------------------------------------------------------------------
 
+// CloseTestDBSuite is the test suite struct for CloseTestDB.
 type CloseTestDBSuite struct {
 	suite.Suite
 }
@@ -235,17 +247,20 @@ func (s *CloseTestDBSuite) Test_Closes_DB_With_Migrated_Tables() {
 	CloseTestDB(s.T(), db) // must not fail even when tables exist
 }
 
+// TestCloseTestDBSuite runs the test suite.
 func TestCloseTestDBSuite(t *testing.T) {
 	suite.Run(t, new(CloseTestDBSuite))
 }
 
 // --- DBCreate ---------------------------------------------------------------------------------
 
+// DBCreateSuite is the test suite struct for DBCreate.
 type DBCreateSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBCreateSuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -288,17 +303,20 @@ func (s *DBCreateSuite) Test_Works_With_Second_Model_Type() {
 	s.Equal("Hello", post.Title)
 }
 
+// TestDBCreateSuite runs the test suite.
 func TestDBCreateSuite(t *testing.T) {
 	suite.Run(t, new(DBCreateSuite))
 }
 
 // --- DBCreateN --------------------------------------------------------------------------------
 
+// DBCreateNSuite is the test suite struct for DBCreateN.
 type DBCreateNSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBCreateNSuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -365,6 +383,7 @@ func (s *DBCreateNSuite) Test_Returns_Pointers_Not_Copies() {
 	}
 }
 
+// DBCreateNSuite runs the test suite.
 func TestDBCreateNSuite(t *testing.T) {
 	suite.Run(t, new(DBCreateNSuite))
 }
@@ -375,11 +394,13 @@ func TestDBCreateNSuite(t *testing.T) {
 
 // --- DBFind ----------------------------------------------------------------------------------
 
+// DBFindSuite is the test suite struct for DBFind.
 type DBFindSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBFindSuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -398,17 +419,20 @@ func (s *DBFindSuite) Test_Fails_The_Test_When_Not_Found() {
 	s.Error(err, "should fail when record not found")
 }
 
+// TestDBFindSuite runs the test suite.
 func TestDBFindSuite(t *testing.T) {
 	suite.Run(t, new(DBFindSuite))
 }
 
 // --- DBFindBy ----------------------------------------------------------------------------------
 
+// DBFindBySuite is the test suite struct for DBFindBy.
 type DBFindBySuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBFindBySuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -429,17 +453,20 @@ func (s *DBFindBySuite) Test_Finds_By_Non_Unique_Constraint() {
 	s.NotZero(1)
 }
 
+// TestDBFindBySuite runs the test suite.
 func TestDBFindBySuite(t *testing.T) {
 	suite.Run(t, new(DBFindBySuite))
 }
 
 // --- DBFirst ----------------------------------------------------------------------------------
 
+// DBFirstSuite is the test suite struct for DBFirst.
 type DBFirstSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBFirstSuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -458,17 +485,20 @@ func (s *DBFirstSuite) Test_Fails_The_Test_When_Empty() {
 	s.Error(err, "should fail when no records")
 }
 
+// TestDBFirstSuite runs the test suite.
 func TestDBFirstSuite(t *testing.T) {
 	suite.Run(t, new(DBFirstSuite))
 }
 
 // --- DBLast ----------------------------------------------------------------------------------
 
+// DBLastSuite is the test suite struct for DBLast.
 type DBLastSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBLastSuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -482,17 +512,20 @@ func (s *DBLastSuite) Test_Returns_Last_Record() {
 	s.Equal("Second", found.Name)
 }
 
+// TestDBLastSuite runs the test suite.
 func TestDBLastSuite(t *testing.T) {
 	suite.Run(t, new(DBLastSuite))
 }
 
 // --- DBCount ----------------------------------------------------------------------------------
 
+// DBCountSuite is the test suite struct for DBCount.
 type DBCountSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBCountSuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -522,17 +555,20 @@ func (s *DBCountSuite) Test_Counts_Zero_When_Empty() {
 	s.Zero(count)
 }
 
+// TestDBCountSuite runs the test suite.
 func TestDBCountSuite(t *testing.T) {
 	suite.Run(t, new(DBCountSuite))
 }
 
 // --- DBExists ----------------------------------------------------------------------------------
 
+// DBExistsSuite is the test suite struct for DBExists.
 type DBExistsSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBExistsSuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -561,17 +597,20 @@ func (s *DBExistsSuite) Test_Fails_The_Test_When_Not_Exists() {
 	s.False(count > 0, "should not exist")
 }
 
+// TestDBExistsSuite runs the test suite.
 func TestDBExistsSuite(t *testing.T) {
 	suite.Run(t, new(DBExistsSuite))
 }
 
 // --- DBNotExists ----------------------------------------------------------------------------------
 
+// DBNotExistsSuite is the test suite struct for DBNotExists.
 type DBNotExistsSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBNotExistsSuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -599,6 +638,7 @@ func (s *DBNotExistsSuite) Test_Fails_The_Test_When_Records_Exist() {
 	s.Equal(int64(1), count, "should have 1 record")
 }
 
+// TestDBNotExistsSuite runs the test suite.
 func TestDBNotExistsSuite(t *testing.T) {
 	suite.Run(t, new(DBNotExistsSuite))
 }
@@ -609,11 +649,13 @@ func TestDBNotExistsSuite(t *testing.T) {
 
 // --- DBUpdate ----------------------------------------------------------------------------------
 
+// DBUpdateSuite is the test suite struct for DBUpdate.
 type DBUpdateSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBUpdateSuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -642,17 +684,20 @@ func (s *DBUpdateSuite) Test_Updates_Multiple_Fields() {
 	s.Equal("new@example.com", found.Email)
 }
 
+// TestDBUpdateSuite runs the test suite.
 func TestDBUpdateSuite(t *testing.T) {
 	suite.Run(t, new(DBUpdateSuite))
 }
 
 // --- DBUpdateBy ----------------------------------------------------------------------------------
 
+// DBUpdateBySuite is the test suite struct for DBUpdateBy.
 type DBUpdateBySuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBUpdateBySuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -668,17 +713,20 @@ func (s *DBUpdateBySuite) Test_Updates_By_Where() {
 	s.Equal(int64(2), count)
 }
 
+// TestDBUpdateBySuite runs the test suite.
 func TestDBUpdateBySuite(t *testing.T) {
 	suite.Run(t, new(DBUpdateBySuite))
 }
 
 // --- DBDelete ----------------------------------------------------------------------------------
 
+// DBDeleteSuite is the test suite struct for DBDelete.
 type DBDeleteSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBDeleteSuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -693,17 +741,20 @@ func (s *DBDeleteSuite) Test_Deletes_By_Record() {
 	s.Zero(count)
 }
 
+// TestDBDeleteSuite runs the test suite.
 func TestDBDeleteSuite(t *testing.T) {
 	suite.Run(t, new(DBDeleteSuite))
 }
 
 // --- DBDeleteBy ----------------------------------------------------------------------------------
 
+// DBDeleteBySuite is the test suite struct for DBDeleteBy.
 type DBDeleteBySuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBDeleteBySuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -722,6 +773,7 @@ func (s *DBDeleteBySuite) Test_Deletes_By_Where() {
 	s.Equal(int64(1), count)
 }
 
+// TestDBDeleteBySuite runs the test suite.
 func TestDBDeleteBySuite(t *testing.T) {
 	suite.Run(t, new(DBDeleteBySuite))
 }
@@ -732,11 +784,13 @@ func TestDBDeleteBySuite(t *testing.T) {
 
 // --- DBTx ----------------------------------------------------------------------------------
 
+// DBTxSuite is the test suite struct for DBTx.
 type DBTxSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBTxSuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -766,6 +820,7 @@ func (s *DBTxSuite) Test_Rollbacks_On_Error() {
 	s.Zero(count)
 }
 
+// TestDBSeedSuite runs the test suite.
 func TestDBTxSuite(t *testing.T) {
 	suite.Run(t, new(DBTxSuite))
 }
@@ -776,11 +831,13 @@ func TestDBTxSuite(t *testing.T) {
 
 // --- DBSeed ----------------------------------------------------------------------------------
 
+// DBSeedSuite is the test suite struct for DBSeed.
 type DBSeedSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBSeedSuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -807,17 +864,20 @@ func (s *DBSeedSuite) Test_Populates_IDs() {
 	s.NotZero(records[0].ID)
 }
 
+// TestDBSeedSuite runs the test suite.
 func TestDBSeedSuite(t *testing.T) {
 	suite.Run(t, new(DBSeedSuite))
 }
 
 // --- DBSeedSlice ----------------------------------------------------------------------------------
 
+// DBSeedSliceSuite is the test suite struct for DBSeedSlice.
 type DBSeedSliceSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
+// SetupTest is called before each test.
 func (s *DBSeedSliceSuite) SetupTest() {
 	s.db = SetupTestDBWithModels(s.T(), &dbTestModel{})
 }
@@ -835,6 +895,7 @@ func (s *DBSeedSliceSuite) Test_Seeds_From_Slice() {
 	s.Equal(int64(2), count)
 }
 
+// TestDBSeedSliceSuite runs the test suite.
 func TestDBSeedSliceSuite(t *testing.T) {
 	suite.Run(t, new(DBSeedSliceSuite))
 }

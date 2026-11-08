@@ -13,12 +13,14 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// HTTPRequestsSuite is the test suite struct for HTTP requests.
 type HTTPRequestsSuite struct {
 	suite.Suite
 	app *fiber.App
 	zt  *T
 }
 
+// SetupTest is called before each test.
 func (s *HTTPRequestsSuite) SetupTest() {
 	s.app = fiber.New()
 	s.zt = New(s.T())
@@ -104,6 +106,7 @@ func (s *HTTPRequestsSuite) SetupTest() {
 	})
 }
 
+// TearDownTest is called after each test.
 func (s *HTTPRequestsSuite) TearDownTest() {
 	if s.app != nil {
 		_ = s.app.Shutdown()
@@ -299,6 +302,7 @@ func (s *HTTPRequestsSuite) Test_HTTP_DELETE_JSON_WithConfig_Timeout() {
 	}).OK().IsJSON().Has("method", "DELETE")
 }
 
+// TestHTTPRequestsSuite runs the test suite.
 func TestHTTPRequestsSuite(t *testing.T) {
 	suite.Run(t, new(HTTPRequestsSuite))
 }

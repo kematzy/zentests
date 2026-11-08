@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// ResponseHTTPTestSuite is the test suite struct.
 type ResponseHTTPTestSuite struct {
 	suite.Suite
 	app         *fiber.App
@@ -16,6 +17,7 @@ type ResponseHTTPTestSuite struct {
 	statusCodes []int
 }
 
+// SetupSuite is called before the test suite is run.
 func (s *ResponseHTTPTestSuite) SetupSuite() {
 	s.app = fiber.New()
 	s.zt = New(s.T())
