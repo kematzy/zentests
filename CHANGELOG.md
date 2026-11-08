@@ -2,7 +2,7 @@
 
 ### 🚀 Features
 
-- Add Logger, MockLogger & DefaultLoggger
+- Add Logger, MockLogger & DefaultLogger
 - Add Fiber helpers HasRoute(), NotHasRoute(), NewApp()
 - Add DB GORM test helpers
 
