@@ -6,103 +6,108 @@ Any items within this section have been confirmed as to be implemented.
 
 ### Report failures at the caller's line (`t.Helper()`)
 
-Assertions and request helpers report the library's file:line in the failure headline today, e.g.
-`response_http.go:24` for `.OK()`, because only a dozen of the ~105 exported methods call
-`t.Helper()`. Add it to every exported method so `go test`, editors and CI annotations point at the
-line in the test file.
+A failed assertion currently points at a library file:line in the failure report, such as
+`response_http.go:24` for `.OK()`. Calling `t.Helper()` (or `r.t.Helper()` / `j.t.Helper()`) in the
+failing method and each wrapper in its call chain should make the report point to the test call site.
 
-Not a correctness problem — the test still fails with the right message and `testify`'s trace
-contains the caller — but jump-to-failure should land on the test, not on the library.
+This is not a correctness problem—the test still fails—but it makes failures harder to jump to in
+editors and CI. Add helpers to exported methods that report test failures and to wrappers that lead
+to those methods. Do not add them indiscriminately to every exported method: pure setters, accessors,
+and constructors that cannot report a test failure do not need them. Logger methods have no testing
+context.
 
-| File | Methods without `t.Helper()` | Note |
-| ---- | ----------------------------- | ---- |
-| `response_http.go` | 41 (~32 missing) | `OK()` delegates to `Status()`; both need it |
-| `request.go` | 25 | `Get()` delegates to `GetWithConfig()`; both need it |
-| `response_json.go` | 18 (~15 missing) | |
-| `response_body.go` | 5 (all missing) | uses `assert.*` directly |
-| `response.go` | 5 (all missing) | includes `Debug()` and `Dump()` |
-| `jar.go` | 8 (all missing) | `j.t.Helper()` — `testing.TB` has `Helper()` |
-| `suite.go` | 5 | `Describe`/`It`/hooks |
-| `fiber.go` | 2 | already uses `zt.Helper()` |
-| `zentests.go` | 2 | `New()`, `Use()` |
+**Audit before editing:** the old per-file counts were stale. For example, several `Jar` methods and
+the route assertions already call `Helper()`, while `zentests.New` does not itself report failures.
+Recheck the current call chains rather than relying on the previous count table.
 
-Not applicable to `logger.go` — `DefaultLogger`/`MockLogger` have no `*testing.T`.
+**Acceptance:** a deliberately failing chain such as `zt.Get(app, "/nope").OK()` reports the test
+file and the line containing the chain, not a `zentests` source line. Verify at least one direct
+assertion and one delegated chain, then run the existing test suite unchanged.
 
-Acceptance: a failing chain (`zt.Get(app, "/nope").OK()`) prints the test file:line in the failure
-headline, and the existing test suite still passes unchanged.
+---
+
+### Verify the Markdown examples in CI
+
+The runnable examples live in `examples/*.md`, but CI does not compile or run them. `go vet` cannot
+see Markdown, so an API change can silently break examples that the README presents as runnable.
+
+Proposed `make examples-check` target:
+
+1. Extract the designated runnable `go` block from each example into a temporary module. Each
+   current example has one complete Go block; fail clearly if that convention changes. Do not treat
+   arbitrary future Go snippets as runnable examples.
+2. Derive temporary directory and module names from the example filenames, and keep valid Go package
+   names from the source. Do not use Markdown titles as package names.
+3. Write a temporary `go.mod` requiring `github.com/kematzy/zentests` and replacing it with the local
+   checkout; run `go mod tidy` there.
+4. Run `go vet ./...` and `go test ./...`; return non-zero on any failure.
+5. Run the target from `make check` and CI.
+
+Cost: roughly 30–40 lines of shell or Python, with no new Go dependencies. Example 03 uses the
+SQLite helpers, so CI must have `CGO_ENABLED=1` and a C compiler. Verify the compiler in both jobs;
+the bundled `go-sqlite3` driver does not require a system SQLite development package by itself.
+
+---
 
 ## Ideas
 
-Any items within this section are ideas and thoughts kept for future consideration, and NOT be
+Any items within this section are ideas and thoughts kept for future consideration, and should NOT
+be implemented.
+
+---
+
+## Archived
+
+Any items within this section are old ideas kept for future reference ONLY. They should NOT be
 implemented.
 
 ### Split DB functionality into `dbtest` package
 
-**Status:** on hold — the current single-package setup stays as it is.
+**Status:** Archived. Revisit only if users report significant CGO/toolchain friction for
+HTTP-only tests.
 
-**Why consider it at all.** Two separate costs are currently paid by every user of the library:
+**Why it was considered.** The root package includes `db_gorm.go`, which imports GORM's SQLite
+driver (`mattn/go-sqlite3`). With CGO enabled, an HTTP-only consumer on a machine without a C
+compiler may still fail to build the root package; setting `CGO_ENABLED=0` is the current workaround
+for HTTP-only use.
 
-1. `db_gorm.go` imports `gorm.io/driver/sqlite`, which is the CGO binding (`mattn/go-sqlite3`), so
-   anyone running tests for a project that only uses the HTTP helpers still needs `CGO_ENABLED=1`
-   and a C toolchain to compile a package they never call.
-2. The GORM + SQLite dependencies sit in the root package, so they also land in the dependency
-   graph of projects that only want assertions.
+A `dbtest` subpackage would stop compiling the SQLite code when users import only
+`github.com/kematzy/zentests`:
 
-Go only compiles what is imported, so moving the helpers into their own package removes both costs
-without touching the API surface:
-
+```txt
+github.com/kematzy/zentests          T, Response, Jar, Describe/It      imports: fiber, testify
+github.com/kematzy/zentests/dbtest   Setup, Create, Find, Tx, Seed …    imports: gorm, sqlite driver, testify
 ```
-github.com/kematzy/zentests          T, Response, Jar, Describe/It      deps: fiber, testify
-github.com/kematzy/zentests/dbtest   Setup, Create, Find, Tx, Seed …    deps: gorm, sqlite driver
-```
+
+However, a subpackage in the same module does **not** remove GORM and SQLite from the root
+`go.mod`; it may not remove those module requirements from a consumer's module graph. Verify that
+benefit with a small downstream module. Full dependency separation may require a nested module.
 
 The `/dbtest` suffix follows the standard library convention (`httptest`, `fstest`, `iotest`).
 
-**Symbols would lose the redundant `DB` prefix** — `dbtest.Setup`, `dbtest.Create`, `dbtest.Find`
-read better than `dbtest.DBSetup`, and the import path already says "database".
+Removing the redundant `DB` prefix (`dbtest.Create` instead of `dbtest.DBCreate`) is optional and
+would be an additional API rename, not a requirement of the package split.
 
-| Today (`zentests.`) | After (`dbtest.`) |
-| ------------------- | ----------------- |
-| `SetupTestDB` / `SetupTestDBWithModels` | `Setup` / `SetupWithModels` |
-| `DBMigrate` / `DBReset` / `CloseTestDB` | `Migrate` / `Reset` / `Close` |
-| `DBCreate` / `DBCreateN` / `DBSeed` / `DBSeedSlice` | `Create` / `CreateN` / `Seed` / `SeedSlice` |
-| `DBFind` / `DBFindBy` / `DBFirst` / `DBLast` | `Find` / `FindBy` / `First` / `Last` |
-| `DBCount` / `DBExists` / `DBNotExists` | `Count` / `Exists` / `NotExists` |
+| Today (`zentests.`)                                            | After (`dbtest.`)                                    |
+| -------------------------------------------------------------- | ---------------------------------------------------- |
+| `SetupTestDB` / `SetupTestDBWithModels`                        | `Setup` / `SetupWithModels`                          |
+| `DBMigrate` / `DBReset` / `CloseTestDB`                        | `Migrate` / `Reset` / `Close`                        |
+| `DBCreate` / `DBCreateN` / `DBSeed` / `DBSeedSlice`            | `Create` / `CreateN` / `Seed` / `SeedSlice`          |
+| `DBFind` / `DBFindBy` / `DBFirst` / `DBLast`                   | `Find` / `FindBy` / `First` / `Last`                 |
+| `DBCount` / `DBExists` / `DBNotExists`                         | `Count` / `Exists` / `NotExists`                     |
 | `DBUpdate` / `DBUpdateBy` / `DBDelete` / `DBDeleteBy` / `DBTx` | `Update` / `UpdateBy` / `Delete` / `DeleteBy` / `Tx` |
 
-**Sub-package first, sub-module only if ever needed.** `github.com/kematzy/zentests/dbtest` is the
-same import path either way, so it can start as a package inside this module (one `go.mod`, one
-release, no CI split) and be extracted into its own module later with a nested tag (`dbtest/v0.x.0`)
-and zero API change. Doing it the other way round costs the release tooling immediately and gains
-users nothing visible.
+**Package vs. module.** A subpackage in this module is the smaller API/code change, but keeps the
+GORM/SQLite requirements in the root `go.mod`. A nested module can isolate those requirements but
+adds release and CI complexity. Choose based on whether the goal is only to avoid compiling SQLite
+for root-package users or also to remove it from their module graph.
 
-**Migration outline.** Create `dbtest/` and `git mv db_gorm.go` → rename symbols → move `db_gorm_test.go`
-with it → update README + `docs/database/*` → CHANGELOG entry marked breaking (v0.4.0) with the
-table above. No compatibility aliases in the root package: an alias would re-add the GORM import
-and undo the whole point.
+**Migration outline.** Create `dbtest/` and `git mv db_gorm.go` → move `db_gorm_test.go` with it →
+update README + `docs/database/*` → CHANGELOG entry marked breaking (v0.4.0). If removing the `DB`
+prefix, rename the symbols as shown in the table. Avoid root-package aliases: wrappers importing
+`dbtest` would restore the SQLite compile dependency.
 
-**Caveat.** Keeping a default in-memory SQLite is what makes the helpers one-liners, so the driver
-decision has to be made together with the split: either stay on `gorm.io/driver/sqlite` (CGO, but
-"GORM's recommended" and the only driver this project actually tests against), or switch to a
-pure-Go driver (`glebarez/sqlite` over `modernc.org/sqlite`) whose provenance and maintenance
-activity need checking first.
-
-### Verify the Markdown examples in CI
-
-The runnable examples live in `examples/*.md` and no pipeline compiles them. `go vet` cannot see
-Markdown, and the old `//go:build manual` Go examples were removed when the pages became the single
-source, so `README.md` can keep claiming "the files above are the ones that run" while an API change
-breaks them silently.
-
-Proposed `make examples-check` target:
-
-1. Extract every ```` ```go ```` block from `examples/*.md` into a temp directory, one package per
-   file, keeping the title as the package name.
-2. Write a minimal `go.mod` whose module `replace`s `github.com/kematzy/zentests` with the local
-   checkout, and `go mod tidy` it.
-3. Run `go vet ./...` and `go test ./...` in that directory.
-4. Exit non-zero on any failure, so `make check` (and CI) catches a stale example.
-
-Cost: ~30-40 lines of shell or Python, no new Go dependencies. Caveat: the suite example uses the
-GORM SQLite driver, so the target needs `CGO_ENABLED=1` and a C compiler — both CI images already
-install `libsqlite3-dev`.
+**Caveat.** A package split does not remove the CGO requirement for users of the SQLite helpers.
+Keep the tested `gorm.io/driver/sqlite` unless database users have a separate need for a pure-Go
+driver; evaluate alternatives such as `glebarez/sqlite` over `modernc.org/sqlite` for compatibility
+and maintenance before switching.
