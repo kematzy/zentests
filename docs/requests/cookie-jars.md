@@ -1,9 +1,8 @@
 # Zentests - Docs - Requests - Cookie Jars
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
-A jar sends requests to one app and keeps the cookies it sets, the way a browser does. Use it for
-flows that span several requests: login, CSRF handshakes, session expiry.
+A `Jar` stores response cookies by name and sends them with later requests to one Fiber app. Use it
+for multi-request flows such as login, CSRF handshakes, and sessions. It is a lightweight test
+helper, not a browser cookie jar; see [How cookies are stored](#how-cookies-are-stored).
 
 ## Create once, reuse
 
@@ -23,7 +22,9 @@ jar.Get("/logout").OK()
 jar.Get("/api/v1/me").Unauthorized()
 ```
 
-The jar is created with `t`, so cleanup is registered for you; there is nothing to close.
+`zentests.NewJar(t, app)` creates an empty jar bound to `app`; it fails the test if `app` is nil.
+The jar stores data in memory and owns no external resources, so no teardown or close call is
+needed.
 
 ## Methods
 
@@ -53,25 +54,26 @@ jar.SetHeader("X-Api-Key", "key-123")
 jar.WithBearer("secret-token")
 ```
 
-Both apply to every request the jar sends. A header already on the request wins, so a `Send` request
-can override them for one call.
+Both apply to every request the jar sends. A non-empty header already on a `Send` request wins, so
+it can override a default for one call.
 
 ## How cookies are stored
 
-The jar is deliberately flat: **no** `Path`, `Domain` or `Expires` matching. Every stored cookie is
-sent with every request to the app. That is enough for the flows these tests care about, and it
-keeps the behaviour easy to reason about — but it is not a browser.
-
-A cookie is forgotten when a response sets it with `MaxAge < 0` or an empty value, which is how
-`ClearCookie` and logout handlers work.
+The jar is a flat map of cookie names to values: it does not match `Path` or `Domain`, enforce
+`Secure` or `HttpOnly`, or expire cookies by `Expires` or positive `MaxAge`. Every stored cookie is
+sent with every request to the app. Cookies are keyed only by name, so later same-name entries
+replace earlier values or remove the entry. Empty values and `MaxAge < 0` remove a cookie, matching
+Fiber's `ClearCookie` behavior.
 
 ## Notes
 
-- **One jar per app.** It holds a reference to the app it was built with.
+- **Each jar is bound to one app.** Create a jar for the app used by that test flow.
 - **Requests are sequential by design.** Sharing one jar across parallel tests races on the cookie
   map; create a jar per test.
-- **`jar.Cookie(name)` returns `""` for an unknown cookie** — assert with `HasCookie` when absence
-  has to fail the test.
+- **Jar requests use the package defaults.** There are no `*WithConfig` jar methods; set
+  `ZENTESTS_TIMEOUT` for a run-wide timeout.
+- **`jar.Cookie(name)` returns `""` for an unknown cookie.** Use `assert.Empty` or `assert.NotEmpty`
+  on that value to check whether the jar holds a cookie.
 
 ## Related
 
@@ -81,4 +83,4 @@ A cookie is forgotten when a response sets it with `MaxAge < 0` or an empty valu
 
 ---
 
-Back to: [Requests](README.md)
+Back to: [Requests](./README.md)

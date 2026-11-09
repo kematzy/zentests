@@ -1,7 +1,5 @@
 # Zentests - Docs - Requests - Multipart
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 `PostMultipart` builds a `multipart/form-data` body from a field map and a list of files, sets the
 `Content-Type` with the boundary, and sends it in one call.
 
@@ -11,9 +9,18 @@
 zt.PostMultipart(app, path, fields, files) *Response
 ```
 
-- `fields` — `map[string]string` of ordinary form fields.
-- `files` — `[]FileUpload`, where each entry is `{Name, Filename, Content []byte}`. The bytes are in
-  hand, so no fixture file has to exist on disk.
+| Input    | Type                | Meaning                                              |
+| -------- | ------------------- | ---------------------------------------------------- |
+| `fields` | `map[string]string` | Ordinary form fields; may be `nil`                   |
+| `files`  | `[]FileUpload`      | Files built from in-memory byte slices; may be `nil` |
+
+Each `FileUpload` has these fields:
+
+| Field      | Meaning                                        |
+| ---------- | ---------------------------------------------- |
+| `Name`     | Form field name; can repeat for multiple files |
+| `Filename` | Filename presented to the server               |
+| `Content`  | File contents as `[]byte`                      |
 
 ## Uploading one file
 
@@ -63,7 +70,8 @@ zt.PostMultipart(app, "/api/v1/avatar", nil, []zentests.FileUpload{
 - **`nil` maps and slices are fine**; a request with fields only, or files only, works.
 - **No `*WithConfig` twin.** A multipart request uses the default timeout; raise it run-wide with
   `ZENTESTS_TIMEOUT` for a slow upload path.
-- **Field order is not guaranteed**; servers must not depend on it, and neither should tests.
+- **Part order is deterministic:** fields are written in sorted key order, followed by files in
+  slice order. Avoid making handler behavior depend on multipart part order.
 
 ## Related
 

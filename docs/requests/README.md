@@ -1,10 +1,8 @@
 # Zentests - Docs - Requests
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
-Every request is one call on `zt`, taking the app and the path and returning a `*Response` ready to
-chain. The pages here cover the methods themselves, the headers sent with every call, timeouts, file
-uploads and cookie-keeping request flows.
+Each request method takes a Fiber app and path and returns a chainable `*Response`. These pages
+cover request methods, default headers, timeouts, multipart uploads, and cookie jars for
+multi-request flows.
 
 ## Contents
 
@@ -16,17 +14,18 @@ uploads and cookie-keeping request flows.
 | [Multipart](multipart.md)     | `PostMultipart` and `FileUpload`                                  |
 | [Cookie Jars](cookie-jars.md) | Keeping cookies across requests: login, CSRF, sessions            |
 
-## What every method shares
+## What `zt` methods share
 
-- **Signature.** `zt.Method(app, path, ...) *Response` — the `*fiber.App` under test and the path,
-  nothing else required.
+- **Signature.** `zt.Method(app, path, ...) *Response` — pass the `*fiber.App` and path, plus any
+  method-specific input. Jar methods are separate and are described in
+  [Cookie Jars](cookie-jars.md).
 - **Return value.** A `*Response`; every assertion is a method on it, and every assertion is
   chainable.
-- **Default headers.** Anything set with `SetHeader` or `WithBearer` is sent with the request. A
-  header belonging to the single request wins over a default of the same name, so `PostJSON`'s
-  `Content-Type: application/json` is never overwritten by a default.
-- **Timeouts.** A zero-value `fiber.TestConfig{}` means a one-second timeout with
-  `FailOnTimeout: true`. `ZENTESTS_TIMEOUT=5s` raises it for a whole run.
+- **Default headers.** `SetHeader` and `WithBearer` apply to requests from that helper. A method's
+  own header, such as `PostJSON`'s `Content-Type: application/json`, overrides a same-name default.
+- **Timeouts.** Plain methods use a zero-value config, which gets a one-second timeout and
+  `FailOnTimeout: true`. Non-zero `*WithConfig` values are passed as-is. `ZENTESTS_TIMEOUT`
+  overrides the default timeout for the process.
 - **No listener.** Requests run through `app.Test`, so the real router, middleware and error handler
   execute in-process. There is no port to pick and no server to shut down.
 

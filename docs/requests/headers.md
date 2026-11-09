@@ -1,14 +1,19 @@
 # Zentests - Docs - Requests - Headers
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 Headers sent _with_ the request. For assertions about headers the server returns, see
 [assertions/headers](../assertions/headers.md).
 
 ## Default headers
 
-`SetHeader` stores a header that every request from that `zt` sends. `WithBearer` is shorthand for
-`SetHeader("Authorization", "Bearer …")`.
+`SetHeader` stores a default header for every request from that `zt`; `WithBearer` sets the default
+`Authorization: Bearer <token>` header.
+
+| Helper                      | Scope | Behavior                                           | Returns |
+| --------------------------- | ----- | -------------------------------------------------- | ------- |
+| `zt.SetHeader(key, value)`  | `*T`  | Set or replace a default header                    | `*T`    |
+| `zt.WithBearer(token)`      | `*T`  | Set default `Authorization: Bearer <token>`        | `*T`    |
+| `jar.SetHeader(key, value)` | `*Jar`| Set or replace a default header for jar requests   | —       |
+| `jar.WithBearer(token)`     | `*Jar`| Set default bearer authorization for jar requests  | —       |
 
 ```go
 zt := zentests.New(t).
@@ -20,8 +25,8 @@ zt.WithBearer("secret-token") // adds Authorization: Bearer secret-token
 zt.Get(app, "/api/v1/users").OK() // sends all three
 ```
 
-Both return `*T`, so they chain onto `New` or onto an earlier call. Header names are canonicalised,
-so `"x-api-key"` and `"X-Api-Key"` configure the same header.
+`zt` setters return `*T` and can be chained; jar setters return no value. Header names passed to
+`SetHeader` are canonicalized, so `"x-api-key"` and `"X-Api-Key"` configure the same default.
 
 ## Precedence
 
@@ -34,13 +39,14 @@ zt.PostJSON(app, "/api/v1/users", data) // sends application/json, not text/plai
 zt.Post(app, "/raw", []byte("hi"))      // sends text/plain
 ```
 
-That rule is what makes `PostJSON`, `PostForm` and `PostMultipart` safe to use with a default
-`Content-Type` set for the rest of the file.
+That rule lets `PostJSON`, `PostForm` and `PostMultipart` use their required content type even when
+a default `Content-Type` is set. Raw-body methods (`Post`, `Put`, `Patch`) do not infer a content type;
+set one with `zt.SetHeader` when needed.
 
 ## The same thing on a jar
 
-`NewJar` has the same two methods, and applies the same precedence: a header already on the request
-wins.
+Jar defaults apply to every jar request. A non-empty header already on a request sent with `Send`
+wins over the default.
 
 ```go
 jar := zentests.NewJar(t, app)
@@ -55,8 +61,8 @@ jar.Get("/api/v1/users").OK()
   headers; nothing is shared between tests.
 - **Headers are per helper instance.** In a suite, setting headers in `SetupTest` applies to the
   `*T` created there — see [testing/testify-suite](../testing/testify-suite.md).
-- **Use `SetHeader` for one-off maps.** The package-level `zentests.SetHeader(key, value)` returns a
-  `map[string]string`, for the raw-body methods that accept a header map.
+- **Per-request headers:** request methods do not accept arbitrary header maps. Use `zt.SetHeader`
+  for defaults; the package-level `zentests.SetHeader(key, value)` only creates a one-entry map.
 
 ## Related
 

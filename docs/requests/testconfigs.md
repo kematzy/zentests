@@ -1,20 +1,20 @@
 # Zentests - Docs - Requests - Test Config
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 Every request runs through Fiber's in-process test transport, which takes a timeout and a policy for
 what happens when the handler exceeds it. `zentests` applies sensible defaults and lets you override
 them per call or for a whole run.
 
 ## Defaults
 
-| Setting         | Default | Meaning                                               |
-| --------------- | ------- | ----------------------------------------------------- |
-| `Timeout`       | `1s`    | How long the request may take                         |
-| `FailOnTimeout` | `true`  | Fail the test instead of returning a partial response |
+| Setting         | Package default | Meaning                                                                      |
+| --------------- | --------------- | ---------------------------------------------------------------------------- |
+| `Timeout`       | `1s`            | Maximum duration for the request                                             |
+| `FailOnTimeout` | `true`          | On timeout, stop the test (`true`) or use Fiber's partial response (`false`) |
 
-A zero-value `fiber.TestConfig{}` means "use the defaults", so plain `zt.Get(...)` is already
-guarded against a handler that never returns.
+Plain request methods pass a zero-value `fiber.TestConfig{}`, which `zentests` replaces with these
+package defaults. A non-zero `*WithConfig` value is passed as-is rather than merged with the
+defaults; set every field whose behavior matters. For example, setting only `Timeout` leaves
+`FailOnTimeout` at `false`.
 
 ## Per call
 
@@ -22,27 +22,27 @@ The ten verb methods have a `*WithConfig` twin:
 
 ```go
 zt.GetWithConfig(app, "/api/v1/report", fiber.TestConfig{
-	Timeout: 10 * time.Second,
+	Timeout:       10 * time.Second,
+	FailOnTimeout: true,
 }).OK()
 ```
 
-`GetWithConfig`, `PostWithConfig`, `PostJSONWithConfig`, `PostFormWithConfig`, `PutWithConfig`,
-`PutJSONWithConfig`, `PatchWithConfig`, `PatchJSONWithConfig`, `DeleteWithConfig`,
-`DeleteJSONWithConfig`.
+All ten `*WithConfig` methods are listed in the
+[Methods reference](methods.md#http-methods-with-testconfig).
 
 `GetQuery` and `PostMultipart` have no config twin; they use the defaults below.
 
 ## Per run
 
-`ZENTESTS_TIMEOUT` replaces the default timeout for the whole process, which is usually easier than
-editing every call when a suite is slow on CI:
+Set `ZENTESTS_TIMEOUT` before starting the test process to replace the package's default timeout.
+This is usually easier than editing every call when a suite is slow on CI:
 
 ```bash
 ZENTESTS_TIMEOUT=5s make test
 ```
 
-Any Go duration works (`500ms`, `2s`, `1m`). An invalid value panics at startup rather than being
-silently ignored — a typo would otherwise leave the suite running with the wrong timeout.
+Use a value accepted by `time.ParseDuration` (`500ms`, `2s`, `1m`). An invalid value panics during
+package initialization rather than being silently ignored.
 
 ## `FailOnTimeout`
 
@@ -61,9 +61,10 @@ resp.OK().Contains("first-chunk")
 ## Notes
 
 - **The timeout applies to the whole request**, handler included, not to each write.
-- **A per-call config beats the run-wide default**: `*WithConfig` ignores `ZENTESTS_TIMEOUT`.
-- **Timeouts fail through `require`**, so a timed-out request stops the current test rather than
-  continuing with an empty response.
+- **A non-zero per-call config bypasses the run-wide default**, including `ZENTESTS_TIMEOUT`. A
+  zero-value config still uses the package defaults.
+- **With `FailOnTimeout: true`, a timeout stops the current test** through `require`; with `false`,
+  Fiber may return a partial response.
 
 ## Related
 

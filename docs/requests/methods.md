@@ -1,30 +1,32 @@
 # Zentests - Docs - Requests - Methods
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
-One call per request: the app, the path, and back a `*Response` ready to chain. For headers sent
-with every request see [Headers](./headers.md); for timeouts see [Test config](testconfigs.md).
+Each request method takes `app` and `path`, plus any method-specific input, and returns a chainable
+`*Response`. For request headers, see [Headers](./headers.md); for timeouts, see
+[Test config](testconfigs.md).
 
 ---
 
 ## Methods reference
 
-All methods accept `*fiber.App` and `path`, return `*Response` for chaining:
+All methods take `app *fiber.App` and `path string`, and return `*Response` for chaining.
 
-| Method                                    | Description                             |
-| ----------------------------------------- | --------------------------------------- |
-| `Get(app, path)`                          | GET request                             |
-| `Post(app, path, body)`                   | POST with raw body                      |
-| `PostJSON(app, path, data)`               | POST with JSON body                     |
-| `PostForm(app, path, data)`               | POST with form data                     |
-| `Put(app, path, body)`                    | PUT request                             |
-| `PutJSON(app, path, data)`                | PUT with JSON                           |
-| `Patch(app, path, body)`                  | PATCH request                           |
-| `PatchJSON(app, path, data)`              | PATCH with JSON                         |
-| `Delete(app, path)`                       | DELETE request                          |
-| `DeleteJSON(app, path, data)`             | DELETE with JSON body                   |
-| `PostMultipart(app, path, fields, files)` | POST with multipart form data and files |
-| `GetQuery(app, path, url.Values)`         | GET with encoded query parameters       |
+| Method                                    | Input                               | Behavior                                    |
+| ----------------------------------------- | ----------------------------------- | ------------------------------------------- |
+| `Get(app, path)`                          | —                                   | GET                                         |
+| `Post(app, path, body)`                   | `body []byte`                       | POST raw body; no content type is inferred  |
+| `PostJSON(app, path, data)`               | `data any`                          | POST JSON; sets `Content-Type`              |
+| `PostForm(app, path, data)`               | `data map[string]string`            | POST URL-encoded form                       |
+| `Put(app, path, body)`                    | `body []byte`                       | PUT raw body; no content type is inferred   |
+| `PutJSON(app, path, data)`                | `data any`                          | PUT JSON; sets `Content-Type`               |
+| `Patch(app, path, body)`                  | `body []byte`                       | PATCH raw body; no content type is inferred |
+| `PatchJSON(app, path, data)`              | `data any`                          | PATCH JSON; sets `Content-Type`             |
+| `Delete(app, path)`                       | —                                   | DELETE                                      |
+| `DeleteJSON(app, path, data)`             | `data any`                          | DELETE with JSON body; sets `Content-Type`  |
+| `PostMultipart(app, path, fields, files)` | `map[string]string`, `[]FileUpload` | POST multipart form data and files          |
+| `GetQuery(app, path, query)`              | `url.Values`                        | GET with URL-encoded query parameters       |
+
+`GetQuery` URL-encodes the values and appends them to `path` (`&` when `path` already has a query).
+A nil or empty `url.Values` still appends the query separator.
 
 ## HTTP Methods with TestConfig
 
@@ -60,14 +62,15 @@ func TestSlowEndpoint(t *testing.T) {
 
     // Custom timeout for slow endpoints
     resp := zt.GetWithConfig(app, "/slow-endpoint", fiber.TestConfig{
-        Timeout: 10 * time.Second,
+        Timeout:       10 * time.Second,
+        FailOnTimeout: true,
     })
     resp.OK().IsJSON()
 
     // Custom timeout with FailOnTimeout behavior
     resp2 := zt.PostJSONWithConfig(app, "/api/users", userData, fiber.TestConfig{
         Timeout:       5 * time.Second,
-        FailOnTimeout: true, // Returns error instead of partial response
+        FailOnTimeout: true, // Stop the test if the request times out
     })
     resp2.Created()
 }
@@ -75,13 +78,14 @@ func TestSlowEndpoint(t *testing.T) {
 
 ### TestConfig Options
 
-| Option          | Type            | Default | Description                                                |
-| --------------- | --------------- | ------- | ---------------------------------------------------------- |
-| `Timeout`       | `time.Duration` | `1s`    | Request timeout duration                                   |
-| `FailOnTimeout` | `bool`          | `true`  | Return error on timeout (true) or partial response (false) |
+| Option          | Type            | Package default | Description                                                                  |
+| --------------- | --------------- | --------------- | ---------------------------------------------------------------------------- |
+| `Timeout`       | `time.Duration` | `1s`            | Maximum request duration                                                     |
+| `FailOnTimeout` | `bool`          | `true`          | On timeout, stop the test (`true`) or use Fiber's partial response (`false`) |
 
-A zero-value `fiber.TestConfig{}` uses the defaults above, which is what the plain methods (`Get`,
-`PostJSON`, …) pass. See [Test config](testconfigs.md) for `ZENTESTS_TIMEOUT` and `FailOnTimeout`.
+Plain methods pass a zero-value config, which `zentests` replaces with these defaults. A non-zero
+`*WithConfig` value is passed as-is, not merged with the defaults; set `FailOnTimeout` explicitly if
+you want it enabled. See [Test config](testconfigs.md) for details.
 
 ---
 
