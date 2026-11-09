@@ -1,9 +1,11 @@
 # zentests
 
-Readable Go tests without magic. Inspired by Pest and RSpec.
+Readable, chainable tests for Fiber v3 apps.
 
-`zentests` provides chainable HTTP assertions and GORM database test helpers for
-[Fiber](https://gofiber.io/) v3.x apps.
+`zentests` gives you in-process HTTP request helpers, fluent response assertions, and GORM
+test-database helpers—all in familiar Go tests.
+
+Inspired by Pest and RSpec.
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/kematzy/zentests.svg)](https://pkg.go.dev/github.com/kematzy/zentests)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kematzy/zentests)](https://goreportcard.com/report/github.com/kematzy/zentests)
@@ -15,7 +17,7 @@ Readable Go tests without magic. Inspired by Pest and RSpec.
 
 - **No magic**: standard Go testing, no reflection tricks, no DSL or code generation
 - **Chainable**: test assertions read easily — `zt.Get(app, "/api/v1/users").OK().IsJSON()`
-- **Type safe**: strict assertions catch mistakes early instead of passing quietly
+- **Typed assertions**: strict JSON assertions catch mistakes early instead of passing quietly
 - **Fiber-native**: requests run through the real router and middleware — no listener, no port
 - **GORM-focused**: built-in in-memory database setup, seeding and record helpers
 - **Well-tested**: coverage gated at 95% in CI on every push
@@ -70,7 +72,7 @@ zt := zentests.New(t) // t *testing.T
 zt.Get(app, "/api/v1/healthz").OK().IsJSON().Has("status", "it works")
 ```
 
-Yes, just two efficient lines of code. **That's the essence of the `zentests` way!**
+Yes, just two readable lines of code. **That's the essence of the `zentests` way!**
 
 More: [docs/comparison](docs/comparison.md)
 
@@ -89,7 +91,7 @@ I created these test assertions and helpers for my projects where I use Fiber an
     - [Request Helper Methods](#request-helper-methods)
     - [Status Assertions](#status-assertions)
     - [Headers Assertions](#headers-assertions)
-    - [HTML Body Assertions](#html-body-assertions)
+    - [Response Body Assertions](#response-body-assertions)
     - [JSON Body Assertions](#json-body-assertions)
     - [GORM Database Assertions](#gorm-database-assertions)
     - [Request Cookie Jars](#request-cookie-jars)
@@ -99,6 +101,8 @@ I created these test assertions and helpers for my projects where I use Fiber an
 5. [Examples, Contributing & Credits](#examples)
 
 </details>
+
+<br />
 
 ---
 
@@ -111,7 +115,9 @@ your compiled binary.
 go get github.com/kematzy/zentests
 ```
 
-**Dependencies**: Fiber, `testify`, GORM and their own transitive modules — nothing else.
+Direct dependencies include [Fiber](https://gofiber.io/),
+[testify](https://github.com/stretchr/testify), [GORM](https://gorm.io/), and GORM's SQLite driver,
+plus their transitive dependencies.
 
 While the API is still `v0.x`, it is suggested to pin the version explicitly:
 
@@ -200,7 +206,6 @@ Working code: [examples/03-testify-suite](examples/example-03.md) <br />More:
 [docs/testing/testify-suite](docs/testing/testify-suite.md)
 
 <br />
-<br />
 
 ---
 
@@ -239,6 +244,8 @@ zt.GetQuery(app, "/api/v1/search", url.Values{"q": {"fiber"}}).OK()
 
 More: [docs/requests](docs/requests/README.md)
 
+<br />
+
 ---
 
 ### Status Assertions
@@ -262,6 +269,8 @@ zt.Get(app, "/api/v1/users/1").StatusIn(200, 204)
 
 More: [docs/assertions/status](docs/assertions/status.md)
 
+<br />
+
 ---
 
 ### Headers Assertions
@@ -275,7 +284,7 @@ Save time and improve clarity with assertions like `IsJSON()` instead of
 zt.Get(app, "/").HasHeader("X-Served-By", "api-1")
 // check for presence
 zt.Get(app, "/api/v1/users").HeaderPresent("X-Request-Id")
-// ensure absent: a one-line security check
+// assert header is absent
 zt.Get(app, "/api/v1/users").HeaderNotPresent("X-Powered-By")
 // check header for multiple values
 zt.Get(app, "/api/v1/users").HeaderHasValues("X-Features", []string{"audio", "video"})
@@ -284,9 +293,11 @@ zt.Get(app, "/api/v1/users").HeaderHasValues("X-Features", []string{"audio", "vi
 Content-type shortcuts: [docs/assertions/content-types](docs/assertions/content-types.md)
 <br />More: [docs/assertions/headers](docs/assertions/headers.md)
 
+<br />
+
 ---
 
-### HTML Body Assertions
+### Response Body Assertions
 
 Easily assert returned HTML `Contains("some words")` or `NotContains("other words")`, you can even
 use regexp with `BodyMatches(regexp)` to assert that content is present.
@@ -302,7 +313,9 @@ zt.Get(app, "/robots.txt").OK().Equals("User-agent: *")
 zt.Get(app, "/blank").OK().IsEmpty()
 ```
 
-More: [docs/assertions/body-html](docs/assertions/body-html.md)
+More: [docs/assertions/response-body](docs/assertions/body-html.md)
+
+<br />
 
 ---
 
@@ -337,6 +350,8 @@ zt.Get(app, "/api/v1/users/1").OK().Bind(&user)
 
 More: [docs/assertions/json](docs/assertions/body-json.md)
 
+<br />
+
 ---
 
 ### GORM Database Assertions
@@ -345,7 +360,7 @@ Conveniently `SetupTestDB()`, `DBMigrate()`, `DBSeed()` and `DBReset()` test dat
 you can create `DBCreate()`, read `DBFind()`, update `DBUpdate()` or delete `DBDelete()` records.
 
 A real test database, gone when the test ends: one line opens in-memory SQLite, migrates your models
-and closes itself. No fixture files, no cleanup, nothing leaking into the next test.
+and closes itself. No fixture files and automatic test cleanup before the next test.
 
 ```go
 db := zentests.SetupTestDBWithModels(t, &User{}, &Post{}) // :memory:, AutoMigrate, auto-close
@@ -358,9 +373,11 @@ zentests.DBUpdate(t, db, found, found.ID, map[string]any{"name": "Janet"})
 zentests.DBCount(t, db, &User{}) // 1
 ```
 
-Note, uses GORM's SQLite driver so it requires CGO and a C compiler.
+Note: this uses GORM's SQLite driver so it requires CGO and a C compiler.
 
 More: [docs/database](docs/database/README.md)
+
+<br />
 
 ---
 
@@ -389,6 +406,8 @@ The jar is deliberately flat: no path, domain or expiry matching, so every store
 every request. `jar.Cookie("session")` returns the raw value when you need it.
 
 More: [docs/requests/cookie-jars](docs/requests/cookie-jars.md)
+
+<br />
 
 ---
 
@@ -420,6 +439,8 @@ which keeps logout tests honest.
 
 More: [docs/assertions/cookies](docs/assertions/cookies.md)
 
+<br />
+
 ---
 
 ### App and Logger Helpers
@@ -429,7 +450,7 @@ Create custom config test apps easily with `NewApp()`, confirm routes are regist
 helper.
 
 ```go
-// declare a custom Fiber app with a custom configs
+// declare a Fiber app with a custom configurations
 app := zentests.NewApp(t, fiber.Config{
 	Views:             html.New("./views", ".html"), // requires `github.com/gofiber/template/html/v3`
 	AppName:           "MyApp",
@@ -481,8 +502,8 @@ Don't miss:
   shared by many tests.
 
 Choose your preference. Try the flat style first, then the BDD style, or go straight to the
-`testify/suite` style. It really doesn't matter, because the usage is almost identical in all of
-them, just instantiate `zt := zentests.New(t)` and begin testing.
+`testify/suite` style. Either way the usage is almost identical in all of them, just instantiate
+`zt := zentests.New(t)` and begin testing.
 
 More: [docs/testing](docs/testing/README.md)
 
@@ -500,14 +521,16 @@ the instructions and complete `*_test.go` code so you can test them yourself.
 - [Example 1](examples/example-01.md) &mdash; plain `func Test` style tests of status, headers, JSON
   paths and array indices, `PostJSON`, and a 404 response
 
-- [Example 2](examples/example-02.md) &mdash; BDD styled tests with nested blocks, `BeforeEach`
-  scope and dotted paths.
+- [Example 2](examples/example-02.md) &mdash; BDD-style tests with nested blocks, `BeforeEach` scope
+  and dotted paths.
 
-- [Example 3](examples/example-03.md) &mdash; uses `testify/suite` styled tests with a shared
+- [Example 3](examples/example-03.md) &mdash; uses `testify/suite` style tests with a shared
   in-memory database, `DBReset` per test and seeding with `DBCreateN`.
 
 These examples are intended to be runnable, while the code in the [docs](docs/README.md) pages is
 generally illustrative.
+
+<br />
 
 ---
 
