@@ -48,6 +48,7 @@ type SuiteContext struct {
 //	})
 func (zt *T) Describe(name string, fn func(ctx *SuiteContext)) {
 	zt.Run(name, func(t *testing.T) {
+		t.Helper()
 		fn(&SuiteContext{t: t})
 	})
 }
@@ -72,6 +73,7 @@ func (zt *T) Describe(name string, fn func(ctx *SuiteContext)) {
 //	})
 func (ctx *SuiteContext) Describe(name string, fn func(ctx *SuiteContext)) {
 	ctx.t.Run(name, func(t *testing.T) {
+		t.Helper()
 		fn(&SuiteContext{t: t, parent: ctx})
 	})
 }
@@ -95,12 +97,16 @@ func (ctx *SuiteContext) It(name string, fn func(*T)) {
 	before, after := ctx.hooks()
 
 	ctx.t.Run(name, func(t *testing.T) {
+		t.Helper()
 		zt := &T{T: t}
 
 		// Register cleanups before setup so they still run if a BeforeEach hook stops the test.
 		// Cleanups run last-in first-out, so registering outermost first runs innermost first.
 		for _, hook := range after {
-			t.Cleanup(func() { hook(zt) })
+			t.Cleanup(func() {
+				t.Helper()
+				hook(zt)
+			})
 		}
 		for _, hook := range before {
 			hook(zt)

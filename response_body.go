@@ -19,6 +19,7 @@ import (
 //
 //	zt.Get(app, "/page").Contains("Welcome")
 func (r *Response) Contains(substring string) *Response {
+	r.t.Helper()
 	assert.Contains(r.t, r.BodyString(), substring, "body should contain substring")
 	return r
 }
@@ -36,6 +37,7 @@ func (r *Response) Contains(substring string) *Response {
 //
 //	zt.Get(app, "/public").NotContains("password")
 func (r *Response) NotContains(substring string) *Response {
+	r.t.Helper()
 	assert.NotContains(r.t, r.BodyString(), substring, "body should not contain substring")
 	return r
 }
@@ -53,6 +55,7 @@ func (r *Response) NotContains(substring string) *Response {
 //
 //	zt.Get(app, "/users/1").BodyMatches(`User ID: \d+`)
 func (r *Response) BodyMatches(pattern string) *Response {
+	r.t.Helper()
 	matched, err := regexp.MatchString(pattern, r.BodyString())
 	if !assert.NoError(r.t, err, "invalid regex pattern") {
 		return r
@@ -74,6 +77,7 @@ func (r *Response) BodyMatches(pattern string) *Response {
 //
 //	zt.Get(app, "/ping").Equals("pong")
 func (r *Response) Equals(expected string) *Response {
+	r.t.Helper()
 	assert.Equal(r.t, expected, r.BodyString(), "body mismatch")
 	return r
 }
@@ -88,6 +92,7 @@ func (r *Response) Equals(expected string) *Response {
 //
 //	zt.Delete(app, "/users/1").NoContent().IsEmpty()
 func (r *Response) IsEmpty() *Response {
+	r.t.Helper()
 	assert.Empty(r.t, r.BodyString(), "body should be empty")
 	return r
 }

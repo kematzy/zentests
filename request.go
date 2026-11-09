@@ -75,6 +75,7 @@ func testConfig(cfg fiber.TestConfig) fiber.TestConfig {
 //	// Internal usage only - use Get(), Post(), etc. instead
 //	resp := execute(t, app, "GET", "/users", nil, nil, fiber.TestConfig{})
 func execute(t testing.TB, app *fiber.App, method, path string, body io.Reader, headers map[string]string, cfg fiber.TestConfig) *Response {
+	t.Helper()
 	req := httptest.NewRequestWithContext(context.Background(), method, path, body)
 	for k, v := range headers {
 		req.Header.Set(k, v)
@@ -87,6 +88,7 @@ func execute(t testing.TB, app *fiber.App, method, path string, body io.Reader, 
 // execute and Jar both delegate here, so every request is handled the same way.
 // It stops the test (via require) if the request cannot be executed, for example on timeout.
 func send(t testing.TB, app *fiber.App, req *http.Request, cfg fiber.TestConfig) *Response {
+	t.Helper()
 	resp, err := app.Test(req, testConfig(cfg)) //nolint:bodyclose // body is stored in Response for lazy reading
 	require.NoError(t, err, "request execution failed")
 
@@ -112,6 +114,7 @@ func send(t testing.TB, app *fiber.App, req *http.Request, cfg fiber.TestConfig)
 // Returns:
 //   - *Response: A Response wrapper for making assertions
 func executeJSON(t testing.TB, app *fiber.App, method, path string, data any, headers map[string]string, cfg fiber.TestConfig) *Response {
+	t.Helper()
 	jsonBody, err := json.Marshal(data)
 	require.NoError(t, err, "JSON marshaling failed")
 
@@ -157,6 +160,7 @@ func formBody(data map[string]string) io.Reader {
 //	resp := zt.Get(app, "/users")
 //	resp.OK().IsJSON().Has("data.users.0.name", "John")
 func (zt *T) Get(app *fiber.App, path string) *Response {
+	zt.Helper()
 	return zt.GetWithConfig(app, path, fiber.TestConfig{})
 }
 
@@ -177,6 +181,7 @@ func (zt *T) Get(app *fiber.App, path string) *Response {
 //	body := []byte("raw data")
 //	zt.Post(app, "/upload", body).OK()
 func (zt *T) Post(app *fiber.App, path string, body []byte) *Response {
+	zt.Helper()
 	return zt.PostWithConfig(app, path, body, fiber.TestConfig{})
 }
 
@@ -197,6 +202,7 @@ func (zt *T) Post(app *fiber.App, path string, body []byte) *Response {
 //	data := map[string]string{"name": "John", "email": "john@example.com"}
 //	zt.PostJSON(app, "/users", data).Created().Has("id", float64(1))
 func (zt *T) PostJSON(app *fiber.App, path string, data any) *Response {
+	zt.Helper()
 	return zt.PostJSONWithConfig(app, path, data, fiber.TestConfig{})
 }
 
@@ -217,6 +223,7 @@ func (zt *T) PostJSON(app *fiber.App, path string, data any) *Response {
 //	data := map[string]string{"username": "john", "password": "secret"}
 //	zt.PostForm(app, "/login", data).OK()
 func (zt *T) PostForm(app *fiber.App, path string, data map[string]string) *Response {
+	zt.Helper()
 	return zt.PostFormWithConfig(app, path, data, fiber.TestConfig{})
 }
 
@@ -236,6 +243,7 @@ func (zt *T) PostForm(app *fiber.App, path string, data map[string]string) *Resp
 //	body := []byte(`{"name": "Updated Name"}`)
 //	zt.Put(app, "/users/1", body).OK()
 func (zt *T) Put(app *fiber.App, path string, body []byte) *Response {
+	zt.Helper()
 	return zt.PutWithConfig(app, path, body, fiber.TestConfig{})
 }
 
@@ -256,6 +264,7 @@ func (zt *T) Put(app *fiber.App, path string, body []byte) *Response {
 //	data := map[string]string{"name": "Updated Name"}
 //	zt.PutJSON(app, "/users/1", data).OK()
 func (zt *T) PutJSON(app *fiber.App, path string, data any) *Response {
+	zt.Helper()
 	return zt.PutJSONWithConfig(app, path, data, fiber.TestConfig{})
 }
 
@@ -275,6 +284,7 @@ func (zt *T) PutJSON(app *fiber.App, path string, data any) *Response {
 //	body := []byte(`{"status": "active"}`)
 //	zt.Patch(app, "/users/1", body).OK()
 func (zt *T) Patch(app *fiber.App, path string, body []byte) *Response {
+	zt.Helper()
 	return zt.PatchWithConfig(app, path, body, fiber.TestConfig{})
 }
 
@@ -295,6 +305,7 @@ func (zt *T) Patch(app *fiber.App, path string, body []byte) *Response {
 //	data := map[string]string{"status": "active"}
 //	zt.PatchJSON(app, "/users/1", data).OK()
 func (zt *T) PatchJSON(app *fiber.App, path string, data any) *Response {
+	zt.Helper()
 	return zt.PatchJSONWithConfig(app, path, data, fiber.TestConfig{})
 }
 
@@ -312,6 +323,7 @@ func (zt *T) PatchJSON(app *fiber.App, path string, data any) *Response {
 //
 //	zt.Delete(app, "/users/1").NoContent()
 func (zt *T) Delete(app *fiber.App, path string) *Response {
+	zt.Helper()
 	return zt.DeleteWithConfig(app, path, fiber.TestConfig{})
 }
 
@@ -332,6 +344,7 @@ func (zt *T) Delete(app *fiber.App, path string) *Response {
 //	data := map[string][]int{"ids": {1, 2, 3}}
 //	zt.DeleteJSON(app, "/users/bulk", data).OK()
 func (zt *T) DeleteJSON(app *fiber.App, path string, data any) *Response {
+	zt.Helper()
 	return zt.DeleteJSONWithConfig(app, path, data, fiber.TestConfig{})
 }
 
@@ -357,6 +370,7 @@ func (zt *T) DeleteJSON(app *fiber.App, path string, data any) *Response {
 //	    Timeout: 5 * time.Second,
 //	}).OK()
 func (zt *T) GetWithConfig(app *fiber.App, path string, cfg fiber.TestConfig) *Response {
+	zt.Helper()
 	return execute(zt.T, app, "GET", path, nil, zt.mergedHeaders(nil), cfg)
 }
 
@@ -377,6 +391,7 @@ func (zt *T) GetWithConfig(app *fiber.App, path string, cfg fiber.TestConfig) *R
 //	    Timeout: 10 * time.Second,
 //	}).OK()
 func (zt *T) PostWithConfig(app *fiber.App, path string, body []byte, cfg fiber.TestConfig) *Response {
+	zt.Helper()
 	return execute(zt.T, app, "POST", path, bytes.NewReader(body), zt.mergedHeaders(nil), cfg)
 }
 
@@ -398,6 +413,7 @@ func (zt *T) PostWithConfig(app *fiber.App, path string, body []byte, cfg fiber.
 //	    FailOnTimeout: true,
 //	}).Created()
 func (zt *T) PostJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.TestConfig) *Response {
+	zt.Helper()
 	return executeJSON(zt.T, app, "POST", path, data, zt.mergedHeaders(nil), cfg)
 }
 
@@ -418,6 +434,7 @@ func (zt *T) PostJSONWithConfig(app *fiber.App, path string, data any, cfg fiber
 //	    Timeout: 5 * time.Second,
 //	}).OK()
 func (zt *T) PostFormWithConfig(app *fiber.App, path string, data map[string]string, cfg fiber.TestConfig) *Response {
+	zt.Helper()
 	headers := zt.mergedHeaders(SetHeader("Content-Type", "application/x-www-form-urlencoded"))
 	return execute(zt.T, app, "POST", path, formBody(data), headers, cfg)
 }
@@ -433,6 +450,7 @@ func (zt *T) PostFormWithConfig(app *fiber.App, path string, data map[string]str
 // Returns:
 //   - *Response: A Response wrapper for making assertions
 func (zt *T) PutWithConfig(app *fiber.App, path string, body []byte, cfg fiber.TestConfig) *Response {
+	zt.Helper()
 	return execute(zt.T, app, "PUT", path, bytes.NewReader(body), zt.mergedHeaders(nil), cfg)
 }
 
@@ -447,6 +465,7 @@ func (zt *T) PutWithConfig(app *fiber.App, path string, body []byte, cfg fiber.T
 // Returns:
 //   - *Response: A Response wrapper for making assertions
 func (zt *T) PutJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.TestConfig) *Response {
+	zt.Helper()
 	return executeJSON(zt.T, app, "PUT", path, data, zt.mergedHeaders(nil), cfg)
 }
 
@@ -461,6 +480,7 @@ func (zt *T) PutJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.
 // Returns:
 //   - *Response: A Response wrapper for making assertions
 func (zt *T) PatchWithConfig(app *fiber.App, path string, body []byte, cfg fiber.TestConfig) *Response {
+	zt.Helper()
 	return execute(zt.T, app, "PATCH", path, bytes.NewReader(body), zt.mergedHeaders(nil), cfg)
 }
 
@@ -475,6 +495,7 @@ func (zt *T) PatchWithConfig(app *fiber.App, path string, body []byte, cfg fiber
 // Returns:
 //   - *Response: A Response wrapper for making assertions
 func (zt *T) PatchJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.TestConfig) *Response {
+	zt.Helper()
 	return executeJSON(zt.T, app, "PATCH", path, data, zt.mergedHeaders(nil), cfg)
 }
 
@@ -488,6 +509,7 @@ func (zt *T) PatchJSONWithConfig(app *fiber.App, path string, data any, cfg fibe
 // Returns:
 //   - *Response: A Response wrapper for making assertions
 func (zt *T) DeleteWithConfig(app *fiber.App, path string, cfg fiber.TestConfig) *Response {
+	zt.Helper()
 	return execute(zt.T, app, "DELETE", path, nil, zt.mergedHeaders(nil), cfg)
 }
 
@@ -502,6 +524,7 @@ func (zt *T) DeleteWithConfig(app *fiber.App, path string, cfg fiber.TestConfig)
 // Returns:
 //   - *Response: A Response wrapper for making assertions
 func (zt *T) DeleteJSONWithConfig(app *fiber.App, path string, data any, cfg fiber.TestConfig) *Response {
+	zt.Helper()
 	return executeJSON(zt.T, app, "DELETE", path, data, zt.mergedHeaders(nil), cfg)
 }
 

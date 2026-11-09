@@ -4,28 +4,6 @@
 
 Any items within this section have been confirmed as to be implemented.
 
-### Report failures at the caller's line (`t.Helper()`)
-
-A failed assertion currently points at a library file:line in the failure report, such as
-`response_http.go:24` for `.OK()`. Calling `t.Helper()` (or `r.t.Helper()` / `j.t.Helper()`) in the
-failing method and each wrapper in its call chain should make the report point to the test call site.
-
-This is not a correctness problem—the test still fails—but it makes failures harder to jump to in
-editors and CI. Add helpers to exported methods that report test failures and to wrappers that lead
-to those methods. Do not add them indiscriminately to every exported method: pure setters, accessors,
-and constructors that cannot report a test failure do not need them. Logger methods have no testing
-context.
-
-**Audit before editing:** the old per-file counts were stale. For example, several `Jar` methods and
-the route assertions already call `Helper()`, while `zentests.New` does not itself report failures.
-Recheck the current call chains rather than relying on the previous count table.
-
-**Acceptance:** a deliberately failing chain such as `zt.Get(app, "/nope").OK()` reports the test
-file and the line containing the chain, not a `zentests` source line. Verify at least one direct
-assertion and one delegated chain, then run the existing test suite unchanged.
-
----
-
 ### Verify the Markdown examples in CI
 
 The runnable examples live in `examples/*.md`, but CI does not compile or run them. `go vet` cannot

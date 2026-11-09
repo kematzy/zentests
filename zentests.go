@@ -69,6 +69,7 @@ func New(t *testing.T) *T {
 // Returns:
 //   - *T: The receiver for method chaining
 func (zt *T) Use(app *fiber.App) *T {
+	zt.Helper()
 	if app == nil {
 		zt.Fatal("zentests: Use called with a nil *fiber.App")
 	}

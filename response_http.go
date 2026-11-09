@@ -21,6 +21,7 @@ import (
 //	zt.Get(app, "/users").Status(200)
 //	zt.Get(app, "/notfound").Status(404)
 func (r *Response) Status(expected int) *Response {
+	r.t.Helper()
 	assert.Equal(r.t, expected, r.StatusCode, "status code mismatch")
 	return r
 }
@@ -35,6 +36,7 @@ func (r *Response) Status(expected int) *Response {
 //
 //	zt.Get(app, "/users").OK()
 func (r *Response) OK() *Response {
+	r.t.Helper()
 	return r.Status(200)
 }
 
@@ -49,6 +51,7 @@ func (r *Response) OK() *Response {
 //
 //	zt.PostJSON(app, "/users", data).Created()
 func (r *Response) Created() *Response {
+	r.t.Helper()
 	return r.Status(201)
 }
 
@@ -63,6 +66,7 @@ func (r *Response) Created() *Response {
 //
 //	zt.PostJSON(app, "/jobs", jobData).Accepted()
 func (r *Response) Accepted() *Response {
+	r.t.Helper()
 	return r.Status(202)
 }
 
@@ -77,6 +81,7 @@ func (r *Response) Accepted() *Response {
 //
 //	zt.Delete(app, "/users/1").NoContent()
 func (r *Response) NoContent() *Response {
+	r.t.Helper()
 	return r.Status(204)
 }
 
@@ -91,6 +96,7 @@ func (r *Response) NoContent() *Response {
 //
 //	zt.PostJSON(app, "/users", invalidData).BadRequest()
 func (r *Response) BadRequest() *Response {
+	r.t.Helper()
 	return r.Status(400)
 }
 
@@ -105,6 +111,7 @@ func (r *Response) BadRequest() *Response {
 //
 //	zt.Get(app, "/protected").Unauthorized()
 func (r *Response) Unauthorized() *Response {
+	r.t.Helper()
 	return r.Status(401)
 }
 
@@ -119,6 +126,7 @@ func (r *Response) Unauthorized() *Response {
 //
 //	zt.Get(app, "/admin").Forbidden()
 func (r *Response) Forbidden() *Response {
+	r.t.Helper()
 	return r.Status(403)
 }
 
@@ -133,6 +141,7 @@ func (r *Response) Forbidden() *Response {
 //
 //	zt.Get(app, "/users/999").NotFound()
 func (r *Response) NotFound() *Response {
+	r.t.Helper()
 	return r.Status(404)
 }
 
@@ -147,6 +156,7 @@ func (r *Response) NotFound() *Response {
 //
 //	zt.PostJSON(app, "/users", invalidUserData).Unprocessable()
 func (r *Response) Unprocessable() *Response {
+	r.t.Helper()
 	return r.Status(422)
 }
 
@@ -161,6 +171,7 @@ func (r *Response) Unprocessable() *Response {
 //
 //	zt.Get(app, "/broken").ServerError()
 func (r *Response) ServerError() *Response {
+	r.t.Helper()
 	return r.Status(500)
 }
 
@@ -293,6 +304,7 @@ func (r *Response) StatusIn(codes ...int) *Response {
 //
 //	zt.Get(app, "/api/users").HasHeader("Content-Type", "application/css") // raises an error
 func (r *Response) HasHeader(key, value string) *Response {
+	r.t.Helper()
 	actual := r.Header.Get(key)
 	assert.Equal(r.t, value, actual, "header %s mismatch", key)
 	return r
@@ -315,6 +327,7 @@ func (r *Response) HasHeader(key, value string) *Response {
 //
 //	zt.Get(app, "/api/users").HeaderContains("Content-Type", "image") // raises an error
 func (r *Response) HeaderContains(key, substring string) *Response {
+	r.t.Helper()
 	actual := r.Header.Get(key)
 	assert.Contains(r.t, actual, substring, "header %s should contain %q", key, substring)
 	return r
@@ -333,6 +346,7 @@ func (r *Response) HeaderContains(key, substring string) *Response {
 //
 //	zt.Get(app, "/secure").HeaderPresent("X-Auth-Token")
 func (r *Response) HeaderPresent(key string) *Response {
+	r.t.Helper()
 	assert.NotEmpty(r.t, r.Header.Get(key), "Expected header %s to exist", key)
 	return r
 }
@@ -350,6 +364,7 @@ func (r *Response) HeaderPresent(key string) *Response {
 //
 //	zt.Get(app, "/public").HeaderNotPresent("Authorization")
 func (r *Response) HeaderNotPresent(key string) *Response {
+	r.t.Helper()
 	assert.Empty(r.t, r.Header.Get(key), "Expected header %s to not exist", key)
 	return r
 }
@@ -369,6 +384,7 @@ func (r *Response) HeaderNotPresent(key string) *Response {
 //
 //	zt.Get(app, "/features").HeaderHasValues("X-Features", []string{"audio", "video"})
 func (r *Response) HeaderHasValues(key string, values []string) *Response {
+	r.t.Helper()
 	headerValues := r.Header.Values(key)
 	assert.ElementsMatch(r.t, values, headerValues)
 	return r
@@ -390,6 +406,7 @@ func (r *Response) HeaderHasValues(key string, values []string) *Response {
 //	    "theme": "dark",
 //	})
 func (r *Response) CookieHasValues(expected map[string]string) *Response {
+	r.t.Helper()
 	// NOTE! must be called on the response
 	cookies := r.resp.Cookies() // Parses "Set-Cookie" headers automatically
 
@@ -512,6 +529,7 @@ func (r *Response) CookieNotPresent(name string) *Response {
 //
 //	zt.Get(app, "/page").HasContentType("text/html; charset=utf-8")
 func (r *Response) HasContentType(contentType string) *Response {
+	r.t.Helper()
 	return r.HasHeader("Content-Type", contentType)
 }
 
@@ -525,6 +543,7 @@ func (r *Response) HasContentType(contentType string) *Response {
 //
 //	zt.Get(app, "/api/users").OK().IsJSON()
 func (r *Response) IsJSON() *Response {
+	r.t.Helper()
 	return r.HeaderContains("Content-Type", "application/json")
 }
 
@@ -538,6 +557,7 @@ func (r *Response) IsJSON() *Response {
 //
 //	zt.Get(app, "/").OK().IsHTML()
 func (r *Response) IsHTML() *Response {
+	r.t.Helper()
 	return r.HeaderContains("Content-Type", "text/html")
 }
 
@@ -551,6 +571,7 @@ func (r *Response) IsHTML() *Response {
 //
 //	zt.Get(app, "/health").OK().IsPlainText()
 func (r *Response) IsPlainText() *Response {
+	r.t.Helper()
 	return r.HeaderContains("Content-Type", "text/plain")
 }
 
@@ -564,6 +585,7 @@ func (r *Response) IsPlainText() *Response {
 //
 //	zt.Get(app, "/style.css").OK().IsCSS()
 func (r *Response) IsCSS() *Response {
+	r.t.Helper()
 	return r.HeaderContains("Content-Type", "text/css")
 }
 
@@ -578,6 +600,7 @@ func (r *Response) IsCSS() *Response {
 //
 //	zt.Get(app, "/app.js").OK().IsJS()
 func (r *Response) IsJS() *Response {
+	r.t.Helper()
 	return r.HeaderContains("Content-Type", "javascript")
 }
 
@@ -592,6 +615,7 @@ func (r *Response) IsJS() *Response {
 //
 //	zt.Get(app, "/api/data.xml").OK().IsXML()
 func (r *Response) IsXML() *Response {
+	r.t.Helper()
 	return r.HeaderContains("Content-Type", "xml")
 }
 
@@ -605,6 +629,7 @@ func (r *Response) IsXML() *Response {
 //
 //	zt.Get(app, "/api/users").OK().IsXHR()
 func (r *Response) IsXHR() *Response {
+	r.t.Helper()
 	return r.HeaderContains("X-Requested-With", "XMLHttpRequest")
 }
 
@@ -618,6 +643,7 @@ func (r *Response) IsXHR() *Response {
 //
 //	zt.Get(app, "/photo.jpg").OK().IsImage()
 func (r *Response) IsImage() *Response {
+	r.t.Helper()
 	return r.HeaderContains("Content-Type", "image/")
 }
 
@@ -631,6 +657,7 @@ func (r *Response) IsImage() *Response {
 //
 //	zt.Get(app, "/logo.png").OK().IsPNG()
 func (r *Response) IsPNG() *Response {
+	r.t.Helper()
 	return r.HeaderContains("Content-Type", "image/png")
 }
 
@@ -644,6 +671,7 @@ func (r *Response) IsPNG() *Response {
 //
 //	zt.Get(app, "/photo.jpg").OK().IsJPEG()
 func (r *Response) IsJPEG() *Response {
+	r.t.Helper()
 	return r.HeaderContains("Content-Type", "image/jpeg")
 }
 
@@ -657,6 +685,7 @@ func (r *Response) IsJPEG() *Response {
 //
 //	zt.Get(app, "/animation.gif").OK().IsGIF()
 func (r *Response) IsGIF() *Response {
+	r.t.Helper()
 	return r.HeaderContains("Content-Type", "image/gif")
 }
 
@@ -670,6 +699,7 @@ func (r *Response) IsGIF() *Response {
 //
 //	zt.Get(app, "/icon.svg").OK().IsSVG()
 func (r *Response) IsSVG() *Response {
+	r.t.Helper()
 	return r.HeaderContains("Content-Type", "image/svg+xml")
 }
 
@@ -683,5 +713,6 @@ func (r *Response) IsSVG() *Response {
 //
 //	zt.Get(app, "/photo.webp").OK().IsWebP()
 func (r *Response) IsWebP() *Response {
+	r.t.Helper()
 	return r.HeaderContains("Content-Type", "image/webp")
 }

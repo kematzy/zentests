@@ -24,6 +24,7 @@ import (
 //
 //	zt.Get(app, "/api/users").JSON().Has("data.0.name", "John")
 func (r *Response) JSON() *Response {
+	r.t.Helper()
 	if r.parsed {
 		return r
 	}
@@ -70,6 +71,7 @@ func (r *Response) Bind(target any) *Response {
 //   - any: The value at path (nil if not found)
 //   - bool: True if the path exists
 func (r *Response) lookup(path string) (any, bool) {
+	r.t.Helper()
 	r.JSON()
 	value, exists := getNestedValue(r.parsedJSON, path)
 	assert.True(r.t, exists, "JSON key %q not found", path)
@@ -86,6 +88,7 @@ func (r *Response) lookup(path string) (any, bool) {
 //   - float64: The numeric value at path
 //   - bool: True if the value exists and is a number
 func (r *Response) lookupNumber(path string) (float64, bool) {
+	r.t.Helper()
 	actual, exists := r.lookup(path)
 	if !exists {
 		return 0, false
@@ -109,6 +112,7 @@ func (r *Response) lookupNumber(path string) (float64, bool) {
 //
 //	zt.Get(app, "/api/users/1").HasKey("data.user.name")
 func (r *Response) HasKey(path string) *Response {
+	r.t.Helper()
 	r.lookup(path)
 	return r
 }
@@ -131,6 +135,7 @@ func (r *Response) HasKey(path string) *Response {
 //	zt.Get(app, "/api/users/1").Has("data.user.name", "John")
 //	zt.Get(app, "/api/count").Has("data.count", 42) // any numeric type works
 func (r *Response) Has(path string, expected any) *Response {
+	r.t.Helper()
 	actual, exists := r.lookup(path)
 	if !exists {
 		return r
@@ -180,6 +185,7 @@ func normalizeNumber(value any) any {
 //
 //	zt.Get(app, "/api/count").HasInt("data.total", 42)
 func (r *Response) HasInt(path string, expected int) *Response {
+	r.t.Helper()
 	number, ok := r.lookupNumber(path)
 	if ok {
 		assert.Equal(r.t, float64(expected), number, "int value mismatch for key %q", path)
@@ -201,6 +207,7 @@ func (r *Response) HasInt(path string, expected int) *Response {
 //
 //	zt.Get(app, "/api/score").HasFloat("data.score", 95.5)
 func (r *Response) HasFloat(path string, expected float64) *Response {
+	r.t.Helper()
 	number, ok := r.lookupNumber(path)
 	if ok {
 		assert.InDelta(r.t, expected, number, 0.0001, "float value mismatch for key %q", path)
@@ -221,6 +228,7 @@ func (r *Response) HasFloat(path string, expected float64) *Response {
 //
 //	zt.Get(app, "/api/users/1").HasString("data.user.email", "john@example.com")
 func (r *Response) HasString(path, expected string) *Response {
+	r.t.Helper()
 	actual, exists := r.lookup(path)
 	if exists {
 		assert.Equal(r.t, expected, actual, "string value mismatch for key %q", path)
@@ -241,6 +249,7 @@ func (r *Response) HasString(path, expected string) *Response {
 //
 //	zt.Get(app, "/api/status").HasBool("data.active", true)
 func (r *Response) HasBool(path string, expected bool) *Response {
+	r.t.Helper()
 	actual, exists := r.lookup(path)
 	if exists {
 		assert.Equal(r.t, expected, actual, "bool value mismatch for key %q", path)
@@ -262,6 +271,7 @@ func (r *Response) HasBool(path string, expected bool) *Response {
 //
 //	zt.Get(app, "/api/users/1").MatchesRegex("data.user.email", `^[\w.-]+@[\w.-]+\.\w+$`)
 func (r *Response) MatchesRegex(path, pattern string) *Response {
+	r.t.Helper()
 	actual, exists := r.lookup(path)
 	if !exists {
 		return r
@@ -298,6 +308,7 @@ func (r *Response) MatchesRegex(path, pattern string) *Response {
 //	    "data.user.active": true,
 //	})
 func (r *Response) JSONHasValues(expected map[string]any) *Response {
+	r.t.Helper()
 	for _, path := range slices.Sorted(maps.Keys(expected)) {
 		r.Has(path, expected[path])
 	}
@@ -322,6 +333,7 @@ func (r *Response) JSONHasValues(expected map[string]any) *Response {
 //	    "data.user.name": "John",
 //	})
 func (r *Response) JSONMatches(expected map[string]any) *Response {
+	r.t.Helper()
 	return r.JSONHasValues(expected)
 }
 
@@ -338,6 +350,7 @@ func (r *Response) JSONMatches(expected map[string]any) *Response {
 //
 //	zt.Get(app, "/api/users").ArrayLength("data.users", 10)
 func (r *Response) ArrayLength(path string, expected int) *Response {
+	r.t.Helper()
 	actual, exists := r.lookup(path)
 	if !exists {
 		return r
@@ -428,6 +441,7 @@ func (r *Response) ArrayEmpty(path string) *Response {
 //
 //	zt.Get(app, "/api/users/999").IsNull("data.user")
 func (r *Response) IsNull(path string) *Response {
+	r.t.Helper()
 	actual, exists := r.lookup(path)
 	if exists {
 		assert.Nil(r.t, actual, "expected null for key %q", path)
@@ -447,6 +461,7 @@ func (r *Response) IsNull(path string) *Response {
 //
 //	zt.Get(app, "/api/users/1").IsNotNull("data.user")
 func (r *Response) IsNotNull(path string) *Response {
+	r.t.Helper()
 	actual, exists := r.lookup(path)
 	if exists {
 		assert.NotNil(r.t, actual, "expected non-null for key %q", path)

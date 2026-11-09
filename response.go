@@ -50,6 +50,7 @@ type Response struct {
 //	body := resp.Body()
 //	fmt.Println(string(body))
 func (r *Response) Body() []byte {
+	r.t.Helper()
 	if !r.bodyRead {
 		var err error
 		r.body, err = io.ReadAll(r.resp.Body)
@@ -74,6 +75,7 @@ func (r *Response) Body() []byte {
 //	bodyStr := resp.BodyString()
 //	assert.Contains(t, bodyStr, "success")
 func (r *Response) BodyString() string {
+	r.t.Helper()
 	return string(r.Body())
 }
 
@@ -124,6 +126,7 @@ func (r *Response) redactedHeaders() http.Header {
 //
 //	zt.Get(app, "/users").Debug().OK()
 func (r *Response) Debug() *Response {
+	r.t.Helper()
 	fmt.Printf("\n=== ZENTESTS DEBUG ===\n\n%s\n", r.Dump())
 
 	if r.parsedJSON != nil {
@@ -150,6 +153,7 @@ func (r *Response) Debug() *Response {
 //	details := resp.Dump()
 //	t.Logf("Response details: %s", details)
 func (r *Response) Dump() string {
+	r.t.Helper()
 	return fmt.Sprintf("Status: %d\nHeaders: %v\nBody: %s",
 		r.StatusCode, r.redactedHeaders(), r.BodyString())
 }
