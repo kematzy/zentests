@@ -4,29 +4,6 @@
 
 Any items within this section have been confirmed as to be implemented.
 
-### Verify the Markdown examples in CI
-
-The runnable examples live in `examples/*.md`, but CI does not compile or run them. `go vet` cannot
-see Markdown, so an API change can silently break examples that the README presents as runnable.
-
-Proposed `make examples-check` target:
-
-1. Extract the designated runnable `go` block from each example into a temporary module. Each
-   current example has one complete Go block; fail clearly if that convention changes. Do not treat
-   arbitrary future Go snippets as runnable examples.
-2. Derive temporary directory and module names from the example filenames, and keep valid Go package
-   names from the source. Do not use Markdown titles as package names.
-3. Write a temporary `go.mod` requiring `github.com/kematzy/zentests` and replacing it with the local
-   checkout; run `go mod tidy` there.
-4. Run `go vet ./...` and `go test ./...`; return non-zero on any failure.
-5. Run the target from `make check` and CI.
-
-Cost: roughly 30–40 lines of shell or Python, with no new Go dependencies. Example 03 uses the
-SQLite helpers, so CI must have `CGO_ENABLED=1` and a C compiler. Verify the compiler in both jobs;
-the bundled `go-sqlite3` driver does not require a system SQLite development package by itself.
-
----
-
 ## Ideas
 
 Any items within this section are ideas and thoughts kept for future consideration, and should NOT

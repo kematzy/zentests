@@ -37,6 +37,7 @@ endef
 
 # non-file targets (commands)
 .PHONY: help fmt fmt-check vet lint tidy modernize modernize-check check spellcheck
+.PHONY: examples-check
 .PHONY: test test-verbose test-dox test-watch coverage-profile test-coverage
 .PHONY: release changelog docs docs-md
 
@@ -93,7 +94,7 @@ modernize-check:
 	@go fix -diff ./... | delta
 
 ## check: Check everything before a commit or push
-check: check-test-coverage fmt-check
+check: check-test-coverage fmt-check examples-check
 	@echo -e "\nChecked test suite: 			󰄬 (passed)"
 	@echo -e "Checking code formatting:		󰄬 (passed)"
 	@go vet ./...
@@ -104,6 +105,10 @@ check: check-test-coverage fmt-check
 	@echo -e "\nChecked spelling:			󰄬 (passed)"
 
 	@echo -e "\n\033[32m 󰄬   All checks passed \033[0m"
+
+## examples-check: Compile and run Go examples embedded in Markdown
+examples-check:
+	@bash scripts/check-examples.sh
 
 ## spellcheck: Check spelling (cspell)
 spellcheck:
