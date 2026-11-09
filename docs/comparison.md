@@ -1,14 +1,10 @@
 # Zentests - Docs - Comparison
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 The same test, three ways: a health check that must return `200`, `application/json` and
 `{"status": "it works"}`.
 
-The README shows abbreviated versions of all three; this page has the complete code.
-
-Here we wish to make it clear what `zentests` removes from that test, what else it gives you, what
-it deliberately does not do, and how to migrate an existing test.
+The README shows abbreviated versions of all three. Below is the complete code. It also shows what
+`zentests` removes, what it adds, where its scope ends, and how to migrate an existing test.
 
 ## Contents
 
@@ -79,7 +75,10 @@ func TestRouteAPIv1Healthz_Raw(t *testing.T) {
 }
 ```
 
-Summary: **29 lines** of code.
+Summary: **29 lines** of test code.
+
+The test handles request construction, errors, status and header checks, body reading, and JSON
+decoding explicitly.
 
 <br />
 
@@ -103,11 +102,10 @@ func TestRouteAPIv1Healthz_Testify(t *testing.T) {
 }
 ```
 
-Summary: **13 lines** of code.
+Summary: **13 lines** of test code.
 
-`testify` shortens the comparisons, but every request still needs its own `httptest` construction,
-its own error check and its own body handling — and the assertions are hand-written per field, so
-adding a fourth check (a header, a nested key, a cookie) means another block of code.
+`testify` shortens comparisons, but request construction, error handling, and body decoding remain
+explicit. Each additional expectation requires another assertion call.
 
 <br />
 
@@ -118,14 +116,14 @@ func TestRouteAPIv1Healthz_Zentests(t *testing.T) {
 	app := api.NewAPIApp() // create app instance
 	zt := zentests.New(t)  // create zentests instance
 
-	zt.Get(app, "/api/v1/healthz").OK().IsJSON().Has("status", "it works") // performs the tests
+	zt.Get(app, "/api/v1/healthz").OK().IsJSON().Has("status", "it works")
 }
 ```
 
-Summary: **4 lines** of code.
+Summary: **4 lines** oft test code.
 
-Same three assertions in one chain. `zentests` is built on `testify`, so it composes with the
-assertions you already use rather than replacing them.
+The request and its three expectations fit in one chain. `zentests` is built on `testify`, so it
+composes with the assertions you already use rather than replacing them.
 
 ---
 
@@ -147,8 +145,8 @@ chain, not another block.
 
 Beyond the single request above, the same import also provides:
 
-- **Timeouts** — `fiber.TestConfig` is applied for you (`1s` default, `ZENTESTS_TIMEOUT` to raise
-  it), so a stuck handler fails the test instead of hanging it.
+- **Timeouts** — plain methods use a `1s` timeout by default; `ZENTESTS_TIMEOUT` overrides it for
+  the process, and `fiber.TestConfig` customizes a call. A timeout fails the test by default.
 - **Multi-step flows** — `NewJar` keeps cookies between requests, so login → authenticated request
   reads like the flow it tests.
 - **Database setup** — `SetupTestDBWithModels`, `DBSeed`, `DBReset` replace hand-rolled in-memory
@@ -163,14 +161,16 @@ Every library has an edge, and knowing it up front saves an evaluation round-tri
 - **Not a replacement for `testify`.** It is built on `testify/assert` and `testify/require`; you
   can and often will use both in one file.
 
-Mocks, containers and snapshot testing are **currently** out of scope — use those tools alongside
-`zentests`, as the table at the end shows.
+General-purpose mocks, container orchestration, and snapshot testing are **currently** not built in.
+Use those tools alongside `zentests`; `MockLogger` is a focused logger test double.
 
 ---
 
 ## Migrating an existing test
 
-Take an `httptest`-based Fiber test and convert it in three steps.
+For each test, create a helper and replace request execution plus response handling with one chain.
+In a `testify/suite`, create the helper in `SetupTest`, not `SetupSuite`, so it is bound to the
+current test's `*testing.T`.
 
 1. **Create the helper once** in `SetupTest`/`SetupSuite` or at the top of the test:
 
@@ -181,37 +181,45 @@ Take an `httptest`-based Fiber test and convert it in three steps.
 2. **Replace the request block** with the equivalent method call:
 
     ```go
-    req := httptest.NewRequest(http.MethodGet, "/users", nil)   // before
+    // before
+    req := httptest.NewRequest(http.MethodGet, "/users", nil)
     resp, err := app.Test(req)
     require.NoError(t, err)
 
-    zt.Get(app, "/users")                                        // after
+    zt.Get(app, "/users")	// after
     ```
 
 3. **Replace the assertion block** with a chain, and drop the `defer resp.Body.Close()` — the body
    is read for you:
 
     ```go
-    assert.Equal(t, 200, resp.StatusCode)                        // before
+    // before
+    defer resp.Body.Close()
+
+    assert.Equal(t, http.StatusOK, resp.StatusCode)
+    assert.Contains(t, resp.Header.Get("Content-Type"), "application/json")
     var got map[string]any
     require.NoError(t, json.NewDecoder(resp.Body).Decode(&got))
     assert.Equal(t, "Jane", got["name"])
 
-    zt.Get(app, "/users").OK().IsJSON().Has("name", "Jane")     // after
+    zt.Get(app, "/users").OK().IsJSON().Has("name", "Jane") // after
     ```
 
-Assertions you cannot express yet (custom mocks, `assert.Eventually`, table-driven checks on
-structs) stay as `testify` calls — mixing is normal.
+The response body is read and cached when an assertion needs it; no manual decode or close is
+needed.
+
+Keep specialized checks such as `assert.Eventually` and direct struct comparisons as `testify`
+assertions. Mixing them with `zentests` is normal.
 
 ## Which should you use
 
-| Situation                                           | Recommendation                                                                               |
-| --------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| New Fiber v3 app, tests written from scratch        | `zentests` for HTTP and database tests                                                       |
-| Existing `testify` + `httptest` suite, working well | Keep it; migrate route by route if the boilerplate hurts                                     |
-| Existing `testify/suite` structure                  | Use `zentests.New(s.T())` inside the suite; see [testify-suite.md](testing/testify-suite.md) |
-| Non-Fiber framework                                 | Not supported                                                                                |
-| Need mocking, containers, snapshots                 | Use those tools alongside `zentests`, not instead of it                                      |
+| Situation                                           | Recommendation                                                                                |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| New Fiber v3 app, tests written from scratch        | `zentests` for HTTP and database tests                                                        |
+| Existing `testify` + `httptest` suite, working well | Keep it; migrate route by route if the boilerplate hurts                                      |
+| Existing `testify/suite` structure                  | Create `zentests.New(s.T())` in `SetupTest`; see [testify-suite.md](testing/testify-suite.md) |
+| Non-Fiber framework                                 | Not supported                                                                                 |
+| Need mocking, containers, snapshots                 | Use those tools alongside `zentests`, not instead of it                                       |
 
 ---
 

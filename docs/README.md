@@ -1,7 +1,5 @@
 # Zentests - Docs
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 Reference pages for each part of `zentests`. Every area has an overview page that states what the
 area covers, then one page per topic with examples and edge cases.
 
@@ -16,9 +14,9 @@ The [README](../README.md) stays short on purpose; the detail lives here.
 | [Assertions](assertions/README.md)  | Status, headers, bodies, JSON, cookies, content types, routes, debugging                    |
 | [Requests](requests/README.md)      | Request methods, default headers, `TestConfig` and timeouts, multipart, cookie jars         |
 | [Database](database/README.md)      | In-memory SQLite setup, records, mutations, transactions                                    |
-| [Helpers](helpers/README.md)        | `NewApp`, `HasRoute`/`NotHasRoute`, `Logger`/`MockLogger`                                   |
+| [Helpers](helpers/README.md)        | `NewApp`, `Logger`, and `MockLogger`                                                       |
 | [Contributing](contributing.md)     | Local setup, `make check`, branch policy, release                                           |
-| [API reference](API.md)             | Generated signatures — skim only; the pages above are the real documentation                |
+| [API reference](API.md)             | Generated signatures and package comments; the pages above are task-oriented guides        |
 
 ## Where to begin
 
@@ -28,7 +26,8 @@ The [README](../README.md) stays short on purpose; the detail lives here.
   side and what a migration looks like.
 - **Testing routes and responses** — [Assertions](assertions/README.md) and
   [Requests](requests/README.md).
-- **Testing with a database** — [Database](database/README.md); the helpers need `CGO_ENABLED=1`.
+- **Testing with a database** — [Database](database/README.md); the built-in SQLite constructors
+  require CGO and a C compiler.
 
 ## Examples
 
