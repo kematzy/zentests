@@ -1,10 +1,8 @@
 # Zentests - Docs - Database
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
-A real database in the test, gone when the test ends: the helpers open in-memory SQLite, migrate
-your GORM models and close the connection themselves, then give you short functions for the create,
-read, update and delete that every test repeats.
+Use a real GORM database in tests without repeating setup and record boilerplate. The built-in
+constructors open in-memory SQLite, optionally migrate models, and register cleanup; the record,
+mutation, and transaction helpers operate on a supplied `*gorm.DB`.
 
 ## Contents
 
@@ -30,13 +28,15 @@ zentests.DBCount(t, db, &User{}) // 1
 
 ## What the helpers assume
 
-- **GORM.** The helpers take a `*gorm.DB`, so they work with GORM models and GORM's query builder.
-- **SQLite in memory.** `SetupTestDB` and `SetupTestDBWithModels` hardwire `gorm.io/driver/sqlite`
-  with `":memory:"`. Other databases are not supported by these constructors.
+- **GORM.** Database helpers use GORM models and connections. Setup functions create the
+  `*gorm.DB`; record, mutation, and transaction helpers operate on the connection they receive.
+- **SQLite in memory.** `SetupTestDB` and `SetupTestDBWithModels` use `gorm.io/driver/sqlite`
+  with `":memory:"`. Other drivers and DSNs require opening your own `*gorm.DB`.
 - **CGO.** That driver links `mattn/go-sqlite3`, so the database tests need `CGO_ENABLED=1` and a C
   compiler. The HTTP half of `zentests` does not.
-- **A `*testing.T`.** Every function takes `t` as its first argument, calls `t.Helper()` and fails
-  the test on error — there are no error returns to check.
+- **A `*testing.T`.** Helpers take `t` first and report database errors as test failures. Most do
+  not return errors; `DBTx` returns the callback error after rollback and fails the test on begin or
+  commit errors.
 
 ## Cleanup is automatic
 

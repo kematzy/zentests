@@ -1,8 +1,6 @@
 # Zentests - Docs - Database - Setup
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
-Five functions cover the lifecycle of a test database: open, migrate, reset, close.
+These five functions cover opening, migrating, resetting, and closing a test database.
 
 | Function                              | Purpose                                                         |
 | ------------------------------------- | --------------------------------------------------------------- |
@@ -23,8 +21,9 @@ zentests.DBMigrate(t, db, &User{}, &Post{})
 db := zentests.SetupTestDBWithModels(t, &User{}, &Post{})
 ```
 
-Both use `":memory:"` with GORM's silent logger, so a failing query produces a test failure rather
-than log noise, and `time.Now().Local()` for timestamps.
+Both use `":memory:"`, GORM's silent logger, and `time.Now().Local()` for timestamps. Database
+helpers report errors through the test; direct GORM calls still need their errors handled by your
+code.
 
 ## Resetting between tests
 
@@ -51,15 +50,17 @@ zentests.CloseTestDB(t, db)
 zt.Get(app, "/api/v1/users").ServerError() // the handler now hits a dead connection
 ```
 
-Calling it twice is harmless: the second close returns an error that the helper ignores.
+Call `CloseTestDB` once. A second explicit call fails the test because the underlying SQL connection
+is already closed; the automatic cleanup registered by setup ignores its close error.
 
 ## Notes
 
-- **`DBReset` needs at least one migration.** With no tables it is a no-op.
+- **`DBReset` with no tables is a no-op.** It clears rows from tables that already exist; it does
+  not migrate models.
 - **In-memory means private.** Two `SetupTestDB` calls give two unrelated databases, even in the
   same test.
-- **Shared cache is not enabled** — no `?cache=shared` — so parallel tests each get their own
-  database instead of fighting over one.
+- **Shared cache is not enabled** — no `?cache=shared`. Use a separate `SetupTestDB` call for each
+  parallel test rather than sharing one database handle.
 
 ## Related
 

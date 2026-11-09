@@ -1,7 +1,5 @@
 # Zentests - Docs - Database - Mutations
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 Updating and deleting records mid-test, to set up the state a case needs or to trigger a code path
 that depends on missing data.
 
@@ -9,8 +7,8 @@ that depends on missing data.
 
 | Function                                           | Target                         |
 | -------------------------------------------------- | ------------------------------ |
-| `DBUpdate(t, db, &User{}, id, updates)`            | One row, by primary key        |
-| `DBUpdateBy(t, db, &User{}, where, args, updates)` | Every row matching a condition |
+| `DBUpdate(t, db, &User{}, id, updates)`            | By primary key; `nil` omits the ID filter |
+| `DBUpdateBy(t, db, &User{}, where, args []any, updates)` | Every row matching a condition |
 
 ```go
 zentests.DBUpdate(t, db, &User{}, 1, map[string]any{"status": "active"})
@@ -22,7 +20,8 @@ zentests.DBUpdateBy(t, db, &User{}, "status = ?", []any{"pending"}, map[string]a
 
 - `updates` is a map, so only the named columns change. Zero values are written, which is why the
   update uses `Updates` rather than `Save`.
-- Passing `nil` as the ID updates every row: `DBUpdate(t, db, &User{}, nil, updates)`.
+- Passing `nil` omits the ID filter. With GORM's default settings, an unfiltered update is rejected
+  with `ErrMissingWhereClause`; it updates all rows only if global updates are explicitly enabled.
 - `DBUpdateBy` takes its arguments as a `[]any`, not variadic, because `updates` comes after them.
 
 ## Deleting

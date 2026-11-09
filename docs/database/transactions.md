@@ -1,9 +1,7 @@
 # Zentests - Docs - Database - Transactions
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
-`DBTx` runs a function inside a transaction, commits when it returns `nil` and rolls back when it
-returns an error — useful when a test needs to prove that a set of writes stands or falls together.
+`DBTx` runs a callback inside a transaction: it commits when the callback returns `nil` and rolls
+back when it returns an error. Use it to test writes that must succeed or fail together.
 
 ## Signature
 
@@ -11,8 +9,8 @@ returns an error — useful when a test needs to prove that a set of writes stan
 zentests.DBTx(t, db, func(tx *gorm.DB) error) error
 ```
 
-The callback receives the transaction handle; use `tx`, not `db`, inside it. The returned error is
-the one your function produced, so a test can assert on it.
+The callback receives the transaction handle; use `tx`, not `db`, for writes that must participate
+in the transaction. Its returned error is surfaced after rollback; `nil` commits the transaction.
 
 ## Committing
 
@@ -57,11 +55,12 @@ value.
 
 ## Notes
 
-- **A commit failure fails the test**, through `require`; a rollback does not, because rolling back
-  is the expected outcome of an error.
+- **Begin and commit failures fail the test** through `require`; rollback errors are not returned by
+  `DBTx`.
 - **`DBTx` does not nest automatically.** If your code under test opens its own transaction, use
   GORM savepoints or test the code path directly.
-- **The callback's error is yours to assert on.** `DBTx` returns it unchanged after rolling back.
+- **Return errors from the callback to request rollback.** Do not call `require`/`FailNow` inside it:
+  those stop the test before `DBTx` can roll back. Assert on the returned callback error afterward.
 
 ## Related
 

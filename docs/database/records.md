@@ -1,10 +1,13 @@
 # Zentests - Docs - Database - Records
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 Creating and reading records without repeating `db.Create(...)` plus an error check in every test.
 
 ## Creating
+
+| Helper                                  | Behavior                                                   | Returns                        |
+| --------------------------------------- | ---------------------------------------------------------- | ------------------------------ |
+| `DBCreate(t, db, record)`               | Inserts one record                                         | Same pointer with GORM fields  |
+| `DBCreateN(t, db, count, factory)`      | Inserts `count` values; factory indices run from 1 to count | Slice of inserted pointers     |
 
 ```go
 user := zentests.DBCreate(t, db, &User{Name: "Jane", Email: "jane@example.com"})
@@ -20,6 +23,11 @@ value (not a pointer) keeps the factory free of loop-variable aliasing bugs.
 
 ## Seeding
 
+| Helper                         | Input   | Behavior                    |
+| ------------------------------ | ------- | --------------------------- |
+| `DBSeed(t, db, records)`       | `[]*T`  | Inserts each pointer in turn |
+| `DBSeedSlice(t, db, records)`  | `[]T`   | Inserts each value in turn   |
+
 For a fixed fixture, seed a slice instead of calling create in a loop:
 
 ```go
@@ -34,8 +42,9 @@ zentests.DBSeedSlice(t, db, []User{
 })
 ```
 
-`DBSeed` takes pointers; `DBSeedSlice` takes values and creates a pointer internally. Both insert
-row by row, so a constraint violation fails at the offending index.
+`DBSeed` takes pointers; `DBSeedSlice` takes values and creates pointers internally. Both insert
+one record at a time. A constraint violation fails the test on that insert; `DBSeedSlice` includes
+the record index in its failure message.
 
 ## Reading
 
@@ -61,8 +70,9 @@ zentests.DBNotExists(t, db, &User{}, "status = ?", "deleted")
 ```
 
 `DBFind`, `DBFindBy`, `DBFirst` and `DBLast` fail the test when nothing matches, and return a
-pointer to the populated record otherwise. `DBCount`, `DBExists` and `DBNotExists` return values you
-can assert on, and fail only on a database error.
+pointer to the populated record otherwise. `DBCount` returns a count and fails only on a database
+error. `DBExists` and `DBNotExists` are assertions: each returns `true` when its condition passes
+and fails the test when it does not.
 
 ## Conditions
 
@@ -78,8 +88,8 @@ zentests.DBCount(t, db, &User{}, "created_at > ? AND status = ?", cutoff, "activ
 
 - **The model argument is for the table.** `&User{}` needs no fields set; only its type matters.
 - **`DBFind` allocates nothing for you** — pass a pointer to a zero value, as shown.
-- **Ordering is the database's.** `DBFirst`/`DBLast` order by primary key; use `DBFindBy` with your
-  own ordering when insertion order matters.
+- **Ordering is by primary key.** `DBFirst` and `DBLast` use primary-key order, not insertion time.
+  Use a GORM query with an explicit `Order` clause when you need custom ordering.
 
 ## Related
 

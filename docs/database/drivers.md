@@ -1,9 +1,8 @@
 # Zentests - Docs - Database - Drivers
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
-The database helpers are built around one driver, on purpose: GORM's SQLite driver, in memory. That
-is what makes them one-liners, and it is the only database configuration this project tests.
+The built-in database constructors use GORM's SQLite driver with an in-memory database. Record,
+mutation, and transaction helpers accept a `*gorm.DB`, so they can also be used with a connection
+opened by your application.
 
 ## SQLite, via GORM
 
@@ -14,34 +13,38 @@ db := zentests.SetupTestDBWithModels(t, &User{}, &Post{})
 ```
 
 - **Driver:** `gorm.io/driver/sqlite` — GORM's recommended SQLite driver.
-- **DSN:** `":memory:"`, so nothing touches the filesystem and every test starts empty.
-- **Logger:** silent, so a failing query reports through `testing` rather than the console.
+- **DSN:** `":memory:"`, so the database does not touch the filesystem. Each constructor call opens
+  a fresh database; reusing a handle preserves its data until reset.
+- **Logger:** GORM logging is silent; database helpers report errors through `testing.T`.
 - **Time:** `time.Now().Local()`, so timestamp assertions are not surprised by UTC conversion.
 
 ## CGO is required
 
-`gorm.io/driver/sqlite` links `mattn/go-sqlite3`, which is a C library. Building the database
-helpers therefore needs:
+`gorm.io/driver/sqlite` uses `mattn/go-sqlite3`, which requires CGO. Running tests that use the
+SQLite constructors requires:
 
 - `CGO_ENABLED=1` (the default when a C compiler is present), and
 - a C toolchain — `gcc`/`clang` on Linux and macOS (Xcode command line tools count), MSYS2 or MinGW
   on Windows.
 
-If your CI image is `golang:alpine` or `CGO_ENABLED=0`, either install a toolchain and `gcc`, or
-keep the database helpers out of that build — the HTTP assertions compile without any of it.
+If your CI image is `golang:alpine` or uses `CGO_ENABLED=0`, install a C toolchain and enable CGO,
+or omit database-helper builds. The HTTP assertions compile with CGO disabled.
 
-## What is not supported
+## Built-in constructor limits
 
-- **PostgreSQL, MySQL, MariaDB.** No constructor accepts a foreign dialector, and no DSN parameter
-  exists. You can use those databases in your own tests, but not through these helpers.
-- **File-backed SQLite.** The helpers hardwire `":memory:"`. A `DBFind` on a `*gorm.DB` you opened
-  yourself works fine, since every helper takes the `*gorm.DB` as an argument.
-- **Pure-Go SQLite** (`modernc.org/sqlite`, `glebarez/sqlite`). Not wired in; the CGO caveat above
-  applies.
+- **PostgreSQL, MySQL, or another driver in the constructors.** `SetupTestDB` and
+  `SetupTestDBWithModels` always use in-memory SQLite and accept no dialector or DSN. Open another
+  GORM connection yourself, then pass it to the record, mutation, migration, or transaction helpers.
+  `DBReset` is intended for SQLite; its sequence reset is SQLite-specific.
+- **File-backed SQLite through the constructors.** They hardwire `":memory:"`; open a file-backed
+  connection yourself if you need one.
+- **Pure-Go SQLite in the built-in constructors** (`modernc.org/sqlite`, `glebarez/sqlite`). These
+  drivers are not wired in; the constructors use `mattn/go-sqlite3` and require CGO.
 
 ## Using your own connection
 
-Every helper takes `db *gorm.DB`, so the constructors are a convenience, not a requirement:
+Record, mutation, migration, and transaction helpers take `db *gorm.DB`; the constructors are
+convenience functions for in-memory SQLite, not a requirement. Open and migrate your own connection:
 
 ```go
 db, err := gorm.Open(sqlite.Open("file:test.db"), &gorm.Config{})
