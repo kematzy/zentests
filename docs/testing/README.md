@@ -1,7 +1,5 @@
 # Zentests - Docs - Testing Styles
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 `zentests` works with three styles of Go tests. The helper is the same in all of them
 (`zt := zentests.New(t)`); what changes is where the app, the database and the assertions live.
 
@@ -18,11 +16,11 @@ read as one idea.
 
 ## Which style
 
-| Style                               | Setup                              | Teardown                         | Best for                                                           |
-| ----------------------------------- | ---------------------------------- | -------------------------------- | ------------------------------------------------------------------ |
-| [Flat](flat.md)                     | `zentests.New(t)` inside each test | none — `t.Cleanup` handles it    | independent tests, small files, `t.Parallel()`                     |
-| [BDD](./bdd.md)                     | `BeforeEach` on a `Describe` block | `AfterEach`                      | grouping by behaviour, readable subtest trees                      |
-| [testify/suite](./testify-suite.md) | `SetupSuite` / `SetupTest`         | `TearDownTest` / `TearDownSuite` | one app or database shared by many tests, existing suite codebases |
+| Style                               | Setup                                   | Teardown / isolation                           | Best for                                               |
+| ----------------------------------- | --------------------------------------- | ---------------------------------------------- | ------------------------------------------------------ |
+| [Flat](flat.md)                     | `zentests.New(t)` and fixtures per test | No listener; resource helpers register cleanup | Independent tests; parallel when fixtures are isolated |
+| [BDD](./bdd.md)                     | `BeforeEach` per `Describe` block       | `AfterEach` per `It`                           | Named behavior groups and readable subtest trees       |
+| [testify/suite](./testify-suite.md) | `SetupSuite` / `SetupTest`              | `TearDownTest` / `TearDownSuite`               | Shared expensive fixtures; existing suite codebases    |
 
 Rules of thumb:
 
@@ -34,18 +32,18 @@ Rules of thumb:
 
 ## What every style shares
 
-- `zentests.New(t)` returns the helper; every assertion hangs off a `*Response` returned by a
-  request.
-- Each test gets its own helper and its own `*Response`; nothing is global.
-- `fiber.App.Test` drives requests in-process, so no listener, port or goroutine is involved and no
-  shutdown is required.
-- Database helpers register their own cleanup through `t.Cleanup`; only close a connection early
-  when a test is about reconnecting.
+- `zentests.New(t)` creates a helper for the current test; response assertions chain from the
+  `*Response` returned by each request.
+- Create a helper per test. A new helper does not isolate state in a shared app, database, or cookie
+  jar; reset or recreate those fixtures as needed.
+- `fiber.App.Test` handles requests in-process. No network listener or port is opened.
+- Resource helpers register cleanup through `t.Cleanup`; close a connection early only when a test
+  needs to release or reopen it explicitly.
 - `ZENTESTS_TIMEOUT` and `fiber.TestConfig` behave identically in all three styles.
 
 ## Examples
 
-Each style has a runnable example, with the same app tested three ways:
+Each style has a runnable example; the examples show how setup and request tests differ by style:
 
 - [examples/01-flat-style](../../examples/example-01.md)
 - [examples/02-bdd](../../examples/example-02.md)

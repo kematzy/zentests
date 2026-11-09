@@ -1,13 +1,9 @@
 # Zentests - Docs - Testing - testify/suite
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
-`testify/suite` builds setup once for a group of tests. Combined with `zentests` it is the right
-choice when several tests share an expensive resource — a migrated database, a fixture app, a seeded
-table — or when the project already has suite-based tests.
-
-Everything in the suite is ordinary `testify`: `zentests` only supplies the helper and the database
-helpers.
+`testify/suite` provides suite-level and per-test lifecycle hooks. Combine it with `zentests` when
+several tests share an expensive resource, such as a migrated database or app, or when the project
+already uses suites. `zentests` supplies the request helper and database helpers; `testify/suite`
+continues to run the test methods.
 
 ## The shape
 
@@ -21,12 +17,12 @@ type UserSuite struct {
 
 func (s *UserSuite) SetupSuite() {
 	s.db = zentests.SetupTestDBWithModels(s.T(), &User{}) // closed after the suite
-	s.zt = zentests.New(s.T())
 	s.app = fiber.New()
 	// routes ...
 }
 
 func (s *UserSuite) SetupTest() {
+	s.zt = zentests.New(s.T()) // bind assertions to this test's *testing.T
 	zentests.DBReset(s.T(), s.db) // same schema, empty tables
 }
 
@@ -53,8 +49,9 @@ TearDownSuite()         once, after every test method
 
 - `SetupTest`/`TearDownTest` run around **each** test method. `TearDownTest` is deferred before
   `SetupTest` runs, so it still runs when setup fails.
-- A failure in `SetupSuite` skips every test **and** `TearDownSuite` — its `defer` is only
-  registered after `SetupSuite` returns.
+- A fatal failure (`require`/`FailNow`) in `SetupSuite` exits before test methods run and before
+  `TearDownSuite` is registered. A non-fatal `assert` failure marks the suite test failed but allows
+  setup to return normally.
 - `s.Require()` stops the current test; `s.Assert()` records the failure and continues.
 
 ## `s.T()` and cleanup — the one thing to get right
@@ -62,7 +59,8 @@ TearDownSuite()         once, after every test method
 `s.T()` returns the `*testing.T` of the **currently running** test. In `SetupSuite` that is the
 suite-level `T`, in `SetupTest` and in a test method it is that test's `T`.
 
-This matters because every `zentests` helper registers cleanup with `t.Cleanup`:
+Resource helpers such as `SetupTestDBWithModels` and `NewApp` register cleanup with `t.Cleanup`.
+Cleanup runs at the scope of the `*testing.T` passed to the helper:
 
 | Called in    | Cleanup runs                     |
 | ------------ | -------------------------------- |
@@ -71,8 +69,9 @@ This matters because every `zentests` helper registers cleanup with `t.Cleanup`:
 | test method  | after that one test              |
 
 So `SetupTestDBWithModels(s.T(), ...)` in `SetupSuite` keeps one database for the whole suite, and
-`zentests.NewApp(s.T())` in `SetupSuite` keeps one app for the whole suite. Neither needs a manual
-close in `TearDownSuite`.
+`zentests.NewApp(s.T())` in `SetupSuite` keeps one app for the whole suite. Both register cleanup on
+the suite-level test; neither needs a manual close in `TearDownSuite`. `zentests.New` itself owns no
+resources; create it in `SetupTest` so assertions are attached to each individual test.
 
 ## Database isolation between tests
 
@@ -101,6 +100,9 @@ type BaseSuite struct {
 
 func (s *BaseSuite) SetupSuite() {
 	s.app = zentests.NewApp(s.T())
+}
+
+func (s *BaseSuite) SetupTest() {
 	s.zt = zentests.New(s.T())
 }
 
@@ -119,7 +121,8 @@ func (s *UserSuite) SetupSuite() {
 ```go
 func (s *SlowSuite) TestReport() {
 	s.zt.GetWithConfig(s.app, "/api/v1/report", fiber.TestConfig{
-		Timeout: 10 * time.Second,
+		Timeout:       10 * time.Second,
+		FailOnTimeout: true,
 	}).OK()
 }
 ```
@@ -129,10 +132,11 @@ func (s *SlowSuite) TestReport() {
 - **Forgetting `suite.Run`.** A suite without it compiles and never runs.
 - **`SetupSuite` instead of `SetupTest` for data.** Rows created in `SetupSuite` are visible to
   every test; reset them in `SetupTest` or create them per test.
-- **Sharing one `*T` across parallel tests.** `zentests.T` wraps a specific `*testing.T`; do not
-  reuse it inside `t.Parallel()` subtests — create one per test.
-- **Relying on `TearDownSuite` after a failed `SetupSuite`.** It does not run, so keep essential
-  cleanup in `t.Cleanup` (which `zentests` helpers already use) rather than in `TearDownSuite`.
+- **Parallel test methods are unsupported.** Do not call `s.T().Parallel()` in a suite; suite state
+  and its current `*testing.T` are shared across methods. Create a new `zentests.T` in `SetupTest`.
+- **Relying on `TearDownSuite` after fatal `SetupSuite` failure.** It is not registered until setup
+  returns. Use resource helpers that register `t.Cleanup` for resources that must be released even
+  when setup stops early.
 
 ## Working code
 

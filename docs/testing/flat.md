@@ -1,12 +1,11 @@
 # Zentests - Docs - Testing - Flat
 
-> **Status:** DRAFT — structure and wording are open for discussion.
+Flat style keeps each test a plain `func TestX(t *testing.T)` and creates `zentests.New(t)` inside
+it. It is a straightforward fit for independent tests; use `t.Parallel()` only when the app and
+other fixtures are safe to share or are created separately per test.
 
-Flat style keeps every test a plain `func TestX(t *testing.T)`. The helper is created inside the
-test, so tests share no state, run in any order, and work with `t.Parallel()`.
-
-Use it for most tests. Reach for [BDD](./bdd.md) or [testify/suite](./testify-suite.md) only when
-their structure earns its keep.
+Use it as the default. Choose [BDD](./bdd.md) or [testify/suite](./testify-suite.md) when their
+organization better fits the test cases.
 
 ## The shape
 
@@ -22,14 +21,16 @@ func TestHealthz(t *testing.T) {
 }
 ```
 
-Three things happen in order: build the app, create the helper, send a request and assert on the
-response. Nothing is shared with the next test, so a failure is always self-contained.
+Build the app and helper in the test, then send a request and assert on its response. Keeping the
+setup local makes the test easier to run independently; shared external state still needs its own
+isolation.
 
 ## Common patterns
 
 ### One test, several assertions
 
-Chain them — a failure stops at the first broken link and names it:
+Chain them to check several parts of one response. A failed assertion is recorded, and the chain
+continues so the test can report other failures too:
 
 ```go
 zt.Get(app, "/api/v1/users").
@@ -54,12 +55,16 @@ Wrap the request in `fiber.TestConfig` when the handler legitimately takes longe
 timeout (`ZENTESTS_TIMEOUT` raises it for the whole run instead):
 
 ```go
-zt.GetWithConfig(app, "/slow", fiber.TestConfig{Timeout: 10 * time.Second}).OK()
+zt.GetWithConfig(app, "/slow", fiber.TestConfig{
+	Timeout:       10 * time.Second,
+	FailOnTimeout: true,
+}).OK()
 ```
 
 ### Parallel tests
 
-Nothing is global, so `t.Parallel()` is safe:
+Each test creates its own app and helper here, so this pattern can use `t.Parallel()`. Avoid sharing
+mutable fixtures between parallel tests:
 
 ```go
 func TestHealthz(t *testing.T) {
@@ -73,12 +78,13 @@ func TestHealthz(t *testing.T) {
 - **Top-level JSON arrays.** JSON assertions address paths from an object root. A response of
   `[{"id":1}]` fails to parse; return `{"users": [...]}` and assert `users.0.id`, or decode with
   `Bind(&slice)`.
-- **Numbers are `float64`.** `Has("count", 42)` fails when the JSON holds `42`; use `HasInt`,
-  `HasFloat` or pass `float64(42)`. See [assertions](../assertions/README.md).
+- **JSON numbers decode as `float64`.** `Has` normalizes numeric expectations, so `Has("count", 42)`
+  matches a JSON number with value 42. Use `HasInt` or `HasFloat` to make your numeric expectation
+  explicit. See [assertions](../assertions/README.md).
 - **Empty path is not the root.** `ArrayLength("", 2)` does not address the whole body — name the
   key (`users`).
-- **`zentests.New(t)` per test.** Creating it once in `TestMain` or a package variable reintroduces
-  shared state and breaks parallelism.
+- **Create `zentests.New(t)` inside each test.** Reusing a helper ties assertions to the wrong test
+  and can share helper-level state such as default headers.
 
 ## Working code
 

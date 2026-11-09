@@ -1,10 +1,7 @@
 # Zentests - Docs - Testing - BDD
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
-BDD style groups tests with `Describe`, runs setup with `BeforeEach`, and writes one `It` per
-behaviour. It produces a readable sub-test tree in the output and needs no dependency beyond
-`zentests`.
+BDD style groups tests with `Describe`, runs per-test setup with `BeforeEach`, and defines each case
+with `It`. These blocks create ordinary Go sub-tests, so no separate BDD framework is needed.
 
 Use it when the _names_ of the tests are the documentation — a public API, a workflow, a set of
 rules — rather than a long list of unrelated checks.
@@ -76,16 +73,17 @@ inner `AfterEach`, then the outer one.
   calls they should apply to; a hook added afterwards does not retroactively apply.
 - **`AfterEach` runs even when the test stops early.** Hooks are registered with `t.Cleanup`, so a
   `require` failure inside `BeforeEach` or the test body still runs teardown.
-- **Each `It` gets a fresh `*zentests.T`.** Headers, cookies and state set inside one test never
-  leak into the next, even when the app is shared.
-- **Sub-tests run sequentially.** There is no `t.Parallel()` hook; for parallel tests use
-  [flat](flat.md) or [testify/suite](./testify-suite.md).
+- **Each `It` gets a fresh `*zentests.T`.** Helper-level headers do not carry over. State in a
+  shared app, database, or cookie jar can still persist; reset or recreate those fixtures in hooks.
+- **Sub-tests run sequentially.** There is no `t.Parallel()` hook; use flat tests or plain Go
+  subtests when parallel execution is required.
 
 ## Limits
 
-- No suite-level setup: work that should happen once for many tests belongs in
-  [testify/suite](./testify-suite.md), or in a plain helper function called from `BeforeEach`.
-- No shared base blocks: `Describe` bodies are functions, so compose with ordinary Go helpers.
+- There are no `BeforeAll`/`AfterAll` hooks. Code in a `Describe` callback runs once and can prepare
+  values captured by its `It` cases; use `testify/suite` when you need explicit suite lifecycle
+  hooks.
+- There is no shared-examples or base-block API. Compose reusable setup with ordinary Go helpers.
 
 ## Working code
 
