@@ -1,9 +1,6 @@
 # Zentests - Docs - Helpers
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
-Small helpers for the two things every suite ends up writing by hand: an app that shuts itself down,
-and a logger you can assert against.
+Helpers for managing a Fiber app's test cleanup and asserting on injected logger calls.
 
 ## Contents
 
@@ -17,9 +14,8 @@ assertions: see [assertions/routes](../assertions/routes.md).
 
 ## Related
 
-- [Assertions](../assertions/README.md) — everything else that hangs off `*Response`
+- [Assertions](../assertions/README.md) — response assertions and route checks
 - [Requests](../requests/README.md) — sending the requests
-- [examples/03-testify-suite](../../examples/example-03.md) — helpers in a suite
 
 ---
 

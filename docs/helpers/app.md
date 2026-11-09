@@ -1,7 +1,5 @@
 # Zentests - Docs - Helpers - App
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 `NewApp` builds a fresh Fiber app and registers its shutdown with `t.Cleanup`, so no test has to end
 with a `defer app.Shutdown()`.
 
@@ -11,8 +9,10 @@ with a `defer app.Shutdown()`.
 zentests.NewApp(t, cfg ...fiber.Config) *fiber.App
 ```
 
-The configuration is optional and variadic, so the zero-config form stays short. Only the first
-value is used if several are passed.
+| Input  | Type              | Behavior                                           |
+| ------ | ----------------- | -------------------------------------------------- |
+| `t`    | `*testing.T`      | Registers `app.Shutdown()` with `t.Cleanup`        |
+| `cfg`  | `...fiber.Config` | Optional; only the first config is used            |
 
 ## Without configuration
 
@@ -46,18 +46,16 @@ setup that drifts.
 
 ## Why shutdown is registered
 
-`app.Test` runs requests in-process and never opens a listener, so a test-only app usually has
-nothing to release. `NewApp` still registers `Shutdown` because:
-
-- a suite-level app lives for many tests, and leaving it running hides resources it opened;
-- configuration may start background work (a views reloader, a prefork listener);
-- a leak is silent until it isn't, and one line at creation is cheaper than a `TearDownSuite`.
+`app.Test` handles requests in-process without opening a listener. `NewApp` still registers
+`Shutdown` so Fiber's app-level shutdown lifecycle runs at test cleanup, including any configured
+shutdown hooks. It does not start a listening server itself.
 
 ## Notes
 
 - **One app per test, or one per suite.** Both work; `NewApp` is about the shutdown, not about
   scope.
-- **Cleanup runs in reverse order**, so an app created before a database is shut down after it.
+- **Cleanup runs in reverse order.** If an app's shutdown hook needs the database, create the DB
+  before `NewApp` so the app shuts down first.
 - **`NewApp` is not required.** `fiber.New()` works exactly the same with `zentests`; only the
   automatic shutdown is missing.
 
@@ -65,7 +63,6 @@ nothing to release. `NewApp` still registers `Shutdown` because:
 
 - [Routes](../assertions/routes.md) — asserting what was registered on the app
 - [testing/testify-suite](../testing/testify-suite.md) — suite-level app setup
-- [examples/03-testify-suite](../../examples/example-03.md)
 
 ---
 

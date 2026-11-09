@@ -1,10 +1,8 @@
 # Zentests - Docs - Helpers - Logger
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
-A three-method logging interface, a production implementation, and a test double that makes fatal
-paths testable — because `Fatalf` on the mock records the call and returns instead of killing the
-process.
+A small logging interface, a standard-library implementation, and a test double for checking
+logging calls. `MockLogger.Fatalf` records the call and returns, so code that logs fatally can be
+tested without exiting the process.
 
 ## The interface
 
@@ -30,19 +28,20 @@ func NewService(log zentests.Logger) *Service {
 
 ## `DefaultLogger`
 
-Writes to stderr with level prefixes and exits on a fatal message.
+Uses the standard library's default logger (stderr by default), prefixes messages with their level,
+and exits with status 1 after `Fatalf`.
 
 ```go
 var logger zentests.Logger = zentests.DefaultLogger{}
 
-logger.Debugf("cache hit for %s", key)   // DEBUG: cache hit for user:42
-logger.Warnf("retrying in %d seconds", n) // WARN: retrying in 3 seconds
-logger.Fatalf("cannot start: %v", err)    // FATAL: cannot start: … then os.Exit(1)
+logger.Debugf("cache hit for %s", key)    // logs a DEBUG-prefixed message
+logger.Warnf("retrying in %d seconds", n) // logs a WARN-prefixed message
+logger.Fatalf("cannot start: %v", err)    // logs FATAL, then exits with status 1
 ```
 
 ## `MockLogger`
 
-Captures every call, prints nothing, and never exits.
+Records whether each level was called and its last formatted message. It prints nothing and never exits.
 
 ```go
 ml := &zentests.MockLogger{}
@@ -78,22 +77,21 @@ assert.True(t, ml.FatalCalled)
 assert.Contains(t, ml.FatalMsg, "missing.json")
 ```
 
-That is the reason the mock exists: `Fatalf` on `DefaultLogger` ends the test process, which no test
-can assert on.
+A direct call to `DefaultLogger.Fatalf` exits the process. Inject `MockLogger` to test code that calls
+`Fatalf`; use a subprocess test if you need to verify the real process exit.
 
 ## Notes
 
 - **`*MockLogger` is a pointer type**, because the methods record into it.
 - **No levels, no structured fields.** Three methods, no configuration — enough for injection, not a
   logging framework.
-- **`DefaultLogger` writes to stderr**, so output appears alongside `go test` failures and does not
-  mix with stdout captured by the test.
+- **`DefaultLogger` uses the standard logger**, which writes to stderr by default; its output is not
+  captured as `testing.T` log output.
 
 ## Related
 
 - [App](app.md) — the other helper
-- [examples/03-testify-suite](../../examples/example-03.md) — helpers used together
 
 ---
 
-Back to: [Helpers](README.md)
+Back to: [Helpers](./README.md)
