@@ -1,18 +1,18 @@
 # Zentests - Docs - Assertions - Content Types
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 Content-type assertions are header checks with readable names: `IsJSON()` instead of
 `HeaderContains("Content-Type", "application/json")`.
 
-## The shortcuts
+## Assertions
 
-| Group        | Assertions                                                           |
-| ------------ | -------------------------------------------------------------------- |
-| Text formats | `IsJSON()`, `IsHTML()`, `IsXML()`, `IsPlainText()`                   |
-| Assets       | `IsCSS()`, `IsJS()`                                                  |
-| Images       | `IsImage()`, `IsPNG()`, `IsJPEG()`, `IsGIF()`, `IsSVG()`, `IsWebP()` |
-| Requests     | `IsXHR()` — the `X-Requested-With: XMLHttpRequest` header            |
+| Group                 | Assertions                                                           |
+| --------------------- | -------------------------------------------------------------------- |
+| Text formats          | `IsJSON()`, `IsHTML()`, `IsXML()`, `IsPlainText()`                   |
+| Assets                | `IsCSS()`, `IsJS()`                                                  |
+| Images                | `IsImage()`, `IsPNG()`, `IsJPEG()`, `IsGIF()`, `IsSVG()`, `IsWebP()` |
+| Other response header | `IsXHR()` — `X-Requested-With` contains `XMLHttpRequest`             |
+
+Usage:
 
 ```go
 zt.Get(app, "/api/v1/users").OK().IsJSON()
@@ -22,9 +22,10 @@ zt.Get(app, "/logo.png").OK().IsPNG().IsImage()
 zt.Get(app, "/api/v1/users").IsXHR()
 ```
 
-Each one is a substring check on the `Content-Type` header, so parameters do not matter:
-`application/json; charset=utf-8` passes `IsJSON()`. Matching is case-sensitive, as the header
-values in practice are.
+The content-type shortcuts use case-sensitive substring checks, so parameters do not matter:
+`application/json; charset=utf-8` passes `IsJSON()`. Use the canonical lowercase media-type values.
+`IsJSON()` looks for the literal `application/json`; it does not match every JSON-based media type,
+such as `application/problem+json`.
 
 ## Exact content type
 
@@ -53,13 +54,15 @@ zt.Get(app, "/page").HasContentType("text/html; charset=utf-8")
   assertion when the format is part of the contract.
 - **A missing `Content-Type` fails every shortcut**, which is usually the true cause when a handler
   forgets to set one.
-- **`IsXHR()` is not a content type.** It reads `X-Requested-With`; it is grouped here because it
-  answers the same question — "what kind of response is this?".
+- **`IsXHR()` checks the response header.** It looks for `XMLHttpRequest` in the response's
+  `X-Requested-With` header; it does not assert that the outgoing request was sent as XHR. This
+  header is conventionally used on requests, so do not use this method as a request-header
+  assertion.
 
 ## Related
 
 - [Headers](./headers.md) — every other header assertion
-- [HTML body](body-html.md) · [JSON body](body-json.md) — assertions on the parsed content
+- [Response Body](body-html.md) · [JSON body](body-json.md) — assertions on the parsed content
 - [examples/01-flat-style](../../examples/example-01.md)
 
 ---

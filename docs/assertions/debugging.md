@@ -1,11 +1,15 @@
 # Zentests - Docs - Assertions - Debugging
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
-When an assertion fails and the message is not enough, `Debug` and `Dump` show the response as the
-test sees it — status, headers and body — with credentials redacted.
+When an assertion failure needs more context, `Debug` and `Dump` show the response status, headers,
+and body. They redact selected credential-bearing headers; the body and unlisted headers are printed
+verbatim.
 
 ## `Debug()` prints, `Dump()` returns
+
+| Helper    | Behavior                                        |
+| --------- | ----------------------------------------------- |
+| `Debug()` | Prints to stdout; returns `*Response`           |
+| `Dump()`  | Returns formatted response details as a string |
 
 ```go
 // during development: print the response, then keep chaining
@@ -26,15 +30,14 @@ Headers: map[Content-Type:[application/json] X-Request-Id:[abc123]]
 Body: {"users":[{"id":1,"name":"Jane"}]}
 ```
 
-`Debug()` additionally prints the parsed JSON, indented, when the body was already parsed.
+If `JSON()` has already parsed a JSON object, `Debug()` also prints it indented.
 
 ## Redacted headers
 
-Credential-bearing headers are masked before printing, so a debug run does not leak tokens into CI
-logs:
+The following response headers are redacted before printing:
 
-`Authorization`, `Cookie`, `Set-Cookie`, `X-Api-Key`, `X-Auth-Token`, `X-Access-Token`,
-`X-Refresh-Token`, `X-Session-Id`, `X-Csrf-Token`.
+`Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `X-Api-Key`, `X-Auth-Token`,
+`X-Access-Token`, `X-Refresh-Token`, `X-Session-Id`, `X-Csrf-Token`.
 
 ```go
 // prints Authorization: [REDACTED]
@@ -46,8 +49,8 @@ that contain personal data.
 
 ## When to use them
 
-- **A failing chain with several assertions**: `Debug()` before the assertions shows which of them
-  was the first to disagree.
+- **A failing chain with several assertions**: `Debug()` shows the response status, headers, and body
+  involved in the checks.
 - **Unexpected 404 or 500**: the body usually explains it faster than reading the handler.
 - **Debugging the test, not the app**: `Dump()` in `t.Logf` keeps output quiet until `-v`.
 

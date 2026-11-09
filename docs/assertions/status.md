@@ -1,23 +1,26 @@
 # Zentests - Docs - Assertions - Status
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 Use simple status names — `OK()`, `NotFound()` — instead of `Status(404)`, or check the class when
 the exact code is not the point.
 
-## Named statuses
+## Assertions
 
-| Assertion         | Code |
-| ----------------- | ---- |
-| `OK()`            | 200  |
-| `Created()`       | 201  |
-| `NoContent()`     | 204  |
-| `BadRequest()`    | 400  |
-| `Unauthorized()`  | 401  |
-| `Forbidden()`     | 403  |
-| `NotFound()`      | 404  |
-| `Unprocessable()` | 422  |
-| `ServerError()`   | 500  |
+| Assertion            | Checks                           |
+| -------------------- | -------------------------------- |
+| `OK()`               | Status is 200                    |
+| `Created()`          | Status is 201                    |
+| `Accepted()`         | Status is 202                    |
+| `NoContent()`        | Status is 204                    |
+| `BadRequest()`       | Status is 400                    |
+| `Unauthorized()`     | Status is 401                    |
+| `Forbidden()`        | Status is 403                    |
+| `NotFound()`         | Status is 404                    |
+| `Unprocessable()`    | Status is 422                    |
+| `ServerError()`      | Status is 500                    |
+| `Status(code)`       | Status equals `code`             |
+| `StatusIn(codes...)` | Status matches one supplied code |
+
+Usage:
 
 ```go
 zt.Get(app, "/").OK()
@@ -26,10 +29,9 @@ zt.Get(app, "/does/not/exist").NotFound()
 zt.Delete(app, "/api/v1/users/1").NoContent()
 ```
 
-## Exact code
+### Exact code
 
-`Status(200)` is still there when the code itself is the subject of the test, and `StatusIn` accepts
-a set when several codes are legitimate:
+`Status(code)` checks an exact code. Use `StatusIn` when several codes are legitimate:
 
 ```go
 zt.Get(app, "/api/v1/users/1").Status(200)
@@ -37,6 +39,14 @@ zt.Get(app, "/api/v1/users/1").StatusIn(200, 204)
 ```
 
 ## Status classes
+
+| Assertion         | Checks                     |
+| ----------------- | -------------------------- |
+| `IsSuccess()`     | Status is in the 2xx range |
+| `IsClientError()` | Status is in the 4xx range |
+| `IsServerError()` | Status is in the 5xx range |
+
+Usage:
 
 ```go
 zt.Get(app, "/api/v1/search").IsSuccess()     // 2xx
@@ -46,12 +56,20 @@ zt.Get(app, "/api/v1/report").IsServerError() // 5xx
 
 ## Redirects
 
+| Assertion               | Checks                                            |
+| ----------------------- | ------------------------------------------------- |
+| `IsRedirect()`          | Status is 301, 302, 303, 307, or 308              |
+| `RedirectsTo(location)` | Redirect status and exact `Location` header match |
+
+Usage:
+
 ```go
 zt.Get(app, "/old").IsRedirect()              // 301, 302, 303, 307 or 308
 zt.Get(app, "/old").RedirectsTo("/new")       // redirect plus an exact Location match
 ```
 
-`RedirectsTo` requires the `Location` header to equal the argument exactly, query string included.
+`304 Not Modified` is not included. `RedirectsTo(location)` requires the `Location` header to equal
+`location` exactly, including any query string.
 
 ## Notes
 

@@ -1,18 +1,21 @@
 # Zentests - Docs - Assertions - Cookies
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 These assertions read the `Set-Cookie` headers of one response. For carrying cookies _between_
 requests, use a [cookie jar](../requests/cookie-jars.md) instead.
 
-## The assertions
+## Assertions
 
-| Assertion                | Checks                                                    |
-| ------------------------ | --------------------------------------------------------- |
-| `HasCookie(name)`        | The response set the named cookie with a real value       |
-| `CookieNotPresent(name)` | The response did not set the named cookie                 |
-| `CookieHasValues(map)`   | Each listed cookie name holds the expected **value**      |
-| `Cookie(name)`           | Returns the `*http.Cookie` so attributes can be inspected |
+| Assertion                                     | Checks                                                   |
+| --------------------------------------------- | -------------------------------------------------------- |
+| `HasCookie(name)`                             | A non-deletion cookie with that name was set             |
+| `CookieNotPresent(name)`                      | No live cookie with that name was set                    |
+| `CookieHasValues(expected map[string]string)` | Listed names have expected values; extra cookies ignored |
+| `Cookie(name)`                                | Returns the first matching `*http.Cookie`                |
+
+`CookieHasValues` is a subset check: it verifies each listed name/value pair and ignores other
+cookies. It checks values, not attributes.
+
+Usage:
 
 ```go
 zt.PostJSON(app, "/api/v1/login", data).OK().
@@ -52,8 +55,10 @@ To confirm a session is really gone, keep using the jar: the deleted cookie must
 
 ## Gotchas
 
-- **A response can set several cookies with the same name** (different paths). These assertions read
-  the first match; check `Cookie(name).Path` when that matters.
+- **A response can set several cookies with the same name** (different paths). `Cookie`,
+  `HasCookie`, and `CookieNotPresent` inspect the first match. `CookieHasValues` collapses cookies
+  into a name/value map, so the last cookie with a duplicate name wins. These helpers do not compare
+  same-name cookies by path.
 - **Cookies are per response, not per app.** The session cookie set on login is not sent by the next
   request unless a jar is carrying it.
 - **`HttpOnly` cookies are invisible to JavaScript but visible here** — the test reads the raw

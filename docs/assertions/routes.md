@@ -1,17 +1,17 @@
 # Zentests - Docs - Assertions - Routes
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 Route assertions check what the app has _registered_, without sending a request. They catch the case
 that produces the most confusing test failures: a route that was never mounted, so the assertion was
 really testing a 404.
 
-## The assertions
+## Assertions
 
 | Assertion                        | Checks                      |
 | -------------------------------- | --------------------------- |
 | `HasRoute(method, path, app)`    | The route is registered     |
 | `NotHasRoute(method, path, app)` | The route is not registered |
+
+Usage:
 
 ```go
 zt.HasRoute("GET", "/api/v1/users", app).
@@ -30,7 +30,8 @@ Both return `*T`, so they chain with each other and with further calls.
 
 ## Optional failure message
 
-Both accept `msgAndArgs` for context, in the same style as `testify`:
+Both accept an optional message for context. Only the first supplied argument is used, as literal
+text; it is not formatted with additional arguments:
 
 ```go
 zt.NotHasRoute("DELETE", "/api/v1/users", app, "bulk delete must not be exposed")
@@ -40,8 +41,9 @@ zt.NotHasRoute("DELETE", "/api/v1/users", app, "bulk delete must not be exposed"
 
 - **After mounting**: assert the routes a router helper is supposed to add, before writing request
   tests against them.
-- **Security checks**: `NotHasRoute` for endpoints that must not exist — an admin route behind a
-  build tag, a deprecated endpoint that should be gone.
+- **Registration checks**: use `NotHasRoute` to confirm a deprecated route is no longer registered.
+  This does not prove a URL is inaccessible; a wildcard or parameterized route may still match it.
+  Use request tests to verify actual routing and access control.
 - **Not** as a substitute for a request test: registration says nothing about status codes, payloads
   or middleware order.
 

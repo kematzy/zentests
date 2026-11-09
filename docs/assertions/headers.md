@@ -1,18 +1,18 @@
 # Zentests - Docs - Assertions - Headers
 
-> **Status:** DRAFT — structure and wording are open for discussion.
-
 Header checks that read like the header, without reaching into `resp.Header.Get(...)` by hand.
 
-## The five assertions
+## Assertions
 
-| Assertion                        | Checks                                              |
-| -------------------------------- | --------------------------------------------------- |
-| `HasHeader(key, value)`          | The header exists and its value is exactly `value`  |
-| `HeaderPresent(key)`             | The header exists and is not empty                  |
-| `HeaderNotPresent(key)`          | The header is missing or empty                      |
-| `HeaderContains(key, substring)` | The header value contains `substring`               |
-| `HeaderHasValues(key, values)`   | The header holds exactly those values, in any order |
+| Assertion                        | Checks                                      |
+| -------------------------------- | ------------------------------------------- |
+| `HasHeader(key, value)`          | The first header value equals `value`       |
+| `HeaderPresent(key)`             | The first header value is non-empty         |
+| `HeaderNotPresent(key)`          | The first header value is missing or empty  |
+| `HeaderContains(key, substring)` | The first header value contains `substring` |
+| `HeaderHasValues(key, values)`   | All values exactly match, in any order      |
+
+Usage:
 
 ```go
 zt.Get(app, "/api/v1/users").HasHeader("X-Served-By", "api-1")
@@ -22,24 +22,26 @@ zt.Get(app, "/api/v1/users").HeaderContains("Cache-Control", "max-age")
 zt.Get(app, "/api/v1/users").HeaderHasValues("X-Features", []string{"audio", "video"})
 ```
 
-Header names are case-insensitive, as HTTP requires. Values are compared exactly, so `max-age=60`
-matches `max-age=60` and nothing else.
+Header names are case-insensitive. `HasHeader` compares the first value exactly; `HeaderContains`
+checks for a substring in that value. `HeaderHasValues` compares the full set of values. For
+example, `HasHeader("Cache-Control", "max-age=60")` requires that exact value.
 
 ## Multi-value headers
 
 `HeaderHasValues` compares the full set with `assert.ElementsMatch`: no extras, no missing entries,
-order irrelevant. Use `HeaderContains` when you only care that one value is among others.
+and order is irrelevant. `HeaderContains` checks only the first value returned by `Header.Get`; it
+does not search later values when a header has several separate values.
 
 ```go
 // exactly these two, in either order
 zt.Get(app, "/assets/app.css").HeaderHasValues("Vary", []string{"Accept", "Accept-Encoding"})
 ```
 
-## Absence is a security check
+## Check for absent headers
 
-`HeaderNotPresent("X-Powered-By")` and `HeaderNotPresent("Server")` are the cheapest way to assert
-that a stack-trace or framework banner is not leaking. `HeaderPresent` and `HeaderNotPresent` treat
-an empty value as absent.
+Use `HeaderNotPresent` to enforce a response-header policy, such as omitting a framework banner.
+This checks only the selected header; it does not establish overall security or check the response
+body. `HeaderPresent` and `HeaderNotPresent` treat an empty first value as absent.
 
 ## Content types are header checks too
 
@@ -54,4 +56,4 @@ readable name. They live on their own page: [Content types](content-types.md).
 
 ---
 
-Back to: [Assertions](./README.md) &mdash; Next: [HTML body](body-html.md)
+Back to: [Assertions](./README.md) &mdash; Next: [Response Body](body-html.md)
