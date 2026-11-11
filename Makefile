@@ -176,7 +176,7 @@ release: check changelog
 	@git diff --cached --quiet || git commit -m "docs(changelog): update CHANGELOG for ${VERSION}"
 	# Create annotated tag
 	@git tag -a ${VERSION} -m "Release ${VERSION}"
-	# Push tags first (triggers the release CI), then the commits
+	# Push tags first, then the current branch, to every configured remote.
 	@git remote | xargs -I% git push % ${VERSION}
 	@git remote | xargs -I% git push %
 	@echo ""
@@ -195,9 +195,17 @@ release: check changelog
 # CHANGELOG
 #======================================================================================================================
 
-## changelog: Generate changelog using git-cliff
+## changelog: Add commits since the latest tag to CHANGELOG.md (set VERSION)
 changelog:
-	@git-cliff --tag ${VERSION} --output CHANGELOG.md
+	@if git rev-parse --quiet --verify "refs/tags/${VERSION}" >/dev/null; then \
+		echo "Tag ${VERSION} already exists; choose a new VERSION." >&2; exit 1; \
+	fi
+	@version=$$(printf '%s' "${VERSION}" | sed 's/^v//'); \
+	if grep -Fq "## [$$version]" CHANGELOG.md; then \
+		echo "CHANGELOG.md already contains version $$version; refusing to duplicate it." >&2; exit 1; \
+	fi
+	@git-cliff --unreleased --tag "${VERSION}" --prepend CHANGELOG.md
+	@cspell --unique --color --no-progress --quiet CHANGELOG.md
 
 
 #======================================================================================================================

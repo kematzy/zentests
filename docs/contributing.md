@@ -59,15 +59,15 @@ make modernize-check        # Dry-run with diffs to identify old Go code with ne
 make check                  # Run all checks (fmt, vet, lint, check-test-coverage)
 make check-test-coverage    # Run tests and enforce coverage threshold (default: 95%)
 
-# Release
-make release                # Release a new tagged version (e.g. make release VERSION=v1.2.3)
-make release VERSION=v1.2.3 # Create specific version
+# Release (requires git-cliff; available through mise.toml)
+git-cliff --unreleased --tag v0.4.0 --output /tmp/CHANGELOG-v0.4.0.md # Preview notes
+make release VERSION=v0.4.0 # Check, update CHANGELOG, tag, and push to all remotes
 
 # Development
 make versions               # Show current and all versions
 
 # Documentation
-make changelog              # Generate changelog using git-cliff
+make changelog VERSION=v0.4.0 # Prepend untagged commits; release invokes this automatically
 make docs                   # Open documentation in browser
 make docs-md                # Create Markdown API doc with `gomarkdoc` in `docs/API.md`
 
