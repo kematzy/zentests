@@ -58,8 +58,8 @@ adds release and CI complexity. Choose based on whether the goal is only to avoi
 for root-package users or also to remove it from their module graph.
 
 **Migration outline.** Create `dbtest/` and `git mv db_gorm.go` → move `db_gorm_test.go` with it →
-update README + `docs/database/*` → CHANGELOG entry marked breaking (v0.4.0). If removing the `DB`
-prefix, rename the symbols as shown in the table. Avoid root-package aliases: wrappers importing
+update README + `docs/database/*` → record the breaking change in the changelog. If removing the
+`DB` prefix, rename the symbols as shown in the table. Avoid root-package aliases: wrappers importing
 `dbtest` would restore the SQLite compile dependency.
 
 **Caveat.** A package split does not remove the CGO requirement for users of the SQLite helpers.

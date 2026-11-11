@@ -11,7 +11,7 @@ Inspired by Pest and RSpec.
 [![Go Report Card](https://goreportcard.com/badge/github.com/kematzy/zentests)](https://goreportcard.com/report/github.com/kematzy/zentests)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **Status:** v0.3.x — API may still change.
+> **Status:** v0.4.x — API may still change.
 
 ## Why `zentests`?
 
@@ -122,7 +122,7 @@ plus their transitive dependencies.
 While the API is still `v0.x`, it is suggested to pin the version explicitly:
 
 ```bash
-go get github.com/kematzy/zentests@v0.3.0
+go get github.com/kematzy/zentests@v0.4.0
 ```
 
 ### Requirements
